@@ -17,34 +17,16 @@
         th { background-color: #D52B1E; color: white; }
         .ganho { background-color: #d4f7d0; color: green; }
         .perda { background-color: #fddcdc; color: red; }
-        .contador { font-weight: bold; margin-top: 20px; }
-        .logo { width: 120px; margin-bottom: 20px; }
-        .tempo-medio { font-size: 18px; font-weight: bold; color: #333; margin: 10px 0; text-align: center; }
-        .tempo-medio-wrapper { margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
-        .mensagem { color: red; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="https://www.eventos.momentoeditorial.com.br/wp-content/uploads/2020/07/logo-Claro-800x600px.png" alt="Claro Brasil Logo" class="logo">
         <h2>Painel ETIT Empresarial</h2>
-        <div class="input-group">
-            <input type="file" id="upload" accept=".xlsx">
-        </div>
-        <div class="input-group">
-            <input type="text" id="login" placeholder="Digite o login ou nome">
-            <button class="botao" onclick="consultarSLA()">Consultar</button>
-            <button class="botao" onclick="limparResultados()">Limpar</button>
-        </div>
+        <input type="file" id="upload" accept=".xlsx">
+        <input type="text" id="login" placeholder="Digite o login ou nome">
+        <button class="botao" onclick="consultarSLA()">Consultar</button>
         <h3 id="nomeColaborador"></h3>
-        <div id="mensagem" class="mensagem"></div>
-        <div class="tempo-medio-wrapper">
-            <div id="tempoMedioGanhos" class="tempo-medio"></div>
-            <div id="tempoMedioPerdas" class="tempo-medio"></div>
-        </div>
-        <div id="contadores" class="contador"></div>
-        <table id="tabelaGanhos"><thead><tr><th>Ticket</th><th>Tempo</th></tr></thead><tbody></tbody></table>
-        <table id="tabelaPerdas"><thead><tr><th>Ticket</th><th>Tempo</th></tr></thead><tbody></tbody></table>
+        <table id="tabelaSLA"><thead><tr><th>Ticket</th><th>Tempo</th></tr></thead><tbody></tbody></table>
     </div>
     <script>
         let dadosPlanilha = [];
@@ -53,6 +35,13 @@
             "N5619600": "Bruno Costa Bucard",
             "N0189105": "Igor Marcelino de Marins",
             "N5713690": "Gabriela Tavares da Silva",
+            "N5802257": "Magno Ferrarez de Morais",
+            "N5604148": "Daniel Marcelo Felisberto Oliveira",
+            "F201714": "Fernanda Mesquita de Freitas",
+            "N0125317": "Roberto Silva do Nascimento",
+            "N5819183": "Rodrigo Pires Bernardino",
+            "N5926003": "Suellen Hernandez da Silva",
+            "N5932064": "Monica da Silva Rodrigues"
         };
 
         document.getElementById('upload').addEventListener('change', function(event) {
@@ -61,53 +50,30 @@
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                dadosPlanilha = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                dadosPlanilha = XLSX.utils.sheet_to_json(sheet, { header: 1 });
                 alert("Planilha carregada com sucesso!");
             };
             reader.readAsArrayBuffer(file);
         });
 
         function consultarSLA() {
-            const login = document.getElementById('login').value.trim().toLowerCase();
+            const login = document.getElementById('login').value.trim().toUpperCase();
             if (!login) return alert("Digite um login ou nome!");
-
-            let ganhos = [], perdas = [], totalTempoGanhos = 0, totalTempoPerdas = 0;
-            document.getElementById('nomeColaborador').textContent = colaboradores[login.toUpperCase()] || "Colaborador não encontrado!";
-
+            const nomeColaborador = colaboradores[login] || "Nome não encontrado";
+            document.getElementById('nomeColaborador').innerHTML = `Colaborador: ${nomeColaborador}`;
+            const tabela = document.getElementById("tabelaSLA").getElementsByTagName("tbody")[0];
+            tabela.innerHTML = "";
             dadosPlanilha.forEach(row => {
                 if (!row || row.length < 5) return;
                 let [ticket, usuarioLogin, usuarioNome, sla, tempo] = row;
-                usuarioLogin = usuarioLogin?.toString().trim().toLowerCase();
-                usuarioNome = usuarioNome?.toString().trim().toLowerCase();
-                tempo = parseFloat(tempo);
-                if (usuarioLogin.includes(login) || usuarioNome.includes(login)) {
-                    sla === 1 ? (ganhos.push([ticket, tempo]), totalTempoGanhos += tempo) : (perdas.push([ticket, tempo]), totalTempoPerdas += tempo);
+                if (usuarioLogin?.toUpperCase() === login || usuarioNome?.toUpperCase().includes(login)) {
+                    let rowElem = tabela.insertRow();
+                    rowElem.insertCell(0).innerText = ticket;
+                    rowElem.insertCell(1).innerText = tempo;
+                    rowElem.className = sla == 1 ? "ganho" : "perda";
                 }
             });
-
-            document.getElementById("contadores").textContent = `Total Dentro do SLA: ${ganhos.length} | Total Fora do SLA: ${perdas.length}`;
-            document.getElementById("tempoMedioGanhos").innerHTML = `Tempo Médio Dentro do SLA: <b>${ganhos.length ? (totalTempoGanhos / ganhos.length).toFixed(2) : "N/A"}</b>`;
-            document.getElementById("tempoMedioPerdas").innerHTML = `Tempo Médio Fora do SLA: <b>${perdas.length ? (totalTempoPerdas / perdas.length).toFixed(2) : "N/A"}</b>`;
-            atualizarTabela("tabelaGanhos", ganhos, "ganho");
-            atualizarTabela("tabelaPerdas", perdas, "perda");
-        }
-
-        function atualizarTabela(idTabela, dados, classe) {
-            const tabela = document.getElementById(idTabela).getElementsByTagName("tbody")[0];
-            tabela.innerHTML = "";
-            dados.forEach(([ticket, tempo]) => {
-                let row = tabela.insertRow();
-                row.insertCell(0).innerText = ticket;
-                row.insertCell(1).innerText = tempo;
-                row.className = classe;
-            });
-        }
-
-        function limparResultados() {
-            document.getElementById("login").value = "";
-            document.getElementById("contadores").textContent = "";
-            document.getElementById("tabelaGanhos").getElementsByTagName("tbody")[0].innerHTML = "";
-            document.getElementById("tabelaPerdas").getElementsByTagName("tbody")[0].innerHTML = "";
         }
     </script>
 </body>
