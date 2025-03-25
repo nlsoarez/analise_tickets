@@ -45,7 +45,8 @@
         <h3 id="nomeColaborador"></h3>
         <div id="contadores" class="contador"></div>
         <div id="error-message" class="error"></div>
-        <h3>Detalhes dos Tickets</h3>
+
+        <h3>Detalhes dos Tickets Dentro do SLA</h3>
         <table>
             <thead>
                 <tr>
@@ -54,9 +55,22 @@
                     <th>Tempo (minutos)</th>
                 </tr>
             </thead>
-            <tbody id="dadosTabela"></tbody>
+            <tbody id="dadosDentroSLA"></tbody>
+        </table>
+
+        <h3>Detalhes dos Tickets Fora do SLA</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>RAL/REC</th>
+                    <th>Status SLA</th>
+                    <th>Tempo (minutos)</th>
+                </tr>
+            </thead>
+            <tbody id="dadosForaSLA"></tbody>
         </table>
     </div>
+
     <script>
         let dadosPlanilha = [];
         const colaboradores = {
@@ -98,7 +112,7 @@
                 document.getElementById('error-message').innerHTML = 'Por favor, insira um login ou nome para consulta.';
                 return;
             }
-            
+
             let nomeColaborador = colaboradores[entrada] || Object.values(colaboradores).find(nome => nome.toUpperCase().includes(entrada)) || "Colaborador não encontrado";
             document.getElementById('nomeColaborador').innerHTML = `Colaborador: ${nomeColaborador}`;
             
@@ -107,8 +121,10 @@
                 return;
             }
             
-            let tabela = document.getElementById('dadosTabela');
-            tabela.innerHTML = "";
+            let tabelaDentro = document.getElementById('dadosDentroSLA');
+            let tabelaFora = document.getElementById('dadosForaSLA');
+            tabelaDentro.innerHTML = "";
+            tabelaFora.innerHTML = "";
             let totalDentro = 0, totalFora = 0, somaDentro = 0, somaFora = 0;
             
             dadosPlanilha.forEach(row => {
@@ -119,22 +135,26 @@
                 let tempo = parseFloat(row[3]);
                 
                 if (nome.includes(nomeColaborador.toUpperCase())) {
-                    let linha = tabela.insertRow();
-                    linha.insertCell(0).innerText = ralRec;
-                    linha.insertCell(1).innerText = indicador === 1 ? "Dentro do SLA" : "Fora do SLA";
-                    linha.insertCell(2).innerText = tempo;
-                    linha.className = indicador === 1 ? "ganho" : "perda";
-                    
+                    let linha;
                     if (indicador === 1) {
+                        // Dentro do SLA
+                        linha = tabelaDentro.insertRow();
+                        linha.className = "ganho";
                         totalDentro++;
                         somaDentro += tempo;
                     } else {
+                        // Fora do SLA
+                        linha = tabelaFora.insertRow();
+                        linha.className = "perda";
                         totalFora++;
                         somaFora += tempo;
                     }
+                    linha.insertCell(0).innerText = ralRec;
+                    linha.insertCell(1).innerText = indicador === 1 ? "Dentro do SLA" : "Fora do SLA";
+                    linha.insertCell(2).innerText = tempo;
                 }
             });
-            
+
             let mediaDentro = totalDentro > 0 ? (somaDentro / totalDentro).toFixed(2) : "N/A";
             let mediaFora = totalFora > 0 ? (somaFora / totalFora).toFixed(2) : "N/A";
             document.getElementById("contadores").innerHTML = `Total Dentro do SLA: ${totalDentro} | Média: ${mediaDentro} min | Total Fora do SLA: ${totalFora} | Média: ${mediaFora} min`;
