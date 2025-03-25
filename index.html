@@ -17,31 +17,36 @@
         th { background-color: #D52B1E; color: white; }
         .ganho { background-color: #d4f7d0; color: green; }
         .perda { background-color: #fddcdc; color: red; }
+        .contador { font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Painel ETIT Empresarial</h2>
-        <input type="file" id="upload" accept=".xlsx">
-        <input type="text" id="login" placeholder="Digite o login ou nome">
-        <button class="botao" onclick="consultarSLA()">Consultar</button>
+        <div class="input-group">
+            <input type="file" id="upload" accept=".xlsx">
+        </div>
+        <div class="input-group">
+            <input type="text" id="login" placeholder="Digite o login ou nome">
+            <button class="botao" onclick="consultarSLA()">Consultar</button>
+        </div>
         <h3 id="nomeColaborador"></h3>
-        <table id="tabelaSLA"><thead><tr><th>Ticket</th><th>Tempo</th></tr></thead><tbody></tbody></table>
+        <div id="contadores" class="contador"></div>
     </div>
     <script>
         let dadosPlanilha = [];
         const colaboradores = {
-            "N6088107": "Leandro Gonçalves de Carvalho",
-            "N5619600": "Bruno Costa Bucard",
-            "N0189105": "Igor Marcelino de Marins",
-            "N5713690": "Gabriela Tavares da Silva",
-            "N5802257": "Magno Ferrarez de Morais",
-            "N5604148": "Daniel Marcelo Felisberto Oliveira",
-            "F201714": "Fernanda Mesquita de Freitas",
-            "N0125317": "Roberto Silva do Nascimento",
-            "N5819183": "Rodrigo Pires Bernardino",
-            "N5926003": "Suellen Hernandez da Silva",
-            "N5932064": "Monica da Silva Rodrigues"
+            "N6088107": "LEANDRO GONÇALVES DE CARVALHO",
+            "N5619600": "BRUNO COSTA BUCARD",
+            "N0189105": "IGOR MARCELINO DE MARINS",
+            "N5713690": "GABRIELA TAVARES DA SILVA",
+            "N5802257": "MAGNO FERRAREZ DE MORAIS",
+            "N5604148": "DANIEL MARCELO FELISBERTO OLIVEIRA",
+            "F201714": "FERNANDA MESQUITA DE FREITAS",
+            "N0125317": "ROBERTO SILVA DO NASCIMENTO",
+            "N5819183": "RODRIGO PIRES BERNARDINO",
+            "N5926003": "SUELLEN HERNANDEZ DA SILVA",
+            "N5932064": "MONICA DA SILVA RODRIGUES"
         };
 
         document.getElementById('upload').addEventListener('change', function(event) {
@@ -50,7 +55,8 @@
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
                 dadosPlanilha = XLSX.utils.sheet_to_json(sheet, { header: 1 });
                 alert("Planilha carregada com sucesso!");
             };
@@ -58,22 +64,14 @@
         });
 
         function consultarSLA() {
-            const login = document.getElementById('login').value.trim().toUpperCase();
-            if (!login) return alert("Digite um login ou nome!");
-            const nomeColaborador = colaboradores[login] || "Nome não encontrado";
+            const entrada = document.getElementById('login').value.trim().toUpperCase();
+            if (!entrada) {
+                alert("Digite um login ou nome!");
+                return;
+            }
+
+            let nomeColaborador = colaboradores[entrada] || Object.values(colaboradores).find(nome => nome.toUpperCase().includes(entrada)) || "Colaborador não encontrado";
             document.getElementById('nomeColaborador').innerHTML = `Colaborador: ${nomeColaborador}`;
-            const tabela = document.getElementById("tabelaSLA").getElementsByTagName("tbody")[0];
-            tabela.innerHTML = "";
-            dadosPlanilha.forEach(row => {
-                if (!row || row.length < 5) return;
-                let [ticket, usuarioLogin, usuarioNome, sla, tempo] = row;
-                if (usuarioLogin?.toUpperCase() === login || usuarioNome?.toUpperCase().includes(login)) {
-                    let rowElem = tabela.insertRow();
-                    rowElem.insertCell(0).innerText = ticket;
-                    rowElem.insertCell(1).innerText = tempo;
-                    rowElem.className = sla == 1 ? "ganho" : "perda";
-                }
-            });
         }
     </script>
 </body>
