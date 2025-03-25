@@ -89,6 +89,10 @@
 
         document.getElementById('upload').addEventListener('change', function(event) {
             const file = event.target.files[0];
+            if (!file.name.endsWith('.xlsx')) {
+                document.getElementById('error-message').innerHTML = 'Por favor, carregue um arquivo .xlsx válido.';
+                return;
+            }
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
