@@ -18,6 +18,18 @@
         .ganho { background-color: #d4f7d0; color: green; }
         .perda { background-color: #fddcdc; color: red; }
         .contador { font-weight: bold; margin-top: 20px; }
+        .error { color: red; margin-top: 10px; }
+        
+        /* Design Responsivo */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            input, button {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -32,6 +44,7 @@
         </div>
         <h3 id="nomeColaborador"></h3>
         <div id="contadores" class="contador"></div>
+        <div id="error-message" class="error"></div>
         <h3>Detalhes dos Tickets</h3>
         <table>
             <thead>
@@ -64,12 +77,17 @@
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const sheet = workbook.Sheets[sheetName];
-                dadosPlanilha = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                alert("Planilha carregada com sucesso!");
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    dadosPlanilha = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    document.getElementById('error-message').innerHTML = ''; // Limpa qualquer mensagem de erro
+                    alert("Planilha carregada com sucesso!");
+                } catch (error) {
+                    document.getElementById('error-message').innerHTML = 'Erro ao carregar a planilha. Por favor, tente novamente.';
+                }
             };
             reader.readAsArrayBuffer(file);
         });
@@ -77,12 +95,17 @@
         function consultarSLA() {
             const entrada = document.getElementById('login').value.trim().toUpperCase();
             if (!entrada) {
-                alert("Digite um login ou nome!");
+                document.getElementById('error-message').innerHTML = 'Por favor, insira um login ou nome para consulta.';
                 return;
             }
-
+            
             let nomeColaborador = colaboradores[entrada] || Object.values(colaboradores).find(nome => nome.toUpperCase().includes(entrada)) || "Colaborador não encontrado";
             document.getElementById('nomeColaborador').innerHTML = `Colaborador: ${nomeColaborador}`;
+            
+            if (nomeColaborador === "Colaborador não encontrado") {
+                document.getElementById('error-message').innerHTML = 'Login ou nome não encontrado. Tente novamente.';
+                return;
+            }
             
             let tabela = document.getElementById('dadosTabela');
             tabela.innerHTML = "";
