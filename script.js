@@ -1,14 +1,14 @@
 const employees = [
-  { "Matricula": "N6088107", "Nome": "Leandro Gonçalves de Carvalho", "Setor": "Empresarial", "DPA": "79%", "ETIT": "-", "Assertividade": "-" },
-  { "Matricula": "N5619600", "Nome": "Bruno Costa Bucard", "Setor": "Empresarial", "DPA": "86%", "ETIT": "-", "Assertividade": "-" },
-  { "Matricula": "N0189105", "Nome": "Igor Marcelino de Marins", "Setor": "Empresarial", "DPA": "83%", "ETIT": "79%", "Assertividade": "-" },
-  { "Matricula": "N5713690", "Nome": "Gabriela Tavares da Silva", "Setor": "Empresarial", "DPA": "80%", "ETIT": "56%", "Assertividade": "-" },
-  { "Matricula": "N5802257", "Nome": "Magno Ferrarez de Morais", "Setor": "Empresarial", "DPA": "70%", "ETIT": "61%", "Assertividade": "-" },
-  { "Matricula": "F201714", "Nome": "Fernanda Mesquita de Freitas", "Setor": "Empresarial", "DPA": "94%", "ETIT": "63%", "Assertividade": "-" },
-  { "Matricula": "N0125317", "Nome": "Roberto Silva do Nascimento", "Setor": "Empresarial", "DPA": "118%", "ETIT": "100%", "Assertividade": "-" },
-  { "Matricula": "N5819183", "Nome": "Rodrigo Pires Bernardino", "Setor": "Empresarial", "DPA": "86%", "ETIT": "85%", "Assertividade": "-" },
-  { "Matricula": "N5926003", "Nome": "Suellen Hernandez da Silva", "Setor": "Empresarial", "DPA": "-", "ETIT": "100%", "Assertividade": "-" },
-  { "Matricula": "N5932064", "Nome": "Monica da Silva Rodrigues", "Setor": "Empresarial", "DPA": "110%", "ETIT": "96%", "Assertividade": "-" }
+  { "Matricula": "F119481", "Nome": "LAYSSA MENDES DE LIMA", "Setor": "Empresarial", "DPA": "97%", "ETIT": "100%" },
+  { "Matricula": "N6026848", "Nome": "BRUNO RIBEIRO ARAUJO", "Setor": "Empresarial", "DPA": "90%", "ETIT": "96%" },
+  { "Matricula": "N5969641", "Nome": "CARLOS ALEXANDRE COSTA DE OLIVEIRA", "Setor": "Empresarial", "DPA": "93%", "ETIT": "93%" },
+  { "Matricula": "N5705710", "Nome": "ULYSSES FERREIRA DOS SANTOS", "Setor": "Empresarial", "DPA": "114%", "ETIT": "100%" },
+  { "Matricula": "F201734", "Nome": "BRENDA FERNANDA DA SILVA DAVID", "Setor": "Empresarial", "DPA": "102%", "ETIT": "91%" },
+  { "Matricula": "N5922887", "Nome": "ROMULO BARBOSA NICOLAE", "Setor": "Empresarial", "DPA": "94%", "ETIT": "93%" },
+  { "Matricula": "N5963374", "Nome": "THIAGO RODRIGUES LOPES", "Setor": "Empresarial", "DPA": "85%", "ETIT": "86%" },
+  { "Matricula": "N5946041", "Nome": "FABIO ANGELO MAGELA DE ALMEIDA", "Setor": "Empresarial", "DPA": "-", "ETIT": "98%" },
+  { "Matricula": "N6172922", "Nome": "DJALMIR SILVA DE SENA", "Setor": "Empresarial", "DPA": "83%", "ETIT": "90%" },
+  { "Matricula": "N5739694", "Nome": "GUILHERME SCALON DA SILVA COELHO", "Setor": "Empresarial", "DPA": "82%", "ETIT": "87%" }
 ];
 
 function definirMeta(tipo) {
