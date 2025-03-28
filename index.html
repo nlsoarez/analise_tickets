@@ -1,21 +1,15 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Consulta de Indicadores</title>
+    <title>Upload de Produtividade</title>
 </head>
 <body>
-    <div class="container">
-        <img src="https://www.eventos.momentoeditorial.com.br/wp-content/uploads/2020/07/logo-Claro-800x600px.png" alt="Logo Claro" class="logo">
-        <h1>Consulta de Indicadores</h1>
-        <input type="text" id="matricula" placeholder="Digite a matrícula">
-        <button onclick="consultar()">Consultar</button>
-        <div id="resultado" class="resultado"></div>
-        <p class="atualizacao">Última atualização: 26/03</p>
-    </div>
-
-    <script src="script.js"></script>
+    <h1>Upload de Produtividade</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
 </body>
 </html>
