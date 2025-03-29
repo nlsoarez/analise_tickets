@@ -93,8 +93,9 @@
                 "Remedy Móvel", "Total", "TOA: 1ª Int.", "NICE: Recebido", "NICE: Atendido", "NICE: Realizado"
             ];
 
-            let tabelaHTML = "<tr>" + cabecalhos.map(col => `<th>${col}</th>`).join("") + "</tr>";
-            
+            // Filtra os dados para exibir somente as colunas do setor
+            let tabelaHTML = "<tr>" + colunasSelecionadas.map((col, index) => `<th>${cabecalhos[index]}</th>`).join("") + "</tr>";
+
             dados.forEach(row => {
                 if (row[0] === matricula) { // Filtra para exibir apenas os dados da matrícula consultada
                     let linha = "<tr>" + indiceColunas.map(i => `<td>${row[i] || ""}</td>`).join("") + "</tr>";
