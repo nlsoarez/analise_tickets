@@ -8,12 +8,18 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #f2f2f2; text-align: center; }
         .container { max-width: 800px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, button { padding: 10px; margin: 10px; }
+        input, button { padding: 10px; margin: 10px; width: 80%; max-width: 300px; }
         .table-container { max-height: 300px; overflow-y: auto; margin-top: 20px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 8px; border: 1px solid #ddd; }
-        th { background-color: #D52B1E; color: white; }
+        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: center; }
+        th { background-color: #D52B1E; color: white; font-size: 16px; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
         .spinner { display: none; font-size: 18px; }
+        .resultado { text-align: left; margin-top: 20px; font-size: 18px; }
+        .resultado strong { font-weight: bold; }
+        .status { padding: 10px; margin-top: 10px; font-size: 16px; color: white; border-radius: 5px; }
+        .status.dentro { background-color: green; }
+        .status.fora { background-color: red; }
     </style>
 </head>
 <body>
@@ -21,7 +27,7 @@
         <h2>Painel ETIT</h2>
         <input type="file" id="upload" accept=".xlsx">
         <input type="text" id="matricula" placeholder="Digite a matrícula" oninput="consultarETIT()">
-        <div id="resultado"></div>
+        <div id="resultado" class="resultado"></div>
         <div class="spinner" id="spinner">⏳ Carregando...</div>
         <div class="table-container">
             <table id="tabelaDados"><thead><tr></tr></thead><tbody></tbody></table>
@@ -142,7 +148,7 @@
             }
 
             // Exibir o nome do analista, setor, média da equipe e tabela
-            document.getElementById("resultado").innerHTML = `<p><strong>Nome:</strong> ${nomeAnalista}</p><p><strong>Setor:</strong> ${setorEncontrado}</p><p><strong>Status:</strong> ${statusAnalista}</p><p><strong>Média da Equipe:</strong> ${mediaEquipe.toFixed(2)}</p>`;
+            document.getElementById("resultado").innerHTML = `<p><strong>Nome:</strong> ${nomeAnalista}</p><p><strong>Setor:</strong> ${setorEncontrado}</p><p class="status ${statusAnalista.toLowerCase()}"><strong>Status:</strong> ${statusAnalista}</p><p><strong>Média da Equipe:</strong> ${mediaEquipe.toFixed(2)}</p>`;
             document.getElementById("tabelaDados").innerHTML = tabelaHTML;
         }
     </script>
