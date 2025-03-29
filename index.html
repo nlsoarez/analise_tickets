@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Produtividade</title>
+    <title>Painel ETIT Móvel</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f2f2f2; text-align: center; }
@@ -24,7 +24,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>Painel ETIT</h2>
+        <h2>Painel de Produtividade</h2>
         <input type="file" id="upload" accept=".xlsx">
         <input type="text" id="matricula" placeholder="Digite a matrícula" oninput="consultarETIT()">
         <div id="resultado" class="resultado"></div>
@@ -127,10 +127,10 @@
                     let linha = "<tr>";
                     let dadosLinha = [];
                     
-                    // Obter os dados das colunas selecionadas
+                    // Obter os dados das colunas selecionadas para aquela matrícula
                     let valoresColunas = indiceColunas.map(i => row[i] || "");
 
-                    // Exibir apenas as colunas relevantes para o analista
+                    // Exibir os valores das colunas
                     dadosLinha = valoresColunas.map(i => `<td>${i}</td>`);
                     linha += dadosLinha.join("") + "</tr>";
                     tabelaHTML += linha;
