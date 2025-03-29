@@ -60,24 +60,26 @@
             }
         };
 
-        // Exemplo de correspondência de cabeçalhos para os indicadores
-        const cabecalhos = {
-            "J": "Indicador de Performance 1",
-            "M": "Indicador de Performance 2",
-            "O": "Indicador de Performance 3",
-            "P": "Indicador de Performance 4",
-            "Q": "Indicador de Performance 5",
-            "R": "Indicador de Performance 6",
-            "E": "Indicador de Performance 7",
-            "F": "Indicador de Performance 8",
-            "K": "Indicador de Performance 9",
-            "L": "Indicador de Performance 10",
-            "B": "Indicador de Performance 11",
-            "C": "Indicador de Performance 12",
-            "G": "Indicador de Performance 13",
-            "H": "Indicador de Performance 14",
-            "I": "Indicador de Performance 15"
-        };
+        // Correspondência dos nomes das colunas
+        const cabecalhos = [
+            "NM - Abertura",
+            "NM - Fechamento",
+            "NM - Fech. Manobra",
+            "OSS - Abertura",
+            "OSS - Acionamento",
+            "OSS - Fechamento",
+            "SGO - Abertura",
+            "SGO - Fechamento",
+            "Abertura RAL",
+            "RAL",
+            "REC",
+            "Remedy Móvel",
+            "Total",
+            "TOA: 1ª Int.",
+            "NICE: Recebido",
+            "NICE: Atendido",
+            "NICE: Realizado"
+        ];
 
         document.getElementById('upload').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -119,7 +121,7 @@
             let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
 
             // Criar cabeçalhos descritivos
-            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${cabecalhos[col]}</th>`).join("") + "</tr>";
+            let tabelaHTML = "<tr>" + cabecalhos.map(col => `<th>${col}</th>`).join("") + "</tr>";
 
             // Procurar os dados do analista consultado
             dados.forEach(row => {
