@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel ETIT Móvel</title>
+    <title>Painel de Produtividade</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f2f2f2; text-align: center; }
@@ -98,9 +98,28 @@
             // Identificar as colunas relevantes do setor
             let colunasSelecionadas = setores[setorEncontrado];
             let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
-            
-            // Criar a tabela HTML com as colunas relevantes
-            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${col}</th>`).join("") + "</tr>";
+
+            // Cabeçalhos das colunas com descrições legíveis
+            const cabeçalhos = {
+                "J": "Indicador 1",
+                "M": "Indicador 2",
+                "O": "Indicador 3",
+                "P": "Indicador 4",
+                "Q": "Indicador 5",
+                "R": "Indicador 6",
+                "E": "Indicador 7",
+                "F": "Indicador 8",
+                "K": "Indicador 9",
+                "L": "Indicador 10",
+                "B": "Indicador 11",
+                "C": "Indicador 12",
+                "G": "Indicador 13",
+                "H": "Indicador 14",
+                "I": "Indicador 15"
+            };
+
+            // Criar a tabela HTML com os cabeçalhos descritivos
+            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${cabeçalhos[col]}</th>`).join("") + "</tr>";
 
             // Procurar os dados do analista consultado e apenas exibir esses dados
             dados.forEach(row => {
