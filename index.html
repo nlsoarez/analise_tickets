@@ -73,9 +73,12 @@
         function consultarETIT() {
             const matricula = document.getElementById('matricula').value.trim().toUpperCase();
             if (!matricula || !dados.length) return;
+
             let setorEncontrado = null;
             let nomeAnalista = "Nome não encontrado";
-            
+            let linhaAnalista = null;
+
+            // Buscar o analista pelo número da matrícula
             for (let setor in analistas) {
                 if (matricula in analistas[setor]) {
                     setorEncontrado = setor;
@@ -83,18 +86,63 @@
                     break;
                 }
             }
+
             if (!setorEncontrado) return;
-            
+
+            // Identificar as colunas relevantes do setor
             let colunasSelecionadas = setores[setorEncontrado];
             let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
-            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${col}</th>`).join("") + "</tr>";
             
+            // Criar a tabela HTML com as colunas relevantes
+            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${col}</th>`).join("") + "</tr>";
+
+            // Encontrar os dados do analista e calcular a média da equipe
+            let somaEquipe = 0;
+            let contadorEquipe = 0;
+
             dados.forEach(row => {
-                let linha = "<tr>" + indiceColunas.map(i => `<td>${row[i] || ""}</td>`).join("") + "</tr>";
+                let linha = "<tr>";
+                let dadosLinha = [];
+                
+                // Obter os dados das colunas selecionadas
+                let valoresColunas = indiceColunas.map(i => row[i] || "");
+
+                // Se a linha corresponde ao analista, salvar essa linha
+                if (row[0] === matricula) {
+                    linhaAnalista = valoresColunas;
+                }
+                
+                // Calcular a soma para a média da equipe
+                valoresColunas.forEach(valor => {
+                    let numero = parseFloat(valor);
+                    if (!isNaN(numero)) {
+                        somaEquipe += numero;
+                        contadorEquipe++;
+                    }
+                });
+
+                // Montar a linha da tabela
+                dadosLinha = valoresColunas.map(i => `<td>${i}</td>`);
+                linha += dadosLinha.join("") + "</tr>";
                 tabelaHTML += linha;
             });
-            
-            document.getElementById("resultado").innerHTML = `<p><strong>Nome:</strong> ${nomeAnalista}</p><p><strong>Setor:</strong> ${setorEncontrado}</p>`;
+
+            // Calcular a média da equipe
+            let mediaEquipe = somaEquipe / contadorEquipe;
+
+            // Verificar se o analista está dentro ou fora da média
+            let statusAnalista = "Dentro da média";
+            if (linhaAnalista) {
+                linhaAnalista.forEach(valor => {
+                    let numeroAnalista = parseFloat(valor);
+                    if (!isNaN(numeroAnalista) && numeroAnalista < mediaEquipe) {
+                        statusAnalista = "Fora da média";
+                    }
+                });
+            }
+
+            // Exibir o nome do analista, setor, média da equipe e tabela
+            document.getElementById("resultado").innerHTML = `<p><strong>Nome:</strong> ${nomeAnalista}</p><p><strong>Setor:</strong> ${setorEncontrado}</p><p><strong>Status:</strong> ${statusAnalista}</p><p><strong>Média da Equipe:</strong> ${mediaEquipe.toFixed(2)}</p>`;
             document.getElementById("tabelaDados").innerHTML = tabelaHTML;
         }
     </script>
