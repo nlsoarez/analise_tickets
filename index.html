@@ -87,13 +87,15 @@
             
             let colunasSelecionadas = setores[setorEncontrado];
             let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
-            let cabecalhos = [
+
+            // Nomes dos cabeçalhos correspondentes às colunas
+            const cabecalhos = [
                 "NM - Abertura", "NM - Fechamento", "NM - Fech. Manobra", "OSS - Abertura", "OSS - Acionamento", 
                 "OSS - Fechamento", "SGO - Abertura", "SGO - Fechamento", "Abertura RAL", "RAL", "REC", 
                 "Remedy Móvel", "Total", "TOA: 1ª Int.", "NICE: Recebido", "NICE: Atendido", "NICE: Realizado"
             ];
 
-            // Filtra os dados para exibir somente as colunas do setor
+            // Adiciona somente as colunas do setor
             let tabelaHTML = "<tr>" + colunasSelecionadas.map((col, index) => `<th>${cabecalhos[index]}</th>`).join("") + "</tr>";
 
             dados.forEach(row => {
