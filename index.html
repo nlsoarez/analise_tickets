@@ -3,31 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel ETIT Móvel</title>
+    <title>Painel de Indicadores</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f2f2f2; text-align: center; }
         .container { max-width: 800px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, button { padding: 10px; margin: 10px; width: 80%; max-width: 300px; }
+        input, button { padding: 10px; margin: 10px; }
         .table-container { max-height: 300px; overflow-y: auto; margin-top: 20px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: center; }
-        th { background-color: #D52B1E; color: white; font-size: 16px; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
+        th, td { padding: 8px; border: 1px solid #ddd; }
+        th { background-color: #D52B1E; color: white; }
         .spinner { display: none; font-size: 18px; }
-        .resultado { text-align: left; margin-top: 20px; font-size: 18px; }
-        .resultado strong { font-weight: bold; }
-        .status { padding: 10px; margin-top: 10px; font-size: 16px; color: white; border-radius: 5px; }
-        .status.dentro { background-color: green; }
-        .status.fora { background-color: red; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Painel ETIT</h2>
+        <h2>Painel de Indicadores</h2>
         <input type="file" id="upload" accept=".xlsx">
         <input type="text" id="matricula" placeholder="Digite a matrícula" oninput="consultarETIT()">
-        <div id="resultado" class="resultado"></div>
+        <div id="resultado"></div>
         <div class="spinner" id="spinner">⏳ Carregando...</div>
         <div class="table-container">
             <table id="tabelaDados"><thead><tr></tr></thead><tbody></tbody></table>
@@ -37,7 +31,7 @@
         let dados = [];
         const setores = {
             "MÓVEL": ["J", "M", "O", "P", "Q", "R"],
-            "EMPRESARIAL": ["E", "F", "J", "K", "L", "O", "P", "Q", "R"],
+            "EMPRESARIAL": ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R"],
             "RESIDENCIAL": ["B", "C", "E", "F", "G", "H", "I", "L", "O", "P", "Q", "R"]
         };
         const analistas = {
@@ -60,27 +54,6 @@
             }
         };
 
-        // Correspondência dos nomes das colunas
-        const cabecalhos = [
-            "NM - Abertura",
-            "NM - Fechamento",
-            "NM - Fech. Manobra",
-            "OSS - Abertura",
-            "OSS - Acionamento",
-            "OSS - Fechamento",
-            "SGO - Abertura",
-            "SGO - Fechamento",
-            "Abertura RAL",
-            "RAL",
-            "REC",
-            "Remedy Móvel",
-            "Total",
-            "TOA: 1ª Int.",
-            "NICE: Recebido",
-            "NICE: Atendido",
-            "NICE: Realizado"
-        ];
-
         document.getElementById('upload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -100,12 +73,9 @@
         function consultarETIT() {
             const matricula = document.getElementById('matricula').value.trim().toUpperCase();
             if (!matricula || !dados.length) return;
-
             let setorEncontrado = null;
             let nomeAnalista = "Nome não encontrado";
-            let linhaAnalista = null;
-
-            // Buscar o analista pelo número da matrícula
+            
             for (let setor in analistas) {
                 if (matricula in analistas[setor]) {
                     setorEncontrado = setor;
@@ -113,33 +83,25 @@
                     break;
                 }
             }
-
             if (!setorEncontrado) return;
-
-            // Identificar as colunas relevantes do setor
+            
             let colunasSelecionadas = setores[setorEncontrado];
             let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
+            let cabecalhos = [
+                "NM - Abertura", "NM - Fechamento", "NM - Fech. Manobra", "OSS - Abertura", "OSS - Acionamento", 
+                "OSS - Fechamento", "SGO - Abertura", "SGO - Fechamento", "Abertura RAL", "RAL", "REC", 
+                "Remedy Móvel", "Total", "TOA: 1ª Int.", "NICE: Recebido", "NICE: Atendido", "NICE: Realizado"
+            ];
 
-            // Criar cabeçalhos descritivos
             let tabelaHTML = "<tr>" + cabecalhos.map(col => `<th>${col}</th>`).join("") + "</tr>";
-
-            // Procurar os dados do analista consultado
+            
             dados.forEach(row => {
-                if (row[0] === matricula) {  // Verifica se a linha corresponde à matrícula consultada
-                    let linha = "<tr>";
-                    let dadosLinha = [];
-                    
-                    // Obter os dados das colunas selecionadas para aquela matrícula
-                    let valoresColunas = indiceColunas.map(i => row[i] || "");
-
-                    // Exibir os valores das colunas
-                    dadosLinha = valoresColunas.map(i => `<td>${i}</td>`);
-                    linha += dadosLinha.join("") + "</tr>";
+                if (row[0] === matricula) { // Filtra para exibir apenas os dados da matrícula consultada
+                    let linha = "<tr>" + indiceColunas.map(i => `<td>${row[i] || ""}</td>`).join("") + "</tr>";
                     tabelaHTML += linha;
                 }
             });
 
-            // Exibir a tabela apenas com os dados do analista
             document.getElementById("resultado").innerHTML = `<p><strong>Nome:</strong> ${nomeAnalista}</p><p><strong>Setor:</strong> ${setorEncontrado}</p>`;
             document.getElementById("tabelaDados").innerHTML = tabelaHTML;
         }
