@@ -3,88 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Produtividade</title>
+    <title>Painel ETIT Móvel</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f2f2f2; text-align: center; }
-        .container { max-width: 900px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         input, button { padding: 10px; margin: 10px; }
-        .table-container { max-height: 400px; overflow-y: auto; margin-top: 20px; border: 1px solid #ddd; }
+        .table-container { max-height: 300px; overflow-y: auto; margin-top: 20px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 8px; border: 1px solid #ddd; }
-        th { background-color: #333; color: white; }
-        .setor { font-weight: bold; font-size: 18px; margin-top: 20px; color: #D52B1E; }
+        th { background-color: #D52B1E; color: white; }
+        .spinner { display: none; font-size: 18px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Painel de Produtividade por Setor</h2>
+        <h2>Painel ETIT</h2>
         <input type="file" id="upload" accept=".xlsx">
-        <input type="text" id="matricula" placeholder="Digite a matrícula" oninput="consultarAnalista()">
-        <div id="output"></div>
+        <input type="text" id="matricula" placeholder="Digite a matrícula" oninput="consultarETIT()">
+        <div id="resultado"></div>
+        <div class="spinner" id="spinner">⏳ Carregando...</div>
+        <div class="table-container">
+            <table id="tabelaDados"><thead><tr></tr></thead><tbody></tbody></table>
+        </div>
     </div>
     <script>
         let dados = [];
         const setores = {
-            "MÓVEL": ["N6104793", "N5931955", "N6173067", "N6071740", "N6172207", "F204763"],
-            "EMPRESARIAL": ["N6088107", "N5619600", "N0189105", "N5713690", "N5802257", "N5604148", "F201714", "N0125317", "N5819183", "N5926003", "N5932064"],
-            "RESIDENCIAL": ["N0238475", "N5923221", "F160641", "N5772086", "N0239871", "N5577565", "N5737414", "N5972428", "N6173055", "N5932090", "N0255801", "N4014011", "N5923996"]
+            "MÓVEL": ["J", "M", "O", "P", "Q", "R"],
+            "EMPRESARIAL": ["E", "F", "J", "K", "L", "O", "P", "Q", "R"],
+            "RESIDENCIAL": ["B", "C", "E", "F", "G", "H", "I", "L", "O", "P", "Q", "R"]
+        };
+        const analistas = {
+            "MÓVEL": {
+                "N6104793": "BRUNO MARIANO VILACA", "N5931955": "THIAGO DE SOUZA INACIO", "N6173067": "JULIANA RIBEIRO GALHÃO",
+                "N6071740": "THIAGO BARBOZA DOS SANTOS", "N6172207": "CHARLES DOS SANTOS PAIVA", "F204763": "RODRIGO REIS DUARTE"
+            },
+            "EMPRESARIAL": {
+                "N6088107": "LEANDRO GONÇALVES DE CARVALHO", "N5619600": "BRUNO COSTA BUCARD", "N0189105": "IGOR MARCELINO DE MARINS",
+                "N5713690": "GABRIELA TAVARES DA SILVA", "N5802257": "MAGNO FERRAREZ DE MORAIS", "N5604148": "DANIEL MARCELO FELISBERTO OLIVEIRA",
+                "F201714": "FERNANDA MESQUITA DE FREITAS", "N0125317": "ROBERTO SILVA DO NASCIMENTO", "N5819183": "RODRIGO PIRES BERNARDINO",
+                "N5926003": "SUELLEN HERNANDEZ DA SILVA", "N5932064": "MONICA DA SILVA RODRIGUES"
+            },
+            "RESIDENCIAL": {
+                "N0238475": "MARLEY MARQUES RIBEIRO", "N5923221": "KELLY PINHEIRO LIRA", "F160641": "JENNIFER MARIA ANDRADE SANTOS",
+                "N5772086": "THIAGO PEREIRA DA SILVA", "N0239871": "LEONARDO FERREIRA LIMA DE ALMEIDA", "N5577565": "MARISTELLA MARCIA DOS SANTOS",
+                "N5737414": "SANDRO DA SILVA CARVALHO", "N5972428": "CRISTIANE HERMOGENES DA SILVA", "N6173055": "JEFFERSON LUIS GONÇALVES COITINHO",
+                "N5932090": "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA", "N0255801": "ELBERTON ANICETO HENRIQUE", "N4014011": "ALAN MARINHO DIAS",
+                "N5923996": "JULIO CESAR SANTOS SOARES"
+            }
         };
 
         document.getElementById('upload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
-
+            document.getElementById("spinner").style.display = "block";
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 dados = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                document.getElementById("spinner").style.display = "none";
+                alert("Planilha carregada com sucesso!");
             };
             reader.readAsArrayBuffer(file);
         });
 
-        function consultarAnalista() {
+        function consultarETIT() {
             const matricula = document.getElementById('matricula').value.trim().toUpperCase();
-            if (!dados.length || !matricula) return;
-
-            let setorEncontrado = "";
-            for (const [setor, matriculas] of Object.entries(setores)) {
-                if (matriculas.includes(matricula)) {
+            if (!matricula || !dados.length) return;
+            let setorEncontrado = null;
+            let nomeAnalista = "Nome não encontrado";
+            
+            for (let setor in analistas) {
+                if (matricula in analistas[setor]) {
                     setorEncontrado = setor;
+                    nomeAnalista = analistas[setor][matricula];
                     break;
                 }
             }
-
-            if (!setorEncontrado) {
-                document.getElementById("output").innerHTML = "Matrícula não encontrada.";
-                return;
-            }
-
-            let resultados = `<h3 class='setor'>${setorEncontrado}</h3>`;
-            let headers = dados[0];
-            let totalAnalista = 0;
-            let totalSetor = 0;
-            let contadorSetor = 0;
+            if (!setorEncontrado) return;
             
-            dados.slice(1).forEach(row => {
-                let matriculaRow = row[0]?.toString().trim();
-                if (matriculaRow === matricula) {
-                    totalAnalista = row[headers.length - 1];
-                    resultados += `<p><strong>Matrícula:</strong> ${matriculaRow} | <strong>Total:</strong> ${totalAnalista}</p>`;
-                }
-                if (setores[setorEncontrado].includes(matriculaRow)) {
-                    totalSetor += row[headers.length - 1];
-                    contadorSetor++;
-                }
+            let colunasSelecionadas = setores[setorEncontrado];
+            let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
+            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${col}</th>`).join("") + "</tr>";
+            
+            dados.forEach(row => {
+                let linha = "<tr>" + indiceColunas.map(i => `<td>${row[i] || ""}</td>`).join("") + "</tr>";
+                tabelaHTML += linha;
             });
-
-            let mediaSetor = contadorSetor > 0 ? (totalSetor / contadorSetor).toFixed(2) : 0;
-            let comparacao = totalAnalista >= mediaSetor ? "Acima da média" : "Abaixo da média";
-            resultados += `<p><strong>Média do Setor:</strong> ${mediaSetor} | <strong>Comparação:</strong> ${comparacao}</p>`;
-
-            document.getElementById("output").innerHTML = resultados;
+            
+            document.getElementById("resultado").innerHTML = `<p><strong>Nome:</strong> ${nomeAnalista}</p><p><strong>Setor:</strong> ${setorEncontrado}</p>`;
+            document.getElementById("tabelaDados").innerHTML = tabelaHTML;
         }
     </script>
 </body>
