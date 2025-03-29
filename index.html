@@ -24,7 +24,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>Painel de Produtividade</h2>
+        <h2>Painel ETIT</h2>
         <input type="file" id="upload" accept=".xlsx">
         <input type="text" id="matricula" placeholder="Digite a matrícula" oninput="consultarETIT()">
         <div id="resultado" class="resultado"></div>
@@ -58,6 +58,25 @@
                 "N5932090": "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA", "N0255801": "ELBERTON ANICETO HENRIQUE", "N4014011": "ALAN MARINHO DIAS",
                 "N5923996": "JULIO CESAR SANTOS SOARES"
             }
+        };
+
+        // Exemplo de correspondência de cabeçalhos para os indicadores
+        const cabecalhos = {
+            "J": "Indicador de Performance 1",
+            "M": "Indicador de Performance 2",
+            "O": "Indicador de Performance 3",
+            "P": "Indicador de Performance 4",
+            "Q": "Indicador de Performance 5",
+            "R": "Indicador de Performance 6",
+            "E": "Indicador de Performance 7",
+            "F": "Indicador de Performance 8",
+            "K": "Indicador de Performance 9",
+            "L": "Indicador de Performance 10",
+            "B": "Indicador de Performance 11",
+            "C": "Indicador de Performance 12",
+            "G": "Indicador de Performance 13",
+            "H": "Indicador de Performance 14",
+            "I": "Indicador de Performance 15"
         };
 
         document.getElementById('upload').addEventListener('change', function(event) {
@@ -99,29 +118,10 @@
             let colunasSelecionadas = setores[setorEncontrado];
             let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
 
-            // Cabeçalhos das colunas com descrições legíveis
-            const cabeçalhos = {
-                "J": "Indicador 1",
-                "M": "Indicador 2",
-                "O": "Indicador 3",
-                "P": "Indicador 4",
-                "Q": "Indicador 5",
-                "R": "Indicador 6",
-                "E": "Indicador 7",
-                "F": "Indicador 8",
-                "K": "Indicador 9",
-                "L": "Indicador 10",
-                "B": "Indicador 11",
-                "C": "Indicador 12",
-                "G": "Indicador 13",
-                "H": "Indicador 14",
-                "I": "Indicador 15"
-            };
+            // Criar cabeçalhos descritivos
+            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${cabecalhos[col]}</th>`).join("") + "</tr>";
 
-            // Criar a tabela HTML com os cabeçalhos descritivos
-            let tabelaHTML = "<tr>" + colunasSelecionadas.map(col => `<th>${cabeçalhos[col]}</th>`).join("") + "</tr>";
-
-            // Procurar os dados do analista consultado e apenas exibir esses dados
+            // Procurar os dados do analista consultado
             dados.forEach(row => {
                 if (row[0] === matricula) {  // Verifica se a linha corresponde à matrícula consultada
                     let linha = "<tr>";
