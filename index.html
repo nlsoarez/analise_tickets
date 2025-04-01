@@ -26,6 +26,7 @@
                 let sheet = workbook.Sheets[workbook.SheetNames[0]];
                 let jsonData = XLSX.utils.sheet_to_json(sheet);
                 
+                let totalGanho = 0;
                 let totalPerdidos = 0;
                 let perdidosAte15min = 0;
                 
@@ -36,10 +37,16 @@
                     let gponVolume = row["GPON - VOLUME"];
                     let tempo = row["TEMPO"];
                     
+                    let ganho = 
+                        (hfcIndicador == 1 && hfcVolume == 1) || 
+                        (gponIndicador == 1 && gponVolume == 1);
                     let perdeu = 
                         (hfcIndicador == 1 && hfcVolume == 0) || 
                         (gponIndicador == 1 && gponVolume == 0);
                     
+                    if (ganho) {
+                        totalGanho++;
+                    }
                     if (perdeu) {
                         totalPerdidos++;
                         if (tempo <= 15) {
@@ -48,7 +55,7 @@
                     }
                 });
                 
-                document.getElementById("resultado").innerText = `Casos Perdidos: ${totalPerdidos}\nCasos Perdidos em até 15min: ${perdidosAte15min}`;
+                document.getElementById("resultado").innerText = `Casos Ganhos: ${totalGanho}\nCasos Perdidos: ${totalPerdidos}\nCasos Perdidos em até 15min: ${perdidosAte15min}`;
             };
             reader.readAsArrayBuffer(fileInput);
         }
