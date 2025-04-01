@@ -5,15 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Outages</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Estilo geral do corpo da página */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Título principal */
+        h2 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Botão e input de arquivo */
+        input[type="file"] {
+            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Resultados e Outages Perdidos */
+        h3 {
+            font-size: 24px;
+            color: #444;
+            margin-top: 30px;
+        }
+
+        #resultado {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            margin-top: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #outagesLista {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+
+        #outagesLista li {
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            #resultado {
+                width: 100%;
+            }
+
+            button {
+                width: 100%;
+                padding: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
     <h2>Upload da Planilha</h2>
     <input type="file" id="fileInput" />
     <button onclick="analisarPlanilha()">Analisar</button>
     <h3>Resultados:</h3>
-    <p id="resultado"></p>
-    <h3>Outages Perdidos em até 15min:</h3>
+    <div id="resultado">
+        <p><strong>Casos Ganhos:</strong> <span id="casosGanho">0</span></p>
+        <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
+        <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
+    </div>
+    <h3>Outages Perdidos em até 15 minutos:</h3>
     <ul id="outagesLista"></ul>
+
     <script>
         function analisarPlanilha() {
             let fileInput = document.getElementById('fileInput').files[0];
@@ -40,25 +135,19 @@
                     let gponVolume = Number(row["GPON - VOLUME"]) || 0;
                     let outageNum = row["OUTAGE"];
                     
-                    // Garantir que o valor do tempo seja tratado corretamente
                     let tempo = row["TEMPO"];
                     if (typeof tempo === "string") {
-                        tempo = tempo.replace(/[^0-9.,]/g, "").trim(); // Remover caracteres não numéricos
-                        tempo = tempo.replace(",", "."); // Substituir vírgula por ponto para formato numérico
+                        tempo = tempo.replace(/[^0-9.,]/g, "").trim();
+                        tempo = tempo.replace(",", ".");
                     }
                     tempo = Number(tempo);
                     
-                    // Converter valores pequenos de TEMPO (possíveis frações de dias) para minutos
                     if (tempo > 0 && tempo < 1) {
-                        tempo = Math.round(tempo * 24 * 60); // Converter dias para minutos
+                        tempo = Math.round(tempo * 24 * 60);
                     }
                     
-                    let ganho = 
-                        (hfcIndicador === 1 && hfcVolume === 1) || 
-                        (gponIndicador === 1 && gponVolume === 1);
-                    let perdeu = 
-                        (hfcIndicador === 1 && hfcVolume === 0) || 
-                        (gponIndicador === 1 && gponVolume === 0);
+                    let ganho = (hfcIndicador === 1 && hfcVolume === 1) || (gponIndicador === 1 && gponVolume === 1);
+                    let perdeu = (hfcIndicador === 1 && hfcVolume === 0) || (gponIndicador === 1 && gponVolume === 0);
                     
                     if (ganho) {
                         totalGanho++;
@@ -74,7 +163,10 @@
                 
                 let porcentagemAte15min = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
                 
-                document.getElementById("resultado").innerText = `Casos Ganhos: ${totalGanho}\nCasos Perdidos: ${totalPerdidos}\nCasos Perdidos em até 15min: ${perdidosAte15min} (${porcentagemAte15min}%)`;
+                document.getElementById("casosGanho").innerText = totalGanho;
+                document.getElementById("casosPerdidos").innerText = totalPerdidos;
+                document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
+                document.getElementById("percentagem15").innerText = porcentagemAte15min;
                 
                 let outagesLista = document.getElementById("outagesLista");
                 outagesLista.innerHTML = "";
