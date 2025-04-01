@@ -1,112 +1,56 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Indicadores</title>
+    <title>Análise de Outages</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f2f2f2; text-align: center; }
-        .container { max-width: 800px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, button { padding: 10px; margin: 10px; }
-        .table-container { max-height: 300px; overflow-y: auto; margin-top: 20px; border: 1px solid #ddd; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 8px; border: 1px solid #ddd; }
-        th { background-color: #D52B1E; color: white; }
-        .spinner { display: none; font-size: 18px; }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Painel de Indicadores</h2>
-        <input type="file" id="upload" accept=".xlsx">
-        <input type="text" id="matricula" placeholder="Digite a matrícula" oninput="consultarETIT()">
-        <div id="resultado"></div>
-        <div class="spinner" id="spinner">⏳ Carregando...</div>
-        <div class="table-container">
-            <table id="tabelaDados"><thead><tr></tr></thead><tbody></tbody></table>
-        </div>
-    </div>
+    <h2>Upload da Planilha</h2>
+    <input type="file" id="fileInput" />
+    <button onclick="analisarPlanilha()">Analisar</button>
+    <h3>Resultados:</h3>
+    <p id="resultado"></p>
     <script>
-        let dados = [];
-        const setores = {
-            "MÓVEL": ["J", "M", "O", "P", "Q", "R"],
-            "EMPRESARIAL": ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R"],
-            "RESIDENCIAL": ["B", "C", "E", "F", "G", "H", "I", "L", "O", "P", "Q", "R"]
-        };
-        const analistas = {
-            "MÓVEL": {
-                "N6104793": "BRUNO MARIANO VILACA", "N5931955": "THIAGO DE SOUZA INACIO", "N6173067": "JULIANA RIBEIRO GALHÃO",
-                "N6071740": "THIAGO BARBOZA DOS SANTOS", "N6172207": "CHARLES DOS SANTOS PAIVA", "F204763": "RODRIGO REIS DUARTE"
-            },
-            "EMPRESARIAL": {
-                "N6088107": "LEANDRO GONÇALVES DE CARVALHO", "N5619600": "BRUNO COSTA BUCARD", "N0189105": "IGOR MARCELINO DE MARINS",
-                "N5713690": "GABRIELA TAVARES DA SILVA", "N5802257": "MAGNO FERRAREZ DE MORAIS", "N5604148": "DANIEL MARCELO FELISBERTO OLIVEIRA",
-                "F201714": "FERNANDA MESQUITA DE FREITAS", "N0125317": "ROBERTO SILVA DO NASCIMENTO", "N5819183": "RODRIGO PIRES BERNARDINO",
-                "N5926003": "SUELLEN HERNANDEZ DA SILVA", "N5932064": "MONICA DA SILVA RODRIGUES"
-            },
-            "RESIDENCIAL": {
-                "N0238475": "MARLEY MARQUES RIBEIRO", "N5923221": "KELLY PINHEIRO LIRA", "F160641": "JENNIFER MARIA ANDRADE SANTOS",
-                "N5772086": "THIAGO PEREIRA DA SILVA", "N0239871": "LEONARDO FERREIRA LIMA DE ALMEIDA", "N5577565": "MARISTELLA MARCIA DOS SANTOS",
-                "N5737414": "SANDRO DA SILVA CARVALHO", "N5972428": "CRISTIANE HERMOGENES DA SILVA", "N6173055": "JEFFERSON LUIS GONÇALVES COITINHO",
-                "N5932090": "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA", "N0255801": "ELBERTON ANICETO HENRIQUE", "N4014011": "ALAN MARINHO DIAS",
-                "N5923996": "JULIO CESAR SANTOS SOARES"
+        function analisarPlanilha() {
+            let fileInput = document.getElementById('fileInput').files[0];
+            if (!fileInput) {
+                alert("Por favor, selecione um arquivo Excel.");
+                return;
             }
-        };
-
-        document.getElementById('upload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            document.getElementById("spinner").style.display = "block";
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                dados = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                document.getElementById("spinner").style.display = "none";
-                alert("Planilha carregada com sucesso!");
+            let reader = new FileReader();
+            reader.onload = function(event) {
+                let data = new Uint8Array(event.target.result);
+                let workbook = XLSX.read(data, { type: 'array' });
+                let sheet = workbook.Sheets[workbook.SheetNames[0]];
+                let jsonData = XLSX.utils.sheet_to_json(sheet);
+                
+                let totalPerdidos = 0;
+                let perdidosAte15min = 0;
+                
+                jsonData.forEach(row => {
+                    let hfcIndicador = row["HFC - INDICADOR"];
+                    let hfcVolume = row["HFC - VOLUME"];
+                    let gponIndicador = row["GPON - INDICADOR"];
+                    let gponVolume = row["GPON - VOLUME"];
+                    let tempo = row["TEMPO"];
+                    
+                    let perdeu = 
+                        (hfcIndicador == 1 && hfcVolume == 0) || 
+                        (gponIndicador == 1 && gponVolume == 0);
+                    
+                    if (perdeu) {
+                        totalPerdidos++;
+                        if (tempo <= 15) {
+                            perdidosAte15min++;
+                        }
+                    }
+                });
+                
+                document.getElementById("resultado").innerText = `Casos Perdidos: ${totalPerdidos}\nCasos Perdidos em até 15min: ${perdidosAte15min}`;
             };
-            reader.readAsArrayBuffer(file);
-        });
-
-        function consultarETIT() {
-            const matricula = document.getElementById('matricula').value.trim().toUpperCase();
-            if (!matricula || !dados.length) return;
-            let setorEncontrado = null;
-            let nomeAnalista = "Nome não encontrado";
-            
-            for (let setor in analistas) {
-                if (matricula in analistas[setor]) {
-                    setorEncontrado = setor;
-                    nomeAnalista = analistas[setor][matricula];
-                    break;
-                }
-            }
-            if (!setorEncontrado) return;
-            
-            let colunasSelecionadas = setores[setorEncontrado];
-            let indiceColunas = colunasSelecionadas.map(letra => XLSX.utils.decode_col(letra));
-
-            // Nomes dos cabeçalhos correspondentes às colunas
-            const cabecalhos = [
-                "NM - Abertura", "NM - Fechamento", "NM - Fech. Manobra", "OSS - Abertura", "OSS - Acionamento", 
-                "OSS - Fechamento", "SGO - Abertura", "SGO - Fechamento", "Abertura RAL", "RAL", "REC", 
-                "Remedy Móvel", "Total", "TOA: 1ª Int.", "NICE: Recebido", "NICE: Atendido", "NICE: Realizado"
-            ];
-
-            // Adiciona somente as colunas do setor
-            let tabelaHTML = "<tr>" + colunasSelecionadas.map((col, index) => `<th>${cabecalhos[index]}</th>`).join("") + "</tr>";
-
-            dados.forEach(row => {
-                if (row[0] === matricula) { // Filtra para exibir apenas os dados da matrícula consultada
-                    let linha = "<tr>" + indiceColunas.map(i => `<td>${row[i] || ""}</td>`).join("") + "</tr>";
-                    tabelaHTML += linha;
-                }
-            });
-
-            document.getElementById("resultado").innerHTML = `<p><strong>Nome:</strong> ${nomeAnalista}</p><p><strong>Setor:</strong> ${setorEncontrado}</p>`;
-            document.getElementById("tabelaDados").innerHTML = tabelaHTML;
+            reader.readAsArrayBuffer(fileInput);
         }
     </script>
 </body>
