@@ -12,6 +12,8 @@
     <button onclick="analisarPlanilha()">Analisar</button>
     <h3>Resultados:</h3>
     <p id="resultado"></p>
+    <h3>Outages Perdidos em até 15min:</h3>
+    <ul id="outagesLista"></ul>
     <script>
         function analisarPlanilha() {
             let fileInput = document.getElementById('fileInput').files[0];
@@ -29,6 +31,7 @@
                 let totalGanho = 0;
                 let totalPerdidos = 0;
                 let perdidosAte15min = 0;
+                let outagesAte15min = [];
                 
                 jsonData.forEach(row => {
                     let hfcIndicador = row["HFC - INDICADOR"];
@@ -36,6 +39,7 @@
                     let gponIndicador = row["GPON - INDICADOR"];
                     let gponVolume = row["GPON - VOLUME"];
                     let tempo = row["TEMPO"];
+                    let outageNum = row["OUTAGE"];
                     
                     let ganho = 
                         (hfcIndicador == 1 && hfcVolume == 1) || 
@@ -51,11 +55,20 @@
                         totalPerdidos++;
                         if (tempo <= 15) {
                             perdidosAte15min++;
+                            outagesAte15min.push(outageNum);
                         }
                     }
                 });
                 
                 document.getElementById("resultado").innerText = `Casos Ganhos: ${totalGanho}\nCasos Perdidos: ${totalPerdidos}\nCasos Perdidos em até 15min: ${perdidosAte15min}`;
+                
+                let outagesLista = document.getElementById("outagesLista");
+                outagesLista.innerHTML = "";
+                outagesAte15min.forEach(outage => {
+                    let li = document.createElement("li");
+                    li.textContent = outage;
+                    outagesLista.appendChild(li);
+                });
             };
             reader.readAsArrayBuffer(fileInput);
         }
