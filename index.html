@@ -43,9 +43,15 @@
                     // Garantir que o valor do tempo seja tratado corretamente
                     let tempo = row["TEMPO"];
                     if (typeof tempo === "string") {
-                        tempo = tempo.replace(/[^0-9]/g, "").trim(); // Remover caracteres não numéricos
+                        tempo = tempo.replace(/[^0-9.,]/g, "").trim(); // Remover caracteres não numéricos
+                        tempo = tempo.replace(",", "."); // Substituir vírgula por ponto para formato numérico
                     }
                     tempo = Number(tempo);
+                    
+                    // Converter valores pequenos de TEMPO (possíveis frações de dias) para minutos
+                    if (tempo > 0 && tempo < 1) {
+                        tempo = Math.round(tempo * 24 * 60); // Converter dias para minutos
+                    }
                     
                     let ganho = 
                         (hfcIndicador === 1 && hfcVolume === 1) || 
