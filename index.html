@@ -61,7 +61,7 @@
                         totalPerdidos++;
                         if (!isNaN(tempo) && tempo > 0 && tempo <= 15) {
                             perdidosAte15min++;
-                            outagesAte15min.push(outageNum);
+                            outagesAte15min.push(`${outageNum} - ${tempo} min`);
                         }
                     }
                 });
