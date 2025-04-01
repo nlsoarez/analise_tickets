@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Outages</title>
+    <title>Análise de Outages - Claro Brasil</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* Estilo geral do corpo da página */
+        /* Estilo geral */
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f4f7fc;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
             display: flex;
@@ -19,95 +19,108 @@
             min-height: 100vh;
         }
 
-        /* Título principal */
-        h2 {
-            font-size: 28px;
-            color: #333;
-            margin-bottom: 20px;
+        /* Container */
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
         }
 
-        /* Botão e input de arquivo */
+        /* Títulos */
+        h2, h3 {
+            color: #D6001C;
+        }
+
+        /* Input e Botão */
         input[type="file"] {
+            display: block;
+            margin: 10px auto;
             font-size: 16px;
-            padding: 10px;
-            margin-bottom: 10px;
         }
 
         button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
+            background-color: #D6001C;
+            color: white;
             border: none;
+            padding: 12px 20px;
+            font-size: 16px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            transition: background 0.3s;
         }
 
         button:hover {
-            background-color: #0056b3;
+            background-color: #A80017;
         }
 
-        /* Resultados e Outages Perdidos */
-        h3 {
-            font-size: 24px;
-            color: #444;
-            margin-top: 30px;
-        }
-
-        #resultado {
-            background-color: #fff;
-            padding: 20px;
+        /* Resultados */
+        .resultados {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff5f5;
             border-radius: 8px;
-            width: 80%;
-            max-width: 600px;
-            margin-top: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        #outagesLista {
-            list-style: none;
-            padding-left: 0;
+        .resultados p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+
+        /* Lista de Outages */
+        .outage-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .outage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
             margin-top: 10px;
         }
 
-        #outagesLista li {
-            background-color: #fff;
+        .outage-item {
+            background: #D6001C;
+            color: white;
             padding: 10px;
-            margin-bottom: 8px;
             border-radius: 5px;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
         }
 
         /* Responsividade */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            #resultado {
+        @media (max-width: 600px) {
+            .container {
                 width: 100%;
-            }
-
-            button {
-                width: 100%;
-                padding: 12px;
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
-    <h2>Upload da Planilha</h2>
-    <input type="file" id="fileInput" />
-    <button onclick="analisarPlanilha()">Analisar</button>
-    <h3>Resultados:</h3>
-    <div id="resultado">
-        <p><strong>Casos Ganhos:</strong> <span id="casosGanho">0</span></p>
-        <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
-        <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
+
+    <div class="container">
+        <h2>Análise de Outages - Claro Brasil</h2>
+        <input type="file" id="fileInput" />
+        <button onclick="analisarPlanilha()">Analisar</button>
+
+        <div class="resultados">
+            <p><strong>Casos Ganhos:</strong> <span id="casosGanho">0</span></p>
+            <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
+            <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
+        </div>
+
+        <div class="outage-container">
+            <h3>Outages Perdidos em até 15 minutos:</h3>
+            <div class="outage-grid" id="outagesLista"></div>
+        </div>
     </div>
-    <h3>Outages Perdidos em até 15 minutos:</h3>
-    <ul id="outagesLista"></ul>
 
     <script>
         function analisarPlanilha() {
@@ -171,13 +184,15 @@
                 let outagesLista = document.getElementById("outagesLista");
                 outagesLista.innerHTML = "";
                 outagesAte15min.forEach(outage => {
-                    let li = document.createElement("li");
-                    li.textContent = outage;
-                    outagesLista.appendChild(li);
+                    let div = document.createElement("div");
+                    div.className = "outage-item";
+                    div.textContent = outage;
+                    outagesLista.appendChild(div);
                 });
             };
             reader.readAsArrayBuffer(fileInput);
         }
     </script>
+
 </body>
 </html>
