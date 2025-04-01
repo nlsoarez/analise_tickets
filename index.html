@@ -38,11 +38,14 @@
                     let hfcVolume = Number(row["HFC - VOLUME"]) || 0;
                     let gponIndicador = Number(row["GPON - INDICADOR"]) || 0;
                     let gponVolume = Number(row["GPON - VOLUME"]) || 0;
-                    let tempoStr = row["TEMPO"];
                     let outageNum = row["OUTAGE"];
                     
-                    // Remover espaços em branco e caracteres não numéricos
-                    let tempo = parseInt(String(tempoStr).replace(/\D/g, ''), 10);
+                    // Garantir que o valor do tempo seja tratado corretamente
+                    let tempo = row["TEMPO"];
+                    if (typeof tempo === "string") {
+                        tempo = tempo.replace(/[^0-9]/g, "").trim(); // Remover caracteres não numéricos
+                    }
+                    tempo = Number(tempo);
                     
                     let ganho = 
                         (hfcIndicador === 1 && hfcVolume === 1) || 
@@ -56,7 +59,7 @@
                     }
                     if (perdeu) {
                         totalPerdidos++;
-                        if (!isNaN(tempo) && tempo <= 15) {
+                        if (!isNaN(tempo) && tempo > 0 && tempo <= 15) {
                             perdidosAte15min++;
                             outagesAte15min.push(outageNum);
                         }
