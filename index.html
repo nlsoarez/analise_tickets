@@ -72,7 +72,9 @@
                     }
                 });
                 
-                document.getElementById("resultado").innerText = `Casos Ganhos: ${totalGanho}\nCasos Perdidos: ${totalPerdidos}\nCasos Perdidos em até 15min: ${perdidosAte15min}`;
+                let porcentagemAte15min = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
+                
+                document.getElementById("resultado").innerText = `Casos Ganhos: ${totalGanho}\nCasos Perdidos: ${totalPerdidos}\nCasos Perdidos em até 15min: ${perdidosAte15min} (${porcentagemAte15min}%)`;
                 
                 let outagesLista = document.getElementById("outagesLista");
                 outagesLista.innerHTML = "";
