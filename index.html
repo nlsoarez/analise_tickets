@@ -71,27 +71,32 @@
             margin: 5px 0;
         }
 
-        /* Lista de Outages */
+        /* Tabela de Outages */
         .outage-container {
             margin-top: 20px;
-            text-align: left;
+            text-align: center;
         }
 
-        .outage-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
+        .outage-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 10px;
         }
 
-        .outage-item {
+        .outage-table th, .outage-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .outage-table th {
             background: #D6001C;
             color: white;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
             font-size: 16px;
-            font-weight: bold;
+        }
+
+        .outage-table tbody tr:nth-child(even) {
+            background: #f9f9f9;
         }
 
         /* Responsividade */
@@ -118,7 +123,15 @@
 
         <div class="outage-container">
             <h3>Outages Perdidos em até 15 minutos:</h3>
-            <div class="outage-grid" id="outagesLista"></div>
+            <table class="outage-table">
+                <thead>
+                    <tr>
+                        <th>Outage</th>
+                        <th>Tempo (min)</th>
+                    </tr>
+                </thead>
+                <tbody id="outagesLista"></tbody>
+            </table>
         </div>
     </div>
 
@@ -169,7 +182,7 @@
                         totalPerdidos++;
                         if (!isNaN(tempo) && tempo > 0 && tempo <= 15) {
                             perdidosAte15min++;
-                            outagesAte15min.push(`${outageNum} - ${tempo} min`);
+                            outagesAte15min.push({ outageNum, tempo });
                         }
                     }
                 });
@@ -183,11 +196,10 @@
                 
                 let outagesLista = document.getElementById("outagesLista");
                 outagesLista.innerHTML = "";
-                outagesAte15min.forEach(outage => {
-                    let div = document.createElement("div");
-                    div.className = "outage-item";
-                    div.textContent = outage;
-                    outagesLista.appendChild(div);
+                outagesAte15min.forEach(({ outageNum, tempo }) => {
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${outageNum}</td><td>${tempo} min</td>`;
+                    outagesLista.appendChild(tr);
                 });
             };
             reader.readAsArrayBuffer(fileInput);
