@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Outages</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Estilo geral */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f4f4f4;
@@ -18,6 +18,8 @@
             justify-content: center;
             min-height: 100vh;
         }
+
+        /* Container */
         .container {
             background: white;
             padding: 20px;
@@ -27,14 +29,19 @@
             max-width: 800px;
             text-align: center;
         }
+
+        /* Títulos */
         h2, h3 {
             color: #D6001C;
         }
+
+        /* Input e Botão */
         input[type="file"] {
             display: block;
             margin: 10px auto;
             font-size: 16px;
         }
+
         button {
             background-color: #D6001C;
             color: white;
@@ -45,9 +52,12 @@
             cursor: pointer;
             transition: background 0.3s;
         }
+
         button:hover {
             background-color: #A80017;
         }
+
+        /* Resultados */
         .resultados {
             margin-top: 20px;
             padding: 15px;
@@ -55,12 +65,24 @@
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
+        .resultados p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+
+        /* Cartões para Outages */
+        .outage-container {
+            margin-top: 20px;
+        }
+
         .outage-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
+
         .outage-card {
             background: #D6001C;
             color: white;
@@ -71,6 +93,12 @@
             font-size: 16px;
             font-weight: bold;
         }
+
+        .outage-card span {
+            font-size: 14px;
+        }
+
+        /* Responsividade */
         @media (max-width: 600px) {
             .container {
                 width: 100%;
@@ -80,6 +108,7 @@
     </style>
 </head>
 <body>
+
     <div class="container">
         <h2>Análise de Outages</h2>
         <input type="file" id="fileInput" />
@@ -90,9 +119,7 @@
             <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
             <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
         </div>
-        
-        <canvas id="graficoOutages" width="400" height="400"></canvas>
-        
+
         <div class="outage-container">
             <h3>Outages Perdidos em até 15 minutos:</h3>
             <div class="outage-cards" id="outagesLista"></div>
@@ -100,8 +127,6 @@
     </div>
 
     <script>
-        let chartInstance = null;
-        
         function analisarPlanilha() {
             let fileInput = document.getElementById('fileInput').files[0];
             if (!fileInput) {
@@ -118,50 +143,60 @@
                 let totalGanho = 0;
                 let totalPerdidos = 0;
                 let perdidosAte15min = 0;
+                let outagesAte15min = [];
                 
                 jsonData.forEach(row => {
                     let hfcIndicador = Number(row["HFC - INDICADOR"]) || 0;
                     let hfcVolume = Number(row["HFC - VOLUME"]) || 0;
                     let gponIndicador = Number(row["GPON - INDICADOR"]) || 0;
                     let gponVolume = Number(row["GPON - VOLUME"]) || 0;
-                    let tempo = Number(row["TEMPO"] || 0);
+                    let outageNum = row["OUTAGE"];
+                    
+                    let tempo = row["TEMPO"];
+                    if (typeof tempo === "string") {
+                        tempo = tempo.replace(/[^0-9.,]/g, "").trim();
+                        tempo = tempo.replace(",", ".");
+                    }
+                    tempo = Number(tempo);
+                    
+                    if (tempo > 0 && tempo < 1) {
+                        tempo = Math.round(tempo * 24 * 60);
+                    }
                     
                     let ganho = (hfcIndicador === 1 && hfcVolume === 1) || (gponIndicador === 1 && gponVolume === 1);
                     let perdeu = (hfcIndicador === 1 && hfcVolume === 0) || (gponIndicador === 1 && gponVolume === 0);
                     
-                    if (ganho) totalGanho++;
+                    if (ganho) {
+                        totalGanho++;
+                    }
                     if (perdeu) {
                         totalPerdidos++;
-                        if (tempo > 0 && tempo <= 15) perdidosAte15min++;
+                        if (!isNaN(tempo) && tempo > 0 && tempo <= 15) {
+                            perdidosAte15min++;
+                            outagesAte15min.push({ outageNum, tempo });
+                        }
                     }
                 });
+                
+                let porcentagemAte15min = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
                 
                 document.getElementById("casosGanho").innerText = totalGanho;
                 document.getElementById("casosPerdidos").innerText = totalPerdidos;
                 document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
-                document.getElementById("percentagem15").innerText = ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) || 0;
+                document.getElementById("percentagem15").innerText = porcentagemAte15min;
                 
-                if (chartInstance) chartInstance.destroy();
-                let ctx = document.getElementById('graficoOutages').getContext('2d');
-                chartInstance = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ["Casos Ganhos", "Casos Perdidos", "Perdidos em até 15min"],
-                        datasets: [{
-                            data: [totalGanho, totalPerdidos, perdidosAte15min],
-                            backgroundColor: ["#4CAF50", "#D6001C", "#FFA500"]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { position: 'top' }
-                        }
-                    }
+                let outagesLista = document.getElementById("outagesLista");
+                outagesLista.innerHTML = "";
+                outagesAte15min.forEach(({ outageNum, tempo }) => {
+                    let div = document.createElement("div");
+                    div.className = "outage-card";
+                    div.innerHTML = `<div><strong>${outageNum}</strong></div><div><span>Tempo: ${tempo} min</span></div>`;
+                    outagesLista.appendChild(div);
                 });
             };
             reader.readAsArrayBuffer(fileInput);
         }
     </script>
+
 </body>
 </html>
