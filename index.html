@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Outages</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f4f4f4;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
         }
 
         .container {
@@ -24,7 +24,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 900px;
+            max-width: 800px;
             text-align: center;
         }
 
@@ -35,6 +35,7 @@
         input[type="file"] {
             display: block;
             margin: 10px auto;
+            font-size: 16px;
         }
 
         button {
@@ -52,6 +53,13 @@
             background-color: #A80017;
         }
 
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: #555;
+            margin-top: 10px;
+        }
+
         .resultados {
             margin-top: 20px;
             padding: 15px;
@@ -60,9 +68,13 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
+        .outage-container {
+            margin-top: 20px;
+        }
+
         .outage-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
@@ -72,43 +84,52 @@
             color: white;
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             text-align: center;
             font-size: 16px;
             font-weight: bold;
-            animation: fadeIn 0.5s ease-in-out;
+            transition: transform 0.3s;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+        .outage-card:hover {
+            transform: scale(1.05);
+        }
+
+        .outage-card span {
+            font-size: 14px;
+            display: block;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h2>Análise de Outages</h2>
         <input type="file" id="fileInput" />
         <button onclick="analisarPlanilha()">Analisar</button>
-        
-        <canvas id="outagesChart" style="margin-top: 20px;"></canvas>
+        <p class="loading" id="loadingMessage">Processando arquivo...</p>
 
         <div class="resultados">
+            <p><strong>Casos Ganhos:</strong> <span id="casosGanho">0</span></p>
+            <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
             <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
         </div>
 
-        <h3>Outages Perdidos em até 15 minutos:</h3>
-        <div class="outage-cards" id="outagesLista"></div>
+        <div class="outage-container">
+            <h3>Outages Perdidos em até 15 minutos:</h3>
+            <div class="outage-cards" id="outagesLista"></div>
+        </div>
     </div>
 
     <script>
         function analisarPlanilha() {
             let fileInput = document.getElementById('fileInput').files[0];
+            let loadingMessage = document.getElementById("loadingMessage");
             if (!fileInput) {
                 alert("Por favor, selecione um arquivo Excel.");
                 return;
             }
+            loadingMessage.style.display = "block";
             let reader = new FileReader();
             reader.onload = function(event) {
                 let data = new Uint8Array(event.target.result);
@@ -116,57 +137,37 @@
                 let sheet = workbook.Sheets[workbook.SheetNames[0]];
                 let jsonData = XLSX.utils.sheet_to_json(sheet);
                 
-                let perdidosAte15min = 0;
+                let totalGanho = 0, totalPerdidos = 0, perdidosAte15min = 0;
                 let outagesAte15min = [];
                 
                 jsonData.forEach(row => {
                     let outageNum = row["OUTAGE"];
-                    let tempo = parseFloat(row["TEMPO"]);
-                    
-                    if (!isNaN(tempo) && tempo > 0 && tempo <= 15) {
-                        perdidosAte15min++;
-                        outagesAte15min.push({ outageNum, tempo });
+                    let tempo = Number(row["TEMPO"]);
+                    let perdeu = row["GPON - INDICADOR"] === 1 && row["GPON - VOLUME"] === 0;
+                    if (perdeu) {
+                        totalPerdidos++;
+                        if (tempo > 0 && tempo <= 15) {
+                            perdidosAte15min++;
+                            outagesAte15min.push({ outageNum, tempo });
+                        }
                     }
                 });
                 
+                document.getElementById("casosPerdidos").innerText = totalPerdidos;
                 document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
+                document.getElementById("percentagem15").innerText = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
                 
                 let outagesLista = document.getElementById("outagesLista");
                 outagesLista.innerHTML = "";
                 outagesAte15min.forEach(({ outageNum, tempo }) => {
                     let div = document.createElement("div");
                     div.className = "outage-card";
-                    div.innerHTML = `<div><strong>${outageNum}</strong></div><div>Tempo: ${tempo} min</div>`;
+                    div.innerHTML = `<strong>${outageNum}</strong><span>Tempo: ${tempo} min</span>`;
                     outagesLista.appendChild(div);
                 });
-                
-                atualizarGrafico(outagesAte15min);
+                loadingMessage.style.display = "none";
             };
             reader.readAsArrayBuffer(fileInput);
-        }
-
-        function atualizarGrafico(outages) {
-            let ctx = document.getElementById('outagesChart').getContext('2d');
-            if (window.outageChart) {
-                window.outageChart.destroy();
-            }
-            window.outageChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: outages.map(o => o.outageNum),
-                    datasets: [{
-                        label: 'Tempo (min)',
-                        data: outages.map(o => o.tempo),
-                        backgroundColor: '#D6001C',
-                        borderRadius: 5,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
         }
     </script>
 </body>
