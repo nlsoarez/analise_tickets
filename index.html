@@ -100,6 +100,8 @@
     </div>
 
     <script>
+        let chartInstance = null;
+        
         function analisarPlanilha() {
             let fileInput = document.getElementById('fileInput').files[0];
             if (!fileInput) {
@@ -116,19 +118,21 @@
                 let totalGanho = 0;
                 let totalPerdidos = 0;
                 let perdidosAte15min = 0;
-                let outagesAte15min = [];
                 
                 jsonData.forEach(row => {
-                    let perdeu = row["STATUS"] === "Perdido";
-                    let ganho = row["STATUS"] === "Ganho";
+                    let hfcIndicador = Number(row["HFC - INDICADOR"]) || 0;
+                    let hfcVolume = Number(row["HFC - VOLUME"]) || 0;
+                    let gponIndicador = Number(row["GPON - INDICADOR"]) || 0;
+                    let gponVolume = Number(row["GPON - VOLUME"]) || 0;
                     let tempo = Number(row["TEMPO"] || 0);
+                    
+                    let ganho = (hfcIndicador === 1 && hfcVolume === 1) || (gponIndicador === 1 && gponVolume === 1);
+                    let perdeu = (hfcIndicador === 1 && hfcVolume === 0) || (gponIndicador === 1 && gponVolume === 0);
+                    
                     if (ganho) totalGanho++;
                     if (perdeu) {
                         totalPerdidos++;
-                        if (tempo > 0 && tempo <= 15) {
-                            perdidosAte15min++;
-                            outagesAte15min.push({ outageNum: row["OUTAGE"], tempo });
-                        }
+                        if (tempo > 0 && tempo <= 15) perdidosAte15min++;
                     }
                 });
                 
@@ -137,8 +141,9 @@
                 document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
                 document.getElementById("percentagem15").innerText = ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) || 0;
                 
+                if (chartInstance) chartInstance.destroy();
                 let ctx = document.getElementById('graficoOutages').getContext('2d');
-                new Chart(ctx, {
+                chartInstance = new Chart(ctx, {
                     type: 'pie',
                     data: {
                         labels: ["Casos Ganhos", "Casos Perdidos", "Perdidos em até 15min"],
