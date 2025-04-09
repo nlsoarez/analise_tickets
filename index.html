@@ -17,23 +17,27 @@
       justify-content: center;
       min-height: 100vh;
     }
+
     .container {
       background: white;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       width: 90%;
-      max-width: 800px;
+      max-width: 900px;
       text-align: center;
     }
+
     h2, h3 {
       color: #D6001C;
     }
+
     input[type="file"] {
       display: block;
       margin: 10px auto;
       font-size: 16px;
     }
+
     button {
       background-color: #D6001C;
       color: white;
@@ -44,9 +48,11 @@
       cursor: pointer;
       transition: background 0.3s;
     }
+
     button:hover {
       background-color: #A80017;
     }
+
     .resultados {
       margin-top: 20px;
       padding: 15px;
@@ -54,19 +60,23 @@
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
+
     .resultados p {
       font-size: 18px;
       margin: 5px 0;
     }
+
     .outage-container {
       margin-top: 20px;
     }
+
     .outage-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 15px;
       margin-top: 20px;
     }
+
     .outage-card {
       background: #D6001C;
       color: white;
@@ -77,104 +87,119 @@
       font-size: 16px;
       font-weight: bold;
     }
+
     .outage-card span {
       font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        width: 100%;
+        padding: 15px;
+      }
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Análise de Outages</h2>
-  <input type="file" id="fileInput" />
-  <button onclick="analisarPlanilha()">Analisar</button>
+  <div class="container">
+    <h2>Análise de Outages</h2>
+    <input type="file" id="fileInput" />
+    <button onclick="analisarPlanilha()">Analisar</button>
 
-  <div class="resultados">
-    <p><strong>Casos Ganhos:</strong> <span id="casosGanho">0</span></p>
-    <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
-    <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
+    <div class="resultados">
+      <p><strong>Casos Ganhos:</strong> <span id="casosGanho">0</span></p>
+      <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
+      <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
+    </div>
+
+    <div class="outage-container">
+      <h3>Outages Perdidos em até 15 minutos:</h3>
+      <div class="outage-cards" id="outagesLista"></div>
+    </div>
   </div>
 
-  <div class="outage-container">
-    <h3>Outages Perdidos em até 15 minutos:</h3>
-    <div class="outage-cards" id="outagesLista"></div>
-  </div>
-</div>
-
-<script>
-  function analisarPlanilha() {
-    let fileInput = document.getElementById('fileInput').files[0];
-    if (!fileInput) {
-      alert("Por favor, selecione um arquivo Excel.");
-      return;
+  <script>
+    function excelDateToJSDate(serial) {
+      const utc_days = Math.floor(serial - 25569);
+      const utc_value = utc_days * 86400;
+      const date_info = new Date(utc_value * 1000);
+      return date_info;
     }
 
-    let reader = new FileReader();
-    reader.onload = function(event) {
-      let data = new Uint8Array(event.target.result);
-      let workbook = XLSX.read(data, { type: 'array' });
-      let sheet = workbook.Sheets[workbook.SheetNames[0]];
-      let jsonData = XLSX.utils.sheet_to_json(sheet);
+    function analisarPlanilha() {
+      let fileInput = document.getElementById('fileInput').files[0];
+      if (!fileInput) {
+        alert("Por favor, selecione um arquivo Excel.");
+        return;
+      }
 
-      let totalGanho = 0;
-      let totalPerdidos = 0;
-      let perdidosAte15min = 0;
-      let outagesAte15min = [];
+      let reader = new FileReader();
+      reader.onload = function(event) {
+        let data = new Uint8Array(event.target.result);
+        let workbook = XLSX.read(data, { type: 'array' });
+        let sheet = workbook.Sheets[workbook.SheetNames[0]];
+        let jsonData = XLSX.utils.sheet_to_json(sheet);
 
-      jsonData.forEach(row => {
-        const outage = String(row["Outage"] || "").trim();
-        if (outage.startsWith("0") || outage === "") return; // Ignorar outage começando com 0 ou vazio
+        let totalGanho = 0;
+        let totalPerdidos = 0;
+        let perdidosAte15min = 0;
+        let outagesAte15min = [];
 
-        const hfcVolume = Number(row["HFC - Volume"]) || 0;
-        const hfcIndicador = Number(row["HFC - Indicador"]) || 0;
-        const gponVolume = Number(row["Gpon - Volume"]) || 0;
-        const gponIndicador = Number(row["Gpon - Indicador"]) || 0;
+        jsonData.forEach(row => {
+          const outage = String(row["Outage"] || "").trim();
+          if (outage.startsWith("0") || outage === "") return;
 
-        // Verifica ganho
-        const ganhoHFC = hfcVolume === 1 && hfcIndicador === 1;
-        const ganhoGPON = gponVolume === 1 && gponIndicador === 1;
+          const hfcVolume = Number(row["HFC - Volume"]) || 0;
+          const hfcIndicador = Number(row["HFC - Indicador"]) || 0;
+          const gponVolume = Number(row["Gpon - Volume"]) || 0;
+          const gponIndicador = Number(row["Gpon - Indicador"]) || 0;
 
-        // Verifica perda
-        const perdaHFC = hfcVolume === 1 && hfcIndicador === 0;
-        const perdaGPON = gponVolume === 1 && gponIndicador === 0;
+          let ganhou = (hfcVolume === 1 && hfcIndicador === 1) || (gponVolume === 1 && gponIndicador === 1);
+          let perdeu = (hfcVolume === 1 && hfcIndicador === 0) || (gponVolume === 1 && gponIndicador === 0);
 
-        const ganhou = ganhoHFC || ganhoGPON;
-        const perdeu = perdaHFC || perdaGPON;
+          let inicioRaw = row["Inicio"];
+          let fimRaw = row["Fim"];
+          let tempoMin = null;
 
-        // Tempo de duração do outage
-        const inicio = new Date(row["Inicio"]);
-        const fim = new Date(row["Fim"]);
-        let tempoMin = (fim - inicio) / (1000 * 60); // minutos
-
-        if (ganhou) totalGanho++;
-        if (perdeu) {
-          totalPerdidos++;
-          if (!isNaN(tempoMin) && tempoMin > 0 && tempoMin <= 15) {
-            perdidosAte15min++;
-            outagesAte15min.push({ outageNum: outage, tempoMin: tempoMin.toFixed(2) });
+          if (!isNaN(inicioRaw) && !isNaN(fimRaw)) {
+            const inicio = excelDateToJSDate(inicioRaw);
+            const fim = excelDateToJSDate(fimRaw);
+            tempoMin = (fim - inicio) / (1000 * 60);
           }
-        }
-      });
 
-      const porcentagemAte15min = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
+          if (ganhou) {
+            totalGanho++;
+          }
 
-      document.getElementById("casosGanho").innerText = totalGanho;
-      document.getElementById("casosPerdidos").innerText = totalPerdidos;
-      document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
-      document.getElementById("percentagem15").innerText = porcentagemAte15min;
+          if (perdeu) {
+            totalPerdidos++;
+            if (tempoMin !== null && tempoMin > 0 && tempoMin <= 15) {
+              perdidosAte15min++;
+              outagesAte15min.push({ outageNum: outage, tempo: tempoMin.toFixed(2) });
+            }
+          }
+        });
 
-      const outagesLista = document.getElementById("outagesLista");
-      outagesLista.innerHTML = "";
-      outagesAte15min.forEach(({ outageNum, tempoMin }) => {
-        const div = document.createElement("div");
-        div.className = "outage-card";
-        div.innerHTML = `<div><strong>${outageNum}</strong></div><div><span>Tempo: ${tempoMin} min</span></div>`;
-        outagesLista.appendChild(div);
-      });
-    };
-    reader.readAsArrayBuffer(fileInput);
-  }
-</script>
+        let porcentagem = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
 
+        document.getElementById("casosGanho").innerText = totalGanho;
+        document.getElementById("casosPerdidos").innerText = totalPerdidos;
+        document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
+        document.getElementById("percentagem15").innerText = porcentagem;
+
+        let outagesLista = document.getElementById("outagesLista");
+        outagesLista.innerHTML = "";
+
+        outagesAte15min.forEach(({ outageNum, tempo }) => {
+          let div = document.createElement("div");
+          div.className = "outage-card";
+          div.innerHTML = `<div><strong>${outageNum}</strong></div><div><span>Tempo: ${tempo} min</span></div>`;
+          outagesLista.appendChild(div);
+        });
+      };
+      reader.readAsArrayBuffer(fileInput);
+    }
+  </script>
 </body>
 </html>
