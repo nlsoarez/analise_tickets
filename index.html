@@ -122,28 +122,36 @@
       let outagesAte15min = [];
 
       jsonData.forEach(row => {
-        const hfcIndicador = Number(row["HFC - Indicador"]) || 0;
-        const hfcVolume = Number(row["HFC - Volume"]) || 0;
-        const gponIndicador = Number(row["Gpon - Indicador"]) || 0;
-        const gponVolume = Number(row["Gpon - Volume"]) || 0;
-        const outageNum = row["Outage"];
+        const outage = String(row["Outage"] || "").trim();
+        if (outage.startsWith("0") || outage === "") return; // Ignorar outage começando com 0 ou vazio
 
-        // Conversão e cálculo de tempo entre "Inicio" e "Fim"
+        const hfcVolume = Number(row["HFC - Volume"]) || 0;
+        const hfcIndicador = Number(row["HFC - Indicador"]) || 0;
+        const gponVolume = Number(row["Gpon - Volume"]) || 0;
+        const gponIndicador = Number(row["Gpon - Indicador"]) || 0;
+
+        // Verifica ganho
+        const ganhoHFC = hfcVolume === 1 && hfcIndicador === 1;
+        const ganhoGPON = gponVolume === 1 && gponIndicador === 1;
+
+        // Verifica perda
+        const perdaHFC = hfcVolume === 1 && hfcIndicador === 0;
+        const perdaGPON = gponVolume === 1 && gponIndicador === 0;
+
+        const ganhou = ganhoHFC || ganhoGPON;
+        const perdeu = perdaHFC || perdaGPON;
+
+        // Tempo de duração do outage
         const inicio = new Date(row["Inicio"]);
         const fim = new Date(row["Fim"]);
-        let tempoMin = (fim - inicio) / (1000 * 60); // tempo em minutos
+        let tempoMin = (fim - inicio) / (1000 * 60); // minutos
 
-        const ganho = (hfcIndicador === 1 && hfcVolume === 1) || (gponIndicador === 1 && gponVolume === 1);
-        const perdeu = (hfcIndicador === 1 && hfcVolume === 0) || (gponIndicador === 1 && gponVolume === 0);
-
-        if (ganho) {
-          totalGanho++;
-        }
+        if (ganhou) totalGanho++;
         if (perdeu) {
           totalPerdidos++;
           if (!isNaN(tempoMin) && tempoMin > 0 && tempoMin <= 15) {
             perdidosAte15min++;
-            outagesAte15min.push({ outageNum, tempoMin: tempoMin.toFixed(2) });
+            outagesAte15min.push({ outageNum: outage, tempoMin: tempoMin.toFixed(2) });
           }
         }
       });
