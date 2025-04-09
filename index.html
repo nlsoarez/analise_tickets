@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Outages</title>
-    <link rel="icon" href="https://www.claro.com.br/assets/img/favicon.ico" type="image/x-icon">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
@@ -151,23 +150,25 @@
                 let perdidosAte15min = 0;
                 outagesAte15min = [];
 
-                jsonData.forEach(row => {
-                    let hfcIndicador = Number(row["HFC - INDICADOR"]) || 0;
-                    let hfcVolume = Number(row["HFC - VOLUME"]) || 0;
-                    let gponIndicador = Number(row["GPON - INDICADOR"]) || 0;
-                    let gponVolume = Number(row["GPON - VOLUME"]) || 0;
-                    let outageNum = row["OUTAGE"];
-                    let tempo = row["TEMPO"];
+                jsonData.forEach((row, index) => {
+                    // Debug: veja os nomes das colunas
+                    if (index === 0) console.log("Exemplo de linha:", row);
 
-                    if (!outageNum || tempo === undefined) return;
+                    let hfcIndicador = Number(row["HFC - INDICADOR"] ?? row["HFC INDICADOR"] ?? 0);
+                    let hfcVolume = Number(row["HFC - VOLUME"] ?? row["HFC VOLUME"] ?? 0);
+                    let gponIndicador = Number(row["GPON - INDICADOR"] ?? row["GPON INDICADOR"] ?? 0);
+                    let gponVolume = Number(row["GPON - VOLUME"] ?? row["GPON VOLUME"] ?? 0);
+                    let outageNum = row["OUTAGE"] ?? row["Outage"] ?? row["OUTAGES"] ?? "Desconhecido";
+                    let tempo = row["TEMPO"] ?? row["Tempo"] ?? row["DURAÇÃO"];
 
                     if (typeof tempo === "string") {
-                        tempo = tempo.replace(/[^0-9.,]/g, "").trim();
-                        tempo = tempo.replace(",", ".");
+                        tempo = tempo.replace(/[^0-9.,]/g, "").trim().replace(",", ".");
                     }
-
                     tempo = Number(tempo);
-                    if (tempo > 0 && tempo < 1) tempo = Math.round(tempo * 24 * 60);
+
+                    if (tempo > 0 && tempo < 1) {
+                        tempo = Math.round(tempo * 24 * 60); // Conversão de dias para minutos
+                    }
 
                     let ganho = (hfcIndicador === 1 && hfcVolume === 1) || (gponIndicador === 1 && gponVolume === 1);
                     let perdeu = (hfcIndicador === 1 && hfcVolume === 0) || (gponIndicador === 1 && gponVolume === 0);
@@ -200,6 +201,7 @@
                     outagesLista.appendChild(div);
                 });
             };
+
             reader.readAsArrayBuffer(fileInput);
         }
 
@@ -207,9 +209,10 @@
             if (outagesAte15min.length === 0) return alert("Nenhum caso para exportar.");
             let ws = XLSX.utils.json_to_sheet(outagesAte15min);
             let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Perdidos <=15min");
+            XLSX.utils.book_append_sheet(wb, ws, "Perdidos ≤15min");
             XLSX.writeFile(wb, "Outages_15min.xlsx");
         }
     </script>
+
 </body>
 </html>
