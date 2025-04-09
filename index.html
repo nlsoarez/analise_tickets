@@ -17,27 +17,23 @@
       justify-content: center;
       min-height: 100vh;
     }
-
     .container {
       background: white;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       width: 90%;
-      max-width: 900px;
+      max-width: 800px;
       text-align: center;
     }
-
     h2, h3 {
       color: #D6001C;
     }
-
     input[type="file"] {
       display: block;
       margin: 10px auto;
       font-size: 16px;
     }
-
     button {
       background-color: #D6001C;
       color: white;
@@ -48,11 +44,9 @@
       cursor: pointer;
       transition: background 0.3s;
     }
-
     button:hover {
       background-color: #A80017;
     }
-
     .resultados {
       margin-top: 20px;
       padding: 15px;
@@ -60,23 +54,19 @@
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
-
     .resultados p {
       font-size: 18px;
       margin: 5px 0;
     }
-
     .outage-container {
       margin-top: 20px;
     }
-
     .outage-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 15px;
       margin-top: 20px;
     }
-
     .outage-card {
       background: #D6001C;
       color: white;
@@ -87,11 +77,9 @@
       font-size: 16px;
       font-weight: bold;
     }
-
     .outage-card span {
       font-size: 14px;
     }
-
     @media (max-width: 600px) {
       .container {
         width: 100%;
@@ -101,7 +89,6 @@
   </style>
 </head>
 <body>
-
   <div class="container">
     <h2>Análise de Outages</h2>
     <input type="file" id="fileInput" />
@@ -121,10 +108,7 @@
 
   <script>
     function excelDateToJSDate(serial) {
-      const utc_days = Math.floor(serial - 25569);
-      const utc_value = utc_days * 86400;
-      const date_info = new Date(utc_value * 1000);
-      return date_info;
+      return new Date((serial - 25569) * 86400 * 1000);
     }
 
     function analisarPlanilha() {
@@ -147,50 +131,55 @@
         let outagesAte15min = [];
 
         jsonData.forEach(row => {
-          const outage = String(row["Outage"] || "").trim();
-          if (outage.startsWith("0") || outage === "") return;
+          const outage = String(row["Outage"]).trim();
+          if (outage.startsWith("0") || !outage) return;
 
-          const hfcVolume = Number(row["HFC - Volume"]) || 0;
-          const hfcIndicador = Number(row["HFC - Indicador"]) || 0;
-          const gponVolume = Number(row["Gpon - Volume"]) || 0;
-          const gponIndicador = Number(row["Gpon - Indicador"]) || 0;
-
-          let ganhou = (hfcVolume === 1 && hfcIndicador === 1) || (gponVolume === 1 && gponIndicador === 1);
-          let perdeu = (hfcVolume === 1 && hfcIndicador === 0) || (gponVolume === 1 && gponIndicador === 0);
+          const hfcVolume = Number(row["HFC - Volume"]);
+          const hfcIndicador = Number(row["HFC - Indicador"]);
+          const gponVolume = Number(row["Gpon - Volume"]);
+          const gponIndicador = Number(row["Gpon - Indicador"]);
 
           let inicioRaw = row["Inicio"];
           let fimRaw = row["Fim"];
+
           let tempoMin = null;
-
-          if (!isNaN(inicioRaw) && !isNaN(fimRaw)) {
-            const inicio = excelDateToJSDate(inicioRaw);
-            const fim = excelDateToJSDate(fimRaw);
-            tempoMin = (fim - inicio) / (1000 * 60);
+          if (inicioRaw && fimRaw) {
+            try {
+              let inicio = !isNaN(inicioRaw) ? excelDateToJSDate(inicioRaw) : new Date(inicioRaw);
+              let fim = !isNaN(fimRaw) ? excelDateToJSDate(fimRaw) : new Date(fimRaw);
+              tempoMin = (fim - inicio) / (1000 * 60);
+            } catch (e) {
+              console.warn("Erro ao converter datas:", e);
+            }
           }
 
-          if (ganhou) {
-            totalGanho++;
-          }
+          const ganhou = (hfcVolume === 1 && hfcIndicador === 1) || (gponVolume === 1 && gponIndicador === 1);
+          const perdeu = (hfcVolume === 1 && hfcIndicador === 0) || (gponVolume === 1 && gponIndicador === 0);
+
+          if (ganhou) totalGanho++;
 
           if (perdeu) {
             totalPerdidos++;
+
             if (tempoMin !== null && tempoMin > 0 && tempoMin <= 15) {
               perdidosAte15min++;
-              outagesAte15min.push({ outageNum: outage, tempo: tempoMin.toFixed(2) });
+              outagesAte15min.push({
+                outageNum: outage,
+                tempo: tempoMin.toFixed(2)
+              });
             }
           }
         });
 
-        let porcentagem = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
+        let porcentagemAte15min = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
 
         document.getElementById("casosGanho").innerText = totalGanho;
         document.getElementById("casosPerdidos").innerText = totalPerdidos;
         document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
-        document.getElementById("percentagem15").innerText = porcentagem;
+        document.getElementById("percentagem15").innerText = porcentagemAte15min;
 
         let outagesLista = document.getElementById("outagesLista");
         outagesLista.innerHTML = "";
-
         outagesAte15min.forEach(({ outageNum, tempo }) => {
           let div = document.createElement("div");
           div.className = "outage-card";
