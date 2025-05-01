@@ -11,7 +11,7 @@
             margin: 20px;
             line-height: 1.6;
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: #333;
         }
         .upload-container {
@@ -36,13 +36,53 @@
         }
         th {
             background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
         }
         .highlight {
             background-color: #f8f8f8;
             font-weight: bold;
         }
-        .turno-table {
-            margin-top: 30px;
+        .sla-dentro {
+            color: green;
+        }
+        .sla-fora {
+            color: red;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            margin-bottom: 20px;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+        .ticket-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .turno-header {
+            background-color: #e6f3ff;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -58,44 +98,76 @@
     <div class="results" id="results" style="display: none;">
         <h2>Resultados</h2>
         
-        <h3>Resumo Geral</h3>
-        <table>
-            <tr>
-                <th>Métrica</th>
-                <th>Valor</th>
-            </tr>
-            <tr>
-                <td>Total de tickets</td>
-                <td id="totalTickets">-</td>
-            </tr>
-            <tr>
-                <td>Total de tickets perdidos</td>
-                <td id="totalPerdidos">-</td>
-            </tr>
-            <tr>
-                <td>Total de tickets perdidos com menos de 30 min</td>
-                <td id="perdidosMenos30">-</td>
-            </tr>
-            <tr class="highlight">
-                <td>% de tickets perdidos com menos de 30 min (sobre total perdidos)</td>
-                <td id="percentMenos30">-</td>
-            </tr>
-        </table>
+        <div class="tab">
+            <button class="tablinks active" onclick="openTab(event, 'resumo')">Resumo Geral</button>
+            <button class="tablinks" onclick="openTab(event, 'porTurno')">Análise por Turno</button>
+            <button class="tablinks" onclick="openTab(event, 'ticketsPerdidos')">Tickets Perdidos</button>
+        </div>
         
-        <h3>Análise por Turno</h3>
-        <table class="turno-table" id="turnoTable">
-            <tr>
-                <th>Turno</th>
-                <th>Total Tickets</th>
-                <th>Tickets Perdidos</th>
-                <th>Perdidos <30 min</th>
-                <th>% Perdidos <30 min</th>
-            </tr>
-            <!-- Os dados serão inseridos aqui pelo JavaScript -->
-        </table>
+        <div id="resumo" class="tabcontent" style="display: block;">
+            <h3>Resumo Geral</h3>
+            <table>
+                <tr>
+                    <th>Métrica</th>
+                    <th>Valor</th>
+                </tr>
+                <tr>
+                    <td>Total de tickets (Volume=1)</td>
+                    <td id="totalTickets">-</td>
+                </tr>
+                <tr>
+                    <td>Tickets dentro do SLA (Volume=1, Indicador=1)</td>
+                    <td id="totalDentroSLA" class="sla-dentro">-</td>
+                </tr>
+                <tr>
+                    <td>Tickets fora do SLA (Volume=1, Indicador=0)</td>
+                    <td id="totalForaSLA" class="sla-fora">-</td>
+                </tr>
+                <tr>
+                    <td>Tickets fora do SLA com menos de 30 min</td>
+                    <td id="foraSlaMenos30">-</td>
+                </tr>
+                <tr class="highlight">
+                    <td>% de tickets fora do SLA com menos de 30 min (sobre total fora do SLA)</td>
+                    <td id="percentMenos30">-</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div id="porTurno" class="tabcontent">
+            <h3>Análise por Turno</h3>
+            <table>
+                <tr>
+                    <th>Turno</th>
+                    <th>Total Tickets</th>
+                    <th>Dentro SLA</th>
+                    <th>Fora SLA</th>
+                    <th>Fora SLA <30 min</th>
+                    <th>% Fora SLA <30 min</th>
+                </tr>
+                <!-- Os dados serão inseridos aqui pelo JavaScript -->
+            </table>
+        </div>
+        
+        <div id="ticketsPerdidos" class="tabcontent">
+            <h3>Tickets Perdidos por Turno</h3>
+            <div id="ticketsPerdidosContainer" class="ticket-list">
+                <!-- Os dados serão inseridos aqui pelo JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script>
+        // Variável global para armazenar os dados processados
+        let processedData = {
+            ticketsForaSLA: [],
+            turnos: {
+                MADRUGADA: { tickets: [] },
+                MANHÃ: { tickets: [] },
+                TARDE: { tickets: [] }
+            }
+        };
+
         function processFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
@@ -129,74 +201,113 @@
         }
         
         function analyzeData(data) {
+            // Resetar dados processados
+            processedData = {
+                ticketsForaSLA: [],
+                turnos: {
+                    MADRUGADA: { tickets: [] },
+                    MANHÃ: { tickets: [] },
+                    TARDE: { tickets: [] }
+                }
+            };
+
             // Inicializar contadores
             let totalTickets = 0;
-            let totalPerdidos = 0;
-            let perdidosMenos30 = 0;
+            let totalDentroSLA = 0;
+            let totalForaSLA = 0;
+            let foraSlaMenos30 = 0;
             
             // Contadores por turno
             const turnos = {
-                MADRUGADA: { total: 0, perdidos: 0, perdidosMenos30: 0 },
-                MANHÃ: { total: 0, perdidos: 0, perdidosMenos30: 0 },
-                TARDE: { total: 0, perdidos: 0, perdidosMenos30: 0 }
+                MADRUGADA: { total: 0, dentro: 0, fora: 0, foraMenos30: 0, tickets: [] },
+                MANHÃ: { total: 0, dentro: 0, fora: 0, foraMenos30: 0, tickets: [] },
+                TARDE: { total: 0, dentro: 0, fora: 0, foraMenos30: 0, tickets: [] }
             };
             
             // Processar cada linha
             data.forEach(row => {
-                if (!row.Turno) return; // Ignorar linhas sem turno
+                if (!row.Turno || row.Volume !== 1) return; // Considerar apenas tickets com Volume=1
+                
+                const turno = row.Turno.toUpperCase();
+                if (!turnos[turno]) return; // Ignorar turnos não mapeados
                 
                 totalTickets++;
+                turnos[turno].total++;
                 
-                // Verificar se é um ticket perdido (Indicador = 0)
-                const isPerdido = row.Indicador === 0;
+                // Verificar se está dentro ou fora do SLA
+                const isDentroSLA = row.Indicador === 1;
+                const isForaSLA = row.Indicador === 0;
                 
                 // Calcular duração (assumindo que a coluna Tempo está no formato HH:MM:SS)
                 let duracaoMinutos = 0;
+                let tempoFormatado = "00:00:00";
+                
                 if (row.Tempo) {
                     if (typeof row.Tempo === 'string') {
                         // Se for string, assumir formato "HH:MM:SS"
                         const [hours, minutes, seconds] = row.Tempo.split(':').map(Number);
                         duracaoMinutos = hours * 60 + minutes + seconds / 60;
+                        tempoFormatado = row.Tempo;
                     } else if (typeof row.Tempo === 'number') {
                         // Se for número, assumir que é fração de dia (formato Excel)
                         duracaoMinutos = row.Tempo * 24 * 60;
+                        
+                        // Converter para formato HH:MM:SS
+                        const hours = Math.floor(duracaoMinutos / 60);
+                        const minutes = Math.floor(duracaoMinutos % 60);
+                        const seconds = Math.floor((duracaoMinutos * 60) % 60);
+                        tempoFormatado = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     }
                 }
                 
+                // Criar objeto de ticket para detalhamento
+                const ticketInfo = {
+                    id: row.Outage || "N/A",
+                    login: row.Login || "N/A",
+                    inicio: row.Inicio || "N/A",
+                    fim: row.Fim || "N/A",
+                    tempo: tempoFormatado,
+                    duracaoMinutos: duracaoMinutos,
+                    turno: turno
+                };
+                
                 // Atualizar contadores gerais
-                if (isPerdido) {
-                    totalPerdidos++;
+                if (isDentroSLA) {
+                    totalDentroSLA++;
+                } else if (isForaSLA) {
+                    totalForaSLA++;
+                    processedData.ticketsForaSLA.push(ticketInfo);
+                    turnos[turno].tickets.push(ticketInfo);
+                    
                     if (duracaoMinutos < 30) {
-                        perdidosMenos30++;
+                        foraSlaMenos30++;
+                        turnos[turno].foraMenos30++;
                     }
                 }
                 
                 // Atualizar contadores por turno
-                const turno = row.Turno.toUpperCase();
-                if (turnos[turno]) {
-                    turnos[turno].total++;
-                    
-                    if (isPerdido) {
-                        turnos[turno].perdidos++;
-                        
-                        if (duracaoMinutos < 30) {
-                            turnos[turno].perdidosMenos30++;
-                        }
-                    }
+                if (isDentroSLA) {
+                    turnos[turno].dentro++;
+                } else if (isForaSLA) {
+                    turnos[turno].fora++;
                 }
             });
             
-            // Atualizar a interface
-            document.getElementById('totalTickets').textContent = totalTickets;
-            document.getElementById('totalPerdidos').textContent = totalPerdidos;
-            document.getElementById('perdidosMenos30').textContent = perdidosMenos30;
+            // Armazenar dados processados
+            processedData.turnos = turnos;
             
-            const percentMenos30 = totalPerdidos > 0 ? 
-                ((perdidosMenos30 / totalPerdidos) * 100).toFixed(2) + '%' : '0%';
+            // Atualizar a interface - Resumo Geral
+            document.getElementById('totalTickets').textContent = totalTickets;
+            document.getElementById('totalDentroSLA').textContent = totalDentroSLA;
+            document.getElementById('totalForaSLA').textContent = totalForaSLA;
+            document.getElementById('foraSlaMenos30').textContent = foraSlaMenos30;
+            
+            const percentMenos30 = totalForaSLA > 0 ? 
+                ((foraSlaMenos30 / totalForaSLA) * 100).toFixed(2) + '%' : '0%';
             document.getElementById('percentMenos30').textContent = percentMenos30;
             
-            // Preencher tabela de turnos
-            const turnoTable = document.getElementById('turnoTable');
+            // Atualizar a interface - Análise por Turno
+            const turnoTable = document.querySelector('#porTurno table');
             
             // Limpar linhas existentes (exceto cabeçalho)
             while (turnoTable.rows.length > 1) {
@@ -207,18 +318,84 @@
             for (const [turno, dados] of Object.entries(turnos)) {
                 const row = turnoTable.insertRow();
                 
-                const percentPerdidos = dados.total > 0 ? 
-                    ((dados.perdidos / dados.total) * 100).toFixed(2) + '%' : '0%';
-                
-                const percentMenos30Turno = dados.perdidos > 0 ? 
-                    ((dados.perdidosMenos30 / dados.perdidos) * 100).toFixed(2) + '%' : '0%';
+                const percentForaMenos30 = dados.fora > 0 ? 
+                    ((dados.foraMenos30 / dados.fora) * 100).toFixed(2) + '%' : '0%';
                 
                 row.insertCell(0).textContent = turno;
                 row.insertCell(1).textContent = dados.total;
-                row.insertCell(2).textContent = dados.perdidos;
-                row.insertCell(3).textContent = dados.perdidosMenos30;
-                row.insertCell(4).textContent = percentMenos30Turno;
+                row.insertCell(2).textContent = dados.dentro;
+                row.insertCell(3).textContent = dados.fora;
+                row.insertCell(4).textContent = dados.foraMenos30;
+                row.insertCell(5).textContent = percentForaMenos30;
             }
+            
+            // Atualizar a interface - Tickets Perdidos
+            updateTicketsPerdidosView();
+        }
+        
+        function updateTicketsPerdidosView() {
+            const container = document.getElementById('ticketsPerdidosContainer');
+            container.innerHTML = '';
+            
+            for (const [turno, dados] of Object.entries(processedData.turnos)) {
+                if (dados.tickets.length === 0) continue;
+                
+                // Cabeçalho do turno
+                const turnoHeader = document.createElement('h4');
+                turnoHeader.className = 'turno-header';
+                turnoHeader.textContent = `Turno: ${turno} (${dados.tickets.length} tickets)`;
+                container.appendChild(turnoHeader);
+                
+                // Tabela de tickets
+                const table = document.createElement('table');
+                
+                // Cabeçalhos da tabela
+                const headerRow = table.insertRow();
+                headerRow.insertCell(0).textContent = 'Ticket ID';
+                headerRow.insertCell(1).textContent = 'Login';
+                headerRow.insertCell(2).textContent = 'Início';
+                headerRow.insertCell(3).textContent = 'Fim';
+                headerRow.insertCell(4).textContent = 'Duração';
+                headerRow.insertCell(5).textContent = 'Tempo (min)';
+                
+                // Adicionar tickets
+                dados.tickets.forEach(ticket => {
+                    const row = table.insertRow();
+                    row.insertCell(0).textContent = ticket.id;
+                    row.insertCell(1).textContent = ticket.login;
+                    row.insertCell(2).textContent = ticket.inicio;
+                    row.insertCell(3).textContent = ticket.fim;
+                    row.insertCell(4).textContent = ticket.tempo;
+                    
+                    const minutosCell = row.insertCell(5);
+                    minutosCell.textContent = ticket.duracaoMinutos.toFixed(2);
+                    
+                    // Destacar tickets com menos de 30 minutos
+                    if (ticket.duracaoMinutos < 30) {
+                        row.style.backgroundColor = '#fff3f3';
+                    }
+                });
+                
+                container.appendChild(table);
+            }
+        }
+        
+        function openTab(evt, tabName) {
+            // Esconder todos os tabcontent
+            const tabcontent = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            
+            // Remover a classe active de todos os tablinks
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            
+            // Mostrar o tab atual e adicionar a classe active ao botão
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
         }
     </script>
 </body>
