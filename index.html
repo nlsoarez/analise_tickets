@@ -1,169 +1,225 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Análise de Outages</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #ec1c24;
-      color: white;
-      padding: 1em;
-      text-align: center;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    h2 {
-      color: #ec1c24;
-    }
-
-    .summary {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 1em;
-      margin-bottom: 2em;
-    }
-
-    .card {
-      flex: 1;
-      background-color: #fff3f3;
-      border-left: 6px solid #ec1c24;
-      padding: 1em;
-      border-radius: 8px;
-      min-width: 250px;
-    }
-
-    .highlight {
-      color: #ec1c24;
-      font-weight: bold;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 2em;
-    }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-
-    th {
-      background-color: #ec1c24;
-      color: white;
-    }
-
-    .turno {
-      margin-top: 2em;
-    }
-
-    .turno h3 {
-      color: #333;
-      margin-bottom: 0.5em;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Análise de Tickets</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .upload-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .results {
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+        .turno-table {
+            margin-top: 30px;
+        }
+    </style>
 </head>
-
 <body>
-  <header>
-    <h1>Resumo de Outages por Turno</h1>
-  </header>
-
-  <div class="container">
-    <div class="summary">
-      <div class="card">
-        <p>Turno: <span class="highlight">Manhã (06h - 14h)</span></p>
-        <p>Tickets Perdidos até 30min: <span class="highlight">12</span></p>
-        <p>Total: <span class="highlight">35</span></p>
-      </div>
-      <div class="card">
-        <p>Turno: <span class="highlight">Tarde (14h - 22h)</span></p>
-        <p>Tickets Perdidos até 30min: <span class="highlight">9</span></p>
-        <p>Total: <span class="highlight">28</span></p>
-      </div>
-      <div class="card">
-        <p>Turno: <span class="highlight">Noite (22h - 06h)</span></p>
-        <p>Tickets Perdidos até 30min: <span class="highlight">6</span></p>
-        <p>Total: <span class="highlight">17</span></p>
-      </div>
+    <h1>Painel de Análise de Tickets</h1>
+    
+    <div class="upload-container">
+        <h2>Upload do Arquivo</h2>
+        <input type="file" id="fileInput" accept=".xlsx, .xls" />
+        <button onclick="processFile()">Processar Arquivo</button>
+    </div>
+    
+    <div class="results" id="results" style="display: none;">
+        <h2>Resultados</h2>
+        
+        <h3>Resumo Geral</h3>
+        <table>
+            <tr>
+                <th>Métrica</th>
+                <th>Valor</th>
+            </tr>
+            <tr>
+                <td>Total de tickets</td>
+                <td id="totalTickets">-</td>
+            </tr>
+            <tr>
+                <td>Total de tickets perdidos</td>
+                <td id="totalPerdidos">-</td>
+            </tr>
+            <tr>
+                <td>Total de tickets perdidos com menos de 30 min</td>
+                <td id="perdidosMenos30">-</td>
+            </tr>
+            <tr class="highlight">
+                <td>% de tickets perdidos com menos de 30 min (sobre total perdidos)</td>
+                <td id="percentMenos30">-</td>
+            </tr>
+        </table>
+        
+        <h3>Análise por Turno</h3>
+        <table class="turno-table" id="turnoTable">
+            <tr>
+                <th>Turno</th>
+                <th>Total Tickets</th>
+                <th>Tickets Perdidos</th>
+                <th>Perdidos <30 min</th>
+                <th>% Perdidos <30 min</th>
+            </tr>
+            <!-- Os dados serão inseridos aqui pelo JavaScript -->
+        </table>
     </div>
 
-    <div class="turno">
-      <h3>Manhã (06h - 14h)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Ticket</th>
-            <th>Início</th>
-            <th>Fim</th>
-            <th>Duração</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>RAL-123456/2025_INC9876543210</td><td>06:10</td><td>06:35</td><td>25 min</td></tr>
-          <tr><td>RAL-123457/2025_INC9876543211</td><td>07:05</td><td>07:30</td><td>25 min</td></tr>
-          <!-- demais registros -->
-        </tbody>
-      </table>
-    </div>
-
-    <div class="turno">
-      <h3>Tarde (14h - 22h)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Ticket</th>
-            <th>Início</th>
-            <th>Fim</th>
-            <th>Duração</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>RAL-123458/2025_INC9876543212</td><td>14:10</td><td>14:30</td><td>20 min</td></tr>
-          <tr><td>RAL-123459/2025_INC9876543213</td><td>15:15</td><td>15:40</td><td>25 min</td></tr>
-          <!-- demais registros -->
-        </tbody>
-      </table>
-    </div>
-
-    <div class="turno">
-      <h3>Noite (22h - 06h)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Ticket</th>
-            <th>Início</th>
-            <th>Fim</th>
-            <th>Duração</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>RAL-123460/2025_INC9876543214</td><td>22:20</td><td>22:45</td><td>25 min</td></tr>
-          <tr><td>RAL-123461/2025_INC9876543215</td><td>23:10</td><td>23:35</td><td>25 min</td></tr>
-          <!-- demais registros -->
-        </tbody>
-      </table>
-    </div>
-  </div>
+    <script>
+        function processFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Por favor, selecione um arquivo primeiro.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Supondo que os dados estão na primeira planilha
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Converter para JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                // Processar os dados
+                analyzeData(jsonData);
+                
+                // Mostrar os resultados
+                document.getElementById('results').style.display = 'block';
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function analyzeData(data) {
+            // Inicializar contadores
+            let totalTickets = 0;
+            let totalPerdidos = 0;
+            let perdidosMenos30 = 0;
+            
+            // Contadores por turno
+            const turnos = {
+                MADRUGADA: { total: 0, perdidos: 0, perdidosMenos30: 0 },
+                MANHÃ: { total: 0, perdidos: 0, perdidosMenos30: 0 },
+                TARDE: { total: 0, perdidos: 0, perdidosMenos30: 0 }
+            };
+            
+            // Processar cada linha
+            data.forEach(row => {
+                if (!row.Turno) return; // Ignorar linhas sem turno
+                
+                totalTickets++;
+                
+                // Verificar se é um ticket perdido (Indicador = 0)
+                const isPerdido = row.Indicador === 0;
+                
+                // Calcular duração (assumindo que a coluna Tempo está no formato HH:MM:SS)
+                let duracaoMinutos = 0;
+                if (row.Tempo) {
+                    if (typeof row.Tempo === 'string') {
+                        // Se for string, assumir formato "HH:MM:SS"
+                        const [hours, minutes, seconds] = row.Tempo.split(':').map(Number);
+                        duracaoMinutos = hours * 60 + minutes + seconds / 60;
+                    } else if (typeof row.Tempo === 'number') {
+                        // Se for número, assumir que é fração de dia (formato Excel)
+                        duracaoMinutos = row.Tempo * 24 * 60;
+                    }
+                }
+                
+                // Atualizar contadores gerais
+                if (isPerdido) {
+                    totalPerdidos++;
+                    if (duracaoMinutos < 30) {
+                        perdidosMenos30++;
+                    }
+                }
+                
+                // Atualizar contadores por turno
+                const turno = row.Turno.toUpperCase();
+                if (turnos[turno]) {
+                    turnos[turno].total++;
+                    
+                    if (isPerdido) {
+                        turnos[turno].perdidos++;
+                        
+                        if (duracaoMinutos < 30) {
+                            turnos[turno].perdidosMenos30++;
+                        }
+                    }
+                }
+            });
+            
+            // Atualizar a interface
+            document.getElementById('totalTickets').textContent = totalTickets;
+            document.getElementById('totalPerdidos').textContent = totalPerdidos;
+            document.getElementById('perdidosMenos30').textContent = perdidosMenos30;
+            
+            const percentMenos30 = totalPerdidos > 0 ? 
+                ((perdidosMenos30 / totalPerdidos) * 100).toFixed(2) + '%' : '0%';
+            document.getElementById('percentMenos30').textContent = percentMenos30;
+            
+            // Preencher tabela de turnos
+            const turnoTable = document.getElementById('turnoTable');
+            
+            // Limpar linhas existentes (exceto cabeçalho)
+            while (turnoTable.rows.length > 1) {
+                turnoTable.deleteRow(1);
+            }
+            
+            // Adicionar dados por turno
+            for (const [turno, dados] of Object.entries(turnos)) {
+                const row = turnoTable.insertRow();
+                
+                const percentPerdidos = dados.total > 0 ? 
+                    ((dados.perdidos / dados.total) * 100).toFixed(2) + '%' : '0%';
+                
+                const percentMenos30Turno = dados.perdidos > 0 ? 
+                    ((dados.perdidosMenos30 / dados.perdidos) * 100).toFixed(2) + '%' : '0%';
+                
+                row.insertCell(0).textContent = turno;
+                row.insertCell(1).textContent = dados.total;
+                row.insertCell(2).textContent = dados.perdidos;
+                row.insertCell(3).textContent = dados.perdidosMenos30;
+                row.insertCell(4).textContent = percentMenos30Turno;
+            }
+        }
+    </script>
 </body>
-
 </html>
