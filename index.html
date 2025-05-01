@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Análise de Tickets</title>
+    <title>Painel de Análise de Tickets - Claro Brasil</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2980b9;
+            --primary-color: #E31937; /* Vermelho Claro */
+            --secondary-color: #C0102C;
             --success-color: #2ecc71;
-            --danger-color: #e74c3c;
-            --warning-color: #f39c12;
-            --light-color: #ecf0f1;
-            --dark-color: #34495e;
-            --text-color: #333;
-            --border-color: #ddd;
+            --danger-color: #E31937;
+            --warning-color: #FFA500;
+            --light-color: #F8F8F8;
+            --dark-color: #333333;
+            --text-color: #333333;
+            --border-color: #DDDDDD;
         }
         
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f7fa;
+            background-color: #FFFFFF;
             color: var(--text-color);
             line-height: 1.6;
         }
@@ -36,20 +36,22 @@
         }
         
         header {
-            background-color: white;
+            background-color: var(--primary-color);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 20px 0;
             margin-bottom: 30px;
         }
         
-        h1, h2, h3, h4 {
-            color: var(--dark-color);
-            margin-top: 0;
-        }
-        
-        h1 {
+        header h1 {
+            color: white;
+            margin: 0;
             font-size: 28px;
             font-weight: 700;
+        }
+        
+        h2, h3, h4 {
+            color: var(--dark-color);
+            margin-top: 0;
         }
         
         h2 {
@@ -64,6 +66,7 @@
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             padding: 25px;
             margin-bottom: 30px;
+            border-top: 4px solid var(--primary-color);
         }
         
         .upload-container {
@@ -98,15 +101,6 @@
             margin-left: 10px;
         }
         
-        .btn-secondary {
-            background-color: var(--light-color);
-            color: var(--dark-color);
-        }
-        
-        .btn-secondary:hover {
-            background-color: #dfe6e9;
-        }
-        
         .file-input {
             display: none;
         }
@@ -118,10 +112,11 @@
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
         }
         
         .file-label:hover {
-            background-color: #dfe6e9;
+            background-color: #e6e6e6;
         }
         
         .tabs {
@@ -175,7 +170,7 @@
         }
         
         tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
+            background-color: rgba(227, 25, 55, 0.05);
         }
         
         .badge {
@@ -192,7 +187,7 @@
         }
         
         .badge-danger {
-            background-color: rgba(231, 76, 60, 0.1);
+            background-color: rgba(227, 25, 55, 0.1);
             color: var(--danger-color);
         }
         
@@ -214,6 +209,7 @@
             font-weight: 500;
             display: flex;
             justify-content: space-between;
+            border-left: 4px solid var(--primary-color);
         }
         
         .turno-title {
@@ -253,6 +249,7 @@
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border-top: 4px solid var(--primary-color);
         }
         
         .summary-card h3 {
@@ -348,7 +345,7 @@
 <body>
     <header>
         <div class="container">
-            <h1>Painel de Análise de Tickets</h1>
+            <h1>Painel de Análise de Tickets - Claro Brasil</h1>
         </div>
     </header>
     
@@ -442,20 +439,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="chart-row">
-                    <div class="chart-col">
-                        <div class="chart-title">Tendência de Tickets Fora SLA</div>
-                        <div class="chart-container">
-                            <canvas id="trendChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-col">
-                        <div class="chart-title">Detalhe por Turno</div>
-                        <div class="chart-container">
-                            <canvas id="detailChart"></canvas>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -479,7 +462,7 @@
         };
 
         // Variáveis para os gráficos
-        let turnoChart, slaChart, trendChart, detailChart;
+        let turnoChart, slaChart;
 
         // Configurar eventos após o carregamento da página
         document.addEventListener('DOMContentLoaded', function() {
@@ -749,8 +732,6 @@
             // Destruir gráficos existentes se houver
             if (turnoChart) turnoChart.destroy();
             if (slaChart) slaChart.destroy();
-            if (trendChart) trendChart.destroy();
-            if (detailChart) detailChart.destroy();
             
             // Gráfico de distribuição por turno
             const turnoCtx = document.getElementById('turnoChart').getContext('2d');
@@ -769,15 +750,15 @@
                         {
                             label: 'Fora SLA',
                             data: Object.values(processedData.turnos).map(t => t.fora),
-                            backgroundColor: '#e74c3c',
-                            borderColor: '#c0392b',
+                            backgroundColor: '#E31937',
+                            borderColor: '#C0102C',
                             borderWidth: 1
                         },
                         {
                             label: 'Fora SLA <30min',
                             data: Object.values(processedData.turnos).map(t => t.foraMenos30),
-                            backgroundColor: '#f39c12',
-                            borderColor: '#d35400',
+                            backgroundColor: '#FFA500',
+                            borderColor: '#CC8400',
                             borderWidth: 1
                         }
                     ]
@@ -833,13 +814,13 @@
                         ],
                         backgroundColor: [
                             '#2ecc71',
-                            '#e74c3c',
-                            '#f39c12'
+                            '#E31937',
+                            '#FFA500'
                         ],
                         borderColor: [
                             '#27ae60',
-                            '#c0392b',
-                            '#d35400'
+                            '#C0102C',
+                            '#CC8400'
                         ],
                         borderWidth: 1
                     }]
@@ -867,126 +848,6 @@
                                     return `${label}: ${value} (${percentage}%)`;
                                 }
                             }
-                        }
-                    }
-                }
-            });
-            
-            // Gráfico de tendência (simulado)
-            const trendCtx = document.getElementById('trendChart').getContext('2d');
-            trendChart = new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
-                    datasets: [
-                        {
-                            label: 'Dentro SLA',
-                            data: [
-                                Math.floor(processedData.summary.totalDentroSLA * 0.7),
-                                Math.floor(processedData.summary.totalDentroSLA * 0.8),
-                                Math.floor(processedData.summary.totalDentroSLA * 0.9),
-                                processedData.summary.totalDentroSLA
-                            ],
-                            borderColor: '#2ecc71',
-                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Fora SLA',
-                            data: [
-                                Math.floor(processedData.summary.totalForaSLA * 1.3),
-                                Math.floor(processedData.summary.totalForaSLA * 1.1),
-                                Math.floor(processedData.summary.totalForaSLA * 0.9),
-                                processedData.summary.totalForaSLA
-                            ],
-                            borderColor: '#e74c3c',
-                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Gráfico de detalhe por turno
-            const detailCtx = document.getElementById('detailChart').getContext('2d');
-            detailChart = new Chart(detailCtx, {
-                type: 'radar',
-                data: {
-                    labels: Object.keys(processedData.turnos),
-                    datasets: [
-                        {
-                            label: 'Dentro SLA',
-                            data: Object.values(processedData.turnos).map(t => t.dentro),
-                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                            borderColor: '#2ecc71',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#2ecc71'
-                        },
-                        {
-                            label: 'Fora SLA',
-                            data: Object.values(processedData.turnos).map(t => t.fora),
-                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                            borderColor: '#e74c3c',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#e74c3c'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                        }
-                    },
-                    scales: {
-                        r: {
-                            angleLines: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            suggestedMin: 0
                         }
                     }
                 }
