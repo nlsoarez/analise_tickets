@@ -137,9 +137,19 @@
       }
       
       if (typeof excelDate === 'string') {
-        const dateStr = excelDate.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/, '$1/$2/$3 $4:$5:$6');
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) return date;
+        // Tenta vários formatos de data
+        const formats = [
+          /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/, // YYYY-MM-DD HH:MM:SS
+          /(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})/, // DD/MM/YYYY HH:MM:SS
+          /(\d{2})\/(\d{2})\/(\d{4})/, // DD/MM/YYYY
+          /(\d{4})-(\d{2})-(\d{2})/ // YYYY-MM-DD
+        ];
+        
+        for (const format of formats) {
+          const dateStr = excelDate.replace(format, '$3/$2/$1 $4:$5:$6');
+          const date = new Date(dateStr);
+          if (!isNaN(date.getTime())) return date;
+        }
       }
       
       return null;
@@ -157,7 +167,7 @@
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, { raw: false }); // Alterado para raw: false para melhor tratamento de dados
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { raw: false });
 
         const turnos = {
           MADRUGADA: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
@@ -171,7 +181,7 @@
         let totalPerdidosAte30min = 0;
 
         jsonData.forEach(row => {
-          // Verifica se é um ticket válido
+          // Verifica se é um ticket válido (pula cabeçalhos)
           const outage = String(row["Outage"] || row["OUTAGE"] || row["outage"] || row["Ticket"] || row["TICKET"] || row["ticket"] || '').trim();
           if (!outage || outage === "Outage" || outage === "OUTAGE" || outage === "Ticket" || outage === "TICKET") return;
 
@@ -181,24 +191,22 @@
           let turno = String(row["Turno"] || row["TURNO"] || row["turno"] || row["Shift"] || row["SHIFT"] || row["shift"] || '').trim().toUpperCase();
           if (!turno) turno = 'OUTROS';
           
-          if (turno.includes('MADRUGADA') || turno.includes('NOITE') || turno.includes('NOITE')) turno = 'MADRUGADA';
+          if (turno.includes('MADRUGADA') || turno.includes('NOITE')) turno = 'MADRUGADA';
           else if (turno.includes('MANHÃ') || turno.includes('MANHA') || turno.includes('MANH') || turno.includes('MORNING') || turno.includes('AM')) turno = 'MANHÃ';
           else if (turno.includes('TARDE') || turno.includes('TARD') || turno.includes('AFTERNOON') || turno.includes('PM')) turno = 'TARDE';
           else turno = 'OUTROS';
 
           turnos[turno].total++;
 
-          // Verifica se é ticket perdido - tratamento mais robusto
+          // Verifica se é ticket perdido
           const indicador = parseInt(row["Indicador"] || row["INDICADOR"] || row["indicador"] || row["Indicator"] || row["INDICATOR"] || row["indicator"] || row["Flag"] || row["FLAG"] || row["flag"] || 1);
           const volume = parseInt(row["Volume"] || row["VOLUME"] || row["volume"] || row["Qtd"] || row["QTD"] || row["qtd"] || row["Quantidade"] || row["QUANTIDADE"] || row["quantidade"] || 1);
           
-          console.log(`Ticket: ${outage}, Turno: ${turno}, Indicador: ${indicador}, Volume: ${volume}`); // Debug
-
           if (indicador === 0 && volume === 1) {
             totalPerdidos++;
             turnos[turno].perdidos++;
 
-            // Calcula duração
+            // Calcula duração em minutos
             let tempoMin = null;
             try {
               const inicio = parseExcelDate(row["Inicio"] || row["INICIO"] || row["inicio"] || row["Start"] || row["START"] || row["start"] || row["Data Início"] || row["DATA INÍCIO"] || row["data início"]);
@@ -295,15 +303,20 @@
         let maiorImpacto = { turno: 'N/A', valor: 0 };
         let menorImpacto = { turno: 'N/A', valor: 100 };
         
-        turnosComDados.forEach(t => {
-          const impacto = parseFloat(turnos[t].porcentagemImpacto);
-          if (impacto > maiorImpacto.valor) {
-            maiorImpacto = { turno: t, valor: impacto };
+        if (turnosComDados.length > 0) {
+          maiorImpacto = { turno: turnosComDados[0], valor: parseFloat(turnos[turnosComDados[0]].porcentagemImpacto) };
+          menorImpacto = { turno: turnosComDados[0], valor: parseFloat(turnos[turnosComDados[0]].porcentagemImpacto) };
+          
+          for (const t of turnosComDados) {
+            const impacto = parseFloat(turnos[t].porcentagemImpacto);
+            if (impacto > maiorImpacto.valor) {
+              maiorImpacto = { turno: t, valor: impacto };
+            }
+            if (impacto < menorImpacto.valor) {
+              menorImpacto = { turno: t, valor: impacto };
+            }
           }
-          if (impacto < menorImpacto.valor) {
-            menorImpacto = { turno: t, valor: impacto };
-          }
-        });
+        }
 
         // Conclusões
         resultadoDiv.innerHTML += `
