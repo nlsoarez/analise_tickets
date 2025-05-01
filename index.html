@@ -1,170 +1,169 @@
-<!DOCTYPE html> 
-<html lang="pt">
+<!DOCTYPE html>
+<html lang="pt-br">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Análise de Tickets Perdidos por Turno</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Outages</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f9f9f9;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
     }
+
+    header {
+      background-color: #ec1c24;
+      color: white;
+      padding: 1em;
+      text-align: center;
+    }
+
     .container {
-      max-width: 960px;
-      margin: auto;
-      background: white;
+      max-width: 1200px;
+      margin: 20px auto;
       padding: 20px;
+      background-color: white;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
     h2 {
-      color: #004b8d;
+      color: #ec1c24;
     }
-    input[type="file"] {
-      margin: 10px 0;
+
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1em;
+      margin-bottom: 2em;
     }
-    .section-title {
-      margin-top: 30px;
-      color: #333;
-      border-bottom: 2px solid #004b8d;
-      padding-bottom: 5px;
+
+    .card {
+      flex: 1;
+      background-color: #fff3f3;
+      border-left: 6px solid #ec1c24;
+      padding: 1em;
+      border-radius: 8px;
+      min-width: 250px;
     }
+
     .highlight {
+      color: #ec1c24;
       font-weight: bold;
-      color: #c00;
     }
-    .stats, .conclusion, .warning {
-      margin-top: 10px;
-    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-bottom: 2em;
     }
-    table, th, td {
-      border: 1px solid #ccc;
-    }
+
     th, td {
-      padding: 8px;
-      text-align: center;
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
     }
+
     th {
-      background-color: #f0f0f0;
+      background-color: #ec1c24;
+      color: white;
     }
-    .ticket-list {
-      margin-bottom: 30px;
+
+    .turno {
+      margin-top: 2em;
+    }
+
+    .turno h3 {
+      color: #333;
+      margin-bottom: 0.5em;
     }
   </style>
 </head>
+
 <body>
+  <header>
+    <h1>Resumo de Outages por Turno</h1>
+  </header>
+
   <div class="container">
-    <h2>Análise de Tickets Perdidos por Turno</h2>
-    <input type="file" id="fileInput" accept=".xlsx, .xls" />
-    <button id="analisarBtn">Analisar</button>
-    <div id="resultado"></div>
+    <div class="summary">
+      <div class="card">
+        <p>Turno: <span class="highlight">Manhã (06h - 14h)</span></p>
+        <p>Tickets Perdidos até 30min: <span class="highlight">12</span></p>
+        <p>Total: <span class="highlight">35</span></p>
+      </div>
+      <div class="card">
+        <p>Turno: <span class="highlight">Tarde (14h - 22h)</span></p>
+        <p>Tickets Perdidos até 30min: <span class="highlight">9</span></p>
+        <p>Total: <span class="highlight">28</span></p>
+      </div>
+      <div class="card">
+        <p>Turno: <span class="highlight">Noite (22h - 06h)</span></p>
+        <p>Tickets Perdidos até 30min: <span class="highlight">6</span></p>
+        <p>Total: <span class="highlight">17</span></p>
+      </div>
+    </div>
+
+    <div class="turno">
+      <h3>Manhã (06h - 14h)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Início</th>
+            <th>Fim</th>
+            <th>Duração</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>RAL-123456/2025_INC9876543210</td><td>06:10</td><td>06:35</td><td>25 min</td></tr>
+          <tr><td>RAL-123457/2025_INC9876543211</td><td>07:05</td><td>07:30</td><td>25 min</td></tr>
+          <!-- demais registros -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="turno">
+      <h3>Tarde (14h - 22h)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Início</th>
+            <th>Fim</th>
+            <th>Duração</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>RAL-123458/2025_INC9876543212</td><td>14:10</td><td>14:30</td><td>20 min</td></tr>
+          <tr><td>RAL-123459/2025_INC9876543213</td><td>15:15</td><td>15:40</td><td>25 min</td></tr>
+          <!-- demais registros -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="turno">
+      <h3>Noite (22h - 06h)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Início</th>
+            <th>Fim</th>
+            <th>Duração</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>RAL-123460/2025_INC9876543214</td><td>22:20</td><td>22:45</td><td>25 min</td></tr>
+          <tr><td>RAL-123461/2025_INC9876543215</td><td>23:10</td><td>23:35</td><td>25 min</td></tr>
+          <!-- demais registros -->
+        </tbody>
+      </table>
+    </div>
   </div>
-  <script>
-    function parseExcelDate(excelDate) {
-      if (typeof excelDate === 'number') {
-        return new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-      }
-      if (typeof excelDate === 'string') {
-        excelDate = excelDate.trim();
-        let date = new Date(excelDate);
-        if (!isNaN(date.getTime())) return date;
-        const brFormat = excelDate.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})/);
-        if (brFormat) {
-          date = new Date(`${brFormat[3]}-${brFormat[2]}-${brFormat[1]}T${brFormat[4]}:${brFormat[5]}:${brFormat[6]}`);
-          if (!isNaN(date.getTime())) return date;
-        }
-        const brDateOnly = excelDate.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-        if (brDateOnly) {
-          date = new Date(`${brDateOnly[3]}-${brDateOnly[2]}-${brDateOnly[1]}`);
-          if (!isNaN(date.getTime())) return date;
-        }
-      }
-      console.warn('Não foi possível converter a data:', excelDate);
-      return null;
-    }
-
-    function analisarPlanilha() {
-      const fileInput = document.getElementById('fileInput').files[0];
-      if (!fileInput) {
-        alert("Por favor, selecione um arquivo Excel.");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        try {
-          const data = new Uint8Array(event.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(sheet, { raw: false });
-
-          const turnos = {
-            MADRUGADA: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
-            MANHÃ: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
-            TARDE: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
-            OUTROS: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] }
-          };
-
-          let totalTickets = 0;
-          let totalPerdidos = 0;
-          let totalPerdidosAte30min = 0;
-
-          jsonData.forEach(row => {
-            const outage = String(row["Outage"] || row["OUTAGE"] || row["outage"] || row["Ticket"] || row["TICKET"] || row["ticket"] || '').trim();
-            if (!outage || outage === "Outage" || outage === "OUTAGE" || outage === "Ticket" || outage === "TICKET") return;
-
-            totalTickets++;
-
-            let turno = String(row["Turno"] || row["TURNO"] || row["turno"] || row["Shift"] || row["SHIFT"] || row["shift"] || '').trim().toUpperCase();
-            if (!turno) turno = 'OUTROS';
-            if (turno.includes('MADRUGADA') || turno.includes('NOITE')) turno = 'MADRUGADA';
-            else if (turno.includes('MANHÃ') || turno.includes('MANHA') || turno.includes('MORNING') || turno.includes('AM')) turno = 'MANHÃ';
-            else if (turno.includes('TARDE') || turno.includes('AFTERNOON') || turno.includes('PM')) turno = 'TARDE';
-            else turno = 'OUTROS';
-
-            turnos[turno].total++;
-
-            const indicador = parseInt(row["Indicador"] || row["INDICADOR"] || row["indicador"] || 1);
-            const volume = parseInt(row["Volume"] || row["VOLUME"] || row["volume"] || 1);
-
-            if (indicador === 0 && volume === 1) {
-              totalPerdidos++;
-              turnos[turno].perdidos++;
-
-              let tempoMin = null;
-              try {
-                const inicio = parseExcelDate(row["Inicio"] || row["INICIO"]);
-                const fim = parseExcelDate(row["Fim"] || row["FIM"]);
-                if (inicio && fim && !isNaN(inicio.getTime()) && !isNaN(fim.getTime())) {
-                  tempoMin = (fim - inicio) / (1000 * 60);
-                }
-              } catch (e) {
-                console.warn(`Erro ao calcular tempo para ticket ${outage}:`, e);
-              }
-
-              if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
-                totalPerdidosAte30min++;
-                turnos[turno].perdidosAte30min++;
-                turnos[turno].tickets.push({ numero: outage, tempo: tempoMin.toFixed(2) });
-              }
-            }
-          });
-
-          const resultadoDiv = document.getElementById("resultado");
-          resultadoDiv.innerHTML = `Tickets analisados: ${totalTickets}`;
-        } catch (error) {
-          console.error('Erro ao processar o arquivo:', error);
-          alert("Erro ao processar o arquivo Excel.");
-        }
-      };
-      reader.readAsArrayBuffer(fileInput);
-    }
-    document.getElementById('analisarBtn').addEventListener('click', analisarPlanilha);
-  </script>
 </body>
+
 </html>
