@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Análise de Outages Empresarial</title>
+  <title>Análise de Tickets</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
       font-family: 'Arial', sans-serif;
       background-color: #f4f4f4;
       margin: 0;
-      padding: 0;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       min-height: 100vh;
     }
     .container {
@@ -23,15 +22,16 @@
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       width: 90%;
-      max-width: 800px;
+      max-width: 600px;
       text-align: center;
     }
-    h2, h3 {
+    h2 {
       color: #D6001C;
+      margin-top: 0;
     }
     input[type="file"] {
       display: block;
-      margin: 10px auto;
+      margin: 15px auto;
       font-size: 16px;
     }
     button {
@@ -43,6 +43,7 @@
       border-radius: 5px;
       cursor: pointer;
       transition: background 0.3s;
+      margin-bottom: 20px;
     }
     button:hover {
       background-color: #A80017;
@@ -53,195 +54,108 @@
       background: #fff5f5;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: left;
     }
     .resultados p {
       font-size: 18px;
-      margin: 5px 0;
+      margin: 10px 0;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
     }
-    .outage-container {
-      margin-top: 20px;
+    .resultados p:last-child {
+      border-bottom: none;
     }
-    .outage-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      margin-top: 20px;
-    }
-    .outage-card {
-      background: #D6001C;
-      color: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      font-size: 16px;
+    .destaque {
       font-weight: bold;
-    }
-    .outage-card span {
-      font-size: 14px;
-    }
-    @media (max-width: 600px) {
-      .container {
-        width: 100%;
-        padding: 15px;
-      }
+      color: #D6001C;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Análise de Outages Empresarial</h2>
-    <input type="file" id="fileInput" />
+    <h2>Análise de Tickets</h2>
+    <input type="file" id="fileInput" accept=".xlsx, .xls" />
     <button id="analisarBtn">Analisar</button>
 
     <div class="resultados">
-      <p><strong>Total de Outages:</strong> <span id="totalOutages">0</span></p>
-      <p><strong>Casos Resolvidos (Indicador=1):</strong> <span id="casosResolvidos">0</span></p>
-      <p><strong>Casos Não Resolvidos (Indicador=0):</strong> <span id="casosNaoResolvidos">0</span></p>
-      <p><strong>Casos ≤15 minutos:</strong> <span id="casosAte15min">0</span> (<span id="percentagem15">0</span>%)</p>
-    </div>
-
-    <div class="outage-container">
-      <h3>Outages Não Resolvidos:</h3>
-      <div class="outage-cards" id="outagesNaoResolvidos"></div>
-      
-      <h3>Outages Resolvidos em até 15 minutos:</h3>
-      <div class="outage-cards" id="outagesResolvidos15min"></div>
+      <p><strong>Total de Tickets:</strong> <span id="totalTickets" class="destaque">0</span></p>
+      <p><strong>Tickets Dentro do SLA:</strong> <span id="dentroSLA" class="destaque">0</span></p>
+      <p><strong>Tickets Fora do SLA:</strong> <span id="foraSLA" class="destaque">0</span></p>
+      <p><strong>Fora do SLA por ≤30min:</strong> <span id="fora30min" class="destaque">0</span></p>
     </div>
   </div>
 
   <script>
     function parseExcelDate(excelDate) {
-      // Verifica se é um número (formato Excel) ou string (formato ISO)
       if (typeof excelDate === 'number') {
         return new Date((excelDate - 25569) * 86400 * 1000);
       } else {
-        // Remove caracteres não numéricos e formata como ISO
         const dateStr = excelDate.toString().replace(/[^\d-: ]/g, '');
         return new Date(dateStr);
       }
     }
 
     function analisarPlanilha() {
-      let fileInput = document.getElementById('fileInput').files[0];
+      const fileInput = document.getElementById('fileInput').files[0];
       if (!fileInput) {
         alert("Por favor, selecione um arquivo Excel.");
         return;
       }
 
-      let reader = new FileReader();
+      const reader = new FileReader();
       reader.onload = function(event) {
-        let data = new Uint8Array(event.target.result);
-        let workbook = XLSX.read(data, { type: 'array' });
-        let sheet = workbook.Sheets[workbook.SheetNames[0]];
-        let jsonData = XLSX.utils.sheet_to_json(sheet);
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        let totalOutages = 0;
-        let casosResolvidos = 0;
-        let casosNaoResolvidos = 0;
-        let casosAte15min = 0;
-        let outagesNaoResolvidos = [];
-        let outagesResolvidos15min = [];
+        let totalTickets = 0;
+        let dentroSLA = 0;
+        let foraSLA = 0;
+        let foraSLA30min = 0;
 
         jsonData.forEach(row => {
           const outage = String(row["Outage"] || '').trim();
-          if (!outage || outage.startsWith("0")) {
-            return; // Substitui o continue por return
-          }
+          if (!outage || outage.startsWith("0")) return;
 
-          totalOutages++;
+          totalTickets++;
 
           const indicador = Number(row["Indicador"]);
           const volume = Number(row["Volume"]);
 
-          // Verifica se Volume = 1 (caso contrário, ignora este registro)
-          if (volume !== 1) {
-            return;
-          }
+          if (volume !== 1) return;
 
-          let inicio = row["Inicio"];
-          let fim = row["Fim"];
           let tempoMin = null;
-
-          if (inicio && fim) {
+          if (row["Inicio"] && row["Fim"]) {
             try {
-              const dataInicio = parseExcelDate(inicio);
-              const dataFim = parseExcelDate(fim);
-              tempoMin = (dataFim - dataInicio) / (1000 * 60);
+              const inicio = parseExcelDate(row["Inicio"]);
+              const fim = parseExcelDate(row["Fim"]);
+              tempoMin = (fim - inicio) / (1000 * 60);
             } catch (e) {
-              console.warn(`Erro ao calcular tempo para outage ${outage}:`, e);
+              console.warn(`Erro ao calcular tempo para ticket ${outage}:`, e);
             }
           }
 
           if (indicador === 1) {
-            casosResolvidos++;
-            
-            if (tempoMin !== null && tempoMin > 0 && tempoMin <= 15) {
-              casosAte15min++;
-              outagesResolvidos15min.push({
-                outageNum: outage,
-                tempo: tempoMin.toFixed(2),
-                login: row["Login"] || 'N/A',
-                inicio: inicio,
-                fim: fim
-              });
-            }
+            dentroSLA++;
           } else if (indicador === 0) {
-            casosNaoResolvidos++;
-            outagesNaoResolvidos.push({
-              outageNum: outage,
-              tempo: tempoMin !== null ? tempoMin.toFixed(2) : 'N/A',
-              login: row["Login"] || 'N/A',
-              inicio: inicio,
-              fim: fim
-            });
+            foraSLA++;
+            if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
+              foraSLA30min++;
+            }
           }
         });
 
-        let porcentagemAte15min = casosResolvidos > 0 ? ((casosAte15min / casosResolvidos) * 100).toFixed(2) : 0;
-
         // Atualiza a interface
-        document.getElementById("totalOutages").innerText = totalOutages;
-        document.getElementById("casosResolvidos").innerText = casosResolvidos;
-        document.getElementById("casosNaoResolvidos").innerText = casosNaoResolvidos;
-        document.getElementById("casosAte15min").innerText = casosAte15min;
-        document.getElementById("percentagem15").innerText = porcentagemAte15min;
-
-        // Exibe os outages não resolvidos
-        let listaNaoResolvidos = document.getElementById("outagesNaoResolvidos");
-        listaNaoResolvidos.innerHTML = "";
-        outagesNaoResolvidos.forEach(item => {
-          let div = document.createElement("div");
-          div.className = "outage-card";
-          div.innerHTML = `
-            <div><strong>${item.outageNum}</strong></div>
-            <div><span>Login: ${item.login}</span></div>
-            <div><span>Tempo: ${item.tempo} min</span></div>
-            <div><small>${item.inicio} → ${item.fim}</small></div>
-          `;
-          listaNaoResolvidos.appendChild(div);
-        });
-
-        // Exibe os outages resolvidos em ≤15min
-        let listaResolvidos15min = document.getElementById("outagesResolvidos15min");
-        listaResolvidos15min.innerHTML = "";
-        outagesResolvidos15min.forEach(item => {
-          let div = document.createElement("div");
-          div.className = "outage-card";
-          div.style.background = "#28a745"; // Verde para casos resolvidos
-          div.innerHTML = `
-            <div><strong>${item.outageNum}</strong></div>
-            <div><span>Login: ${item.login}</span></div>
-            <div><span>Tempo: ${item.tempo} min</span></div>
-            <div><small>${item.inicio} → ${item.fim}</small></div>
-          `;
-          listaResolvidos15min.appendChild(div);
-        });
+        document.getElementById("totalTickets").textContent = totalTickets;
+        document.getElementById("dentroSLA").textContent = dentroSLA;
+        document.getElementById("foraSLA").textContent = foraSLA;
+        document.getElementById("fora30min").textContent = foraSLA30min;
       };
       reader.readAsArrayBuffer(fileInput);
     }
 
-    // Adiciona o event listener corretamente
+    // Configura o evento de clique
     document.getElementById('analisarBtn').addEventListener('click', analisarPlanilha);
   </script>
 </body>
