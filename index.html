@@ -175,28 +175,30 @@
         let totalPerdidosAte30min = 0;
 
         jsonData.forEach(row => {
+          console.log("Linha atual:", row); // Debug: mostra os dados da linha
+
           // Verifica se é um ticket válido (pula cabeçalhos)
-          const outage = String(row["Outage"] || row["Outage"] || '').trim();
-          if (!outage || outage === "Outage") return;
+          const outage = String(row["Outage"] || row["OUTAGE"] || row["outage"] || row["Ticket"] || row["TICKET"] || row["ticket"] || '').trim();
+          if (!outage || outage === "Outage" || outage === "OUTAGE" || outage === "Ticket" || outage === "TICKET") return;
 
           totalTickets++;
           
-          // Normaliza o turno
-          let turno = String(row["Turno"] || '').trim().toUpperCase();
+          // Normaliza o turno - adicione mais variações possíveis
+          let turno = String(row["Turno"] || row["TURNO"] || row["turno"] || row["Shift"] || row["SHIFT"] || row["shift"] || '').trim().toUpperCase();
           if (!turno) turno = 'OUTROS';
           
-          // Padroniza nomes de turnos
-          if (turno.includes('MADRUGADA')) turno = 'MADRUGADA';
-          else if (turno.includes('MANHÃ') || turno.includes('MANHA')) turno = 'MANHÃ';
-          else if (turno.includes('TARDE')) turno = 'TARDE';
+          // Padroniza nomes de turnos com mais variações
+          if (turno.includes('MADRUGADA') || turno.includes('NOITE') || turno.includes('NOITE')) turno = 'MADRUGADA';
+          else if (turno.includes('MANHÃ') || turno.includes('MANHA') || turno.includes('MANH') || turno.includes('MORNING') || turno.includes('AM')) turno = 'MANHÃ';
+          else if (turno.includes('TARDE') || turno.includes('TARD') || turno.includes('AFTERNOON') || turno.includes('PM')) turno = 'TARDE';
           else turno = 'OUTROS';
 
           // Incrementa contagem total por turno
           turnos[turno].total++;
 
-          // Verifica se é ticket perdido (Indicador = 0 e Volume = 1)
-          const indicador = parseInt(row["Indicador"]) || 1;
-          const volume = parseInt(row["Volume"]) || 1;
+          // Verifica se é ticket perdido - adicione mais variações de nome de coluna
+          const indicador = parseInt(row["Indicador"] || row["INDICADOR"] || row["indicador"] || row["Indicator"] || row["INDICATOR"] || row["indicator"] || 1);
+          const volume = parseInt(row["Volume"] || row["VOLUME"] || row["volume"] || row["Qtd"] || row["QTD"] || row["qtd"] || 1);
           
           if (indicador === 0 && volume === 1) {
             totalPerdidos++;
@@ -205,8 +207,8 @@
             // Calcula duração em minutos
             let tempoMin = null;
             try {
-              const inicio = parseExcelDate(row["Inicio"]);
-              const fim = parseExcelDate(row["Fim"]);
+              const inicio = parseExcelDate(row["Inicio"] || row["INICIO"] || row["inicio"] || row["Start"] || row["START"] || row["start"]);
+              const fim = parseExcelDate(row["Fim"] || row["FIM"] || row["fim"] || row["End"] || row["END"] || row["end"]);
               
               if (inicio && fim && !isNaN(inicio.getTime()) && !isNaN(fim.getTime())) {
                 tempoMin = (fim - inicio) / (1000 * 60);
