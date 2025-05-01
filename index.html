@@ -469,7 +469,7 @@
             turnos: {
                 MANHÃ: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
                 TARDE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
-                NOITE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
+                MADRUGADA: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
             },
             summary: {
                 totalTickets: 0,
@@ -560,7 +560,7 @@
             reader.onerror = function() {
                 alert('Erro ao ler o arquivo.');
                 document.getElementById('loadingIndicator').style.display = 'none';
-                document.getElementById('processBtn').disabled = false;
+                    document.getElementById('processBtn').disabled = false;
             };
             
             reader.readAsArrayBuffer(file);
@@ -573,7 +573,7 @@
                 turnos: {
                     MANHÃ: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
                     TARDE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
-                    NOITE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
+                    MADRUGADA: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
                 },
                 summary: {
                     totalTickets: 0,
@@ -588,9 +588,8 @@
             data.forEach(row => {
                 if (!row.Turno || row.Volume !== 1) return; // Considerar apenas tickets com Volume=1
                 
-                // Converter "MADRUGADA" para "NOITE" para consistência
+                // Manter o turno original (MANHÃ, TARDE ou MADRUGADA)
                 let turno = row.Turno.toUpperCase();
-                turno = turno === 'MADRUGADA' ? 'NOITE' : turno;
                 
                 if (!processedData.turnos[turno]) return; // Ignorar turnos não mapeados
                 
@@ -659,8 +658,8 @@
             const turnoTableBody = document.getElementById('turnoTableBody');
             turnoTableBody.innerHTML = '';
             
-            // Ordem dos turnos para exibição: Manhã, Tarde, Noite
-            const turnosOrdenados = ['MANHÃ', 'TARDE', 'NOITE'];
+            // Ordem dos turnos para exibição: Manhã, Tarde, Madrugada
+            const turnosOrdenados = ['MANHÃ', 'TARDE', 'MADRUGADA'];
             
             for (const turno of turnosOrdenados) {
                 const dados = processedData.turnos[turno];
@@ -684,11 +683,11 @@
             
             let hasTickets = false;
             
-            // Ordem dos turnos: Manhã, Tarde, Noite
+            // Ordem dos turnos: Manhã, Tarde, Madrugada
             const turnosOrdenados = [
                 { nome: 'MANHÃ', dados: processedData.turnos.MANHÃ },
                 { nome: 'TARDE', dados: processedData.turnos.TARDE },
-                { nome: 'NOITE', dados: processedData.turnos.NOITE }
+                { nome: 'MADRUGADA', dados: processedData.turnos.MADRUGADA }
             ];
             
             // Percorrer os turnos na ordem definida
@@ -764,7 +763,7 @@
             if (slaChart) slaChart.destroy();
             
             // Ordem dos turnos para os gráficos
-            const turnosOrdenados = ['MANHÃ', 'TARDE', 'NOITE'];
+            const turnosOrdenados = ['MANHÃ', 'TARDE', 'MADRUGADA'];
             
             // Gráfico de distribuição por turno
             const turnoCtx = document.getElementById('turnoChart').getContext('2d');
