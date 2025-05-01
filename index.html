@@ -132,14 +132,11 @@
 
   <script>
     function parseExcelDate(excelDate) {
-      // Se for número (formato Excel)
       if (typeof excelDate === 'number') {
         return new Date((excelDate - 25569) * 86400 * 1000);
       }
       
-      // Se for string
       if (typeof excelDate === 'string') {
-        // Padroniza formato de data
         const dateStr = excelDate.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/, '$1/$2/$3 $4:$5:$6');
         const date = new Date(dateStr);
         if (!isNaN(date.getTime())) return date;
@@ -160,9 +157,8 @@
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { raw: false }); // Alterado para raw: false para melhor tratamento de dados
 
-        // Objetos para armazenar estatísticas por turno
         const turnos = {
           MADRUGADA: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
           MANHÃ: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
@@ -175,40 +171,38 @@
         let totalPerdidosAte30min = 0;
 
         jsonData.forEach(row => {
-          console.log("Linha atual:", row); // Debug: mostra os dados da linha
-
-          // Verifica se é um ticket válido (pula cabeçalhos)
+          // Verifica se é um ticket válido
           const outage = String(row["Outage"] || row["OUTAGE"] || row["outage"] || row["Ticket"] || row["TICKET"] || row["ticket"] || '').trim();
           if (!outage || outage === "Outage" || outage === "OUTAGE" || outage === "Ticket" || outage === "TICKET") return;
 
           totalTickets++;
           
-          // Normaliza o turno - adicione mais variações possíveis
+          // Normaliza o turno
           let turno = String(row["Turno"] || row["TURNO"] || row["turno"] || row["Shift"] || row["SHIFT"] || row["shift"] || '').trim().toUpperCase();
           if (!turno) turno = 'OUTROS';
           
-          // Padroniza nomes de turnos com mais variações
           if (turno.includes('MADRUGADA') || turno.includes('NOITE') || turno.includes('NOITE')) turno = 'MADRUGADA';
           else if (turno.includes('MANHÃ') || turno.includes('MANHA') || turno.includes('MANH') || turno.includes('MORNING') || turno.includes('AM')) turno = 'MANHÃ';
           else if (turno.includes('TARDE') || turno.includes('TARD') || turno.includes('AFTERNOON') || turno.includes('PM')) turno = 'TARDE';
           else turno = 'OUTROS';
 
-          // Incrementa contagem total por turno
           turnos[turno].total++;
 
-          // Verifica se é ticket perdido - adicione mais variações de nome de coluna
-          const indicador = parseInt(row["Indicador"] || row["INDICADOR"] || row["indicador"] || row["Indicator"] || row["INDICATOR"] || row["indicator"] || 1);
-          const volume = parseInt(row["Volume"] || row["VOLUME"] || row["volume"] || row["Qtd"] || row["QTD"] || row["qtd"] || 1);
+          // Verifica se é ticket perdido - tratamento mais robusto
+          const indicador = parseInt(row["Indicador"] || row["INDICADOR"] || row["indicador"] || row["Indicator"] || row["INDICATOR"] || row["indicator"] || row["Flag"] || row["FLAG"] || row["flag"] || 1);
+          const volume = parseInt(row["Volume"] || row["VOLUME"] || row["volume"] || row["Qtd"] || row["QTD"] || row["qtd"] || row["Quantidade"] || row["QUANTIDADE"] || row["quantidade"] || 1);
           
+          console.log(`Ticket: ${outage}, Turno: ${turno}, Indicador: ${indicador}, Volume: ${volume}`); // Debug
+
           if (indicador === 0 && volume === 1) {
             totalPerdidos++;
             turnos[turno].perdidos++;
 
-            // Calcula duração em minutos
+            // Calcula duração
             let tempoMin = null;
             try {
-              const inicio = parseExcelDate(row["Inicio"] || row["INICIO"] || row["inicio"] || row["Start"] || row["START"] || row["start"]);
-              const fim = parseExcelDate(row["Fim"] || row["FIM"] || row["fim"] || row["End"] || row["END"] || row["end"]);
+              const inicio = parseExcelDate(row["Inicio"] || row["INICIO"] || row["inicio"] || row["Start"] || row["START"] || row["start"] || row["Data Início"] || row["DATA INÍCIO"] || row["data início"]);
+              const fim = parseExcelDate(row["Fim"] || row["FIM"] || row["fim"] || row["End"] || row["END"] || row["end"] || row["Data Fim"] || row["DATA FIM"] || row["data fim"]);
               
               if (inicio && fim && !isNaN(inicio.getTime()) && !isNaN(fim.getTime())) {
                 tempoMin = (fim - inicio) / (1000 * 60);
@@ -217,7 +211,6 @@
               console.warn(`Erro ao calcular tempo para ticket ${outage}:`, e);
             }
 
-            // Contabiliza tickets perdidos com ≤30 minutos
             if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
               totalPerdidosAte30min++;
               turnos[turno].perdidosAte30min++;
@@ -234,7 +227,6 @@
           ? ((totalPerdidosAte30min / totalPerdidos) * 100).toFixed(2)
           : '0.00';
 
-        // Calcula porcentagens por turno
         for (const turno in turnos) {
           turnos[turno].porcentagemImpacto = turnos[turno].perdidos > 0
             ? ((turnos[turno].perdidosAte30min / turnos[turno].perdidos) * 100).toFixed(2)
@@ -258,7 +250,7 @@
           </div>
         `;
 
-        // Tabela por Turno (mostra apenas turnos principais)
+        // Tabela por Turno
         resultadoDiv.innerHTML += `
           <h3 class="section-title">Distribuição por Turno</h3>
           <table class="turno-table">
@@ -290,7 +282,6 @@
           </table>
         `;
 
-        // Se houver tickets em OUTROS, mostra aviso
         if (turnos.OUTROS.total > 0) {
           resultadoDiv.innerHTML += `
             <p class="warning">Atenção: ${turnos.OUTROS.total} tickets não puderam ser classificados em turnos específicos.</p>
@@ -320,7 +311,6 @@
           <div class="conclusion">
             <p><strong>Turno com maior impacto:</strong> <span class="highlight">${maiorImpacto.turno}</span> (${maiorImpacto.valor}% dos tickets perdidos têm ≤30min)</p>
             <p><strong>Turno com menor impacto:</strong> <span class="highlight">${menorImpacto.turno}</span> (${menorImpacto.valor}% dos tickets perdidos têm ≤30min)</p>
-            ${turnosComDados.includes('MADRUGADA') ? `<p><strong>MADRUGADA:</strong> ${turnos.MADRUGADA.porcentagemImpacto}% dos tickets perdidos têm ≤30min</p>` : ''}
           </div>
         `;
 
