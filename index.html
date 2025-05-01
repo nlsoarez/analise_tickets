@@ -107,13 +107,6 @@
       margin: 20px 0;
       text-align: left;
     }
-    .recommendation {
-      background-color: #e7f5fe;
-      padding: 15px;
-      border-left: 5px solid #1a73e8;
-      margin: 20px 0;
-      text-align: left;
-    }
     .section-title {
       color: #333;
       border-bottom: 2px solid #D6001C;
@@ -141,13 +134,6 @@
         const dateStr = excelDate.toString().replace(/[^\d-: ]/g, '');
         return new Date(dateStr);
       }
-    }
-
-    function getTurno(hora) {
-      const horas = hora.getHours();
-      if (horas >= 0 && horas < 6) return 'MADRUGADA';
-      if (horas >= 6 && horas < 12) return 'MANHÃ';
-      return 'TARDE';
     }
 
     function analisarPlanilha() {
@@ -210,9 +196,7 @@
             turnos[turno].perdidosAte30min++;
             turnos[turno].tickets.push({
               numero: outage,
-              tempo: tempoMin.toFixed(2),
-              inicio: row["Inicio"],
-              fim: row["Fim"]
+              tempo: tempoMin.toFixed(2)
             });
           }
         });
@@ -224,10 +208,6 @@
 
         // Calcula porcentagens por turno
         for (const turno in turnos) {
-          turnos[turno].porcentagemPerdidos = turnos[turno].total > 0
-            ? ((turnos[turno].perdidos / turnos[turno].total) * 100).toFixed(2)
-            : 0;
-            
           turnos[turno].porcentagemImpacto = turnos[turno].perdidos > 0
             ? ((turnos[turno].perdidosAte30min / turnos[turno].perdidos) * 100).toFixed(2)
             : 0;
@@ -242,7 +222,7 @@
           <h3 class="section-title">Dados Gerais</h3>
           <div class="stats">
             <p><strong>Total de Tickets Analisados:</strong> <span class="highlight">${totalTickets}</span></p>
-            <p><strong>Tickets Perdidos:</strong> <span class="highlight">${totalPerdidos}</span> (${((totalPerdidos/totalTickets)*100).toFixed(2)}% do total)</p>
+            <p><strong>Tickets Perdidos:</strong> <span class="highlight">${totalPerdidos}</span></p>
             <p><strong>Perdidos com ≤30min:</strong> <span class="highlight">${totalPerdidosAte30min}</span></p>
             <p><strong>Representam:</strong> <span class="highlight">${porcentagemGeral}%</span> do total de perdidos</p>
           </div>
@@ -256,7 +236,6 @@
               <tr>
                 <th>Turno</th>
                 <th>Total Tickets</th>
-                <th>% do Total</th>
                 <th>Tickets Perdidos</th>
                 <th>Perdidos ≤30min</th>
                 <th>% Impacto</th>
@@ -267,7 +246,6 @@
                 <tr>
                   <td>${turno}</td>
                   <td>${dados.total}</td>
-                  <td>${((dados.total/totalTickets)*100).toFixed(2)}%</td>
                   <td>${dados.perdidos}</td>
                   <td>${dados.perdidosAte30min}</td>
                   <td class="highlight">${dados.porcentagemImpacto}%</td>
@@ -287,16 +265,6 @@
           </div>
         `;
 
-        // Recomendações
-        resultadoDiv.innerHTML += `
-          <h3 class="section-title">Recomendações</h3>
-          <div class="recommendation">
-            <p>✅ <strong>Priorizar análises no turno da MANHÃ</strong> (maior % de perdas rápidas)</p>
-            <p>🔍 Avaliar causas comuns em tickets curtos perdidos (ex: falhas operacionais?)</p>
-            <p>👀 Monitorar MADRUGADA/TARDE para evitar degradação</p>
-          </div>
-        `;
-
         // Detalhes dos tickets perdidos por turno
         for (const turno in turnos) {
           if (turnos[turno].perdidosAte30min > 0) {
@@ -307,8 +275,6 @@
                   <tr>
                     <th>Número do Ticket</th>
                     <th>Tempo (minutos)</th>
-                    <th>Início</th>
-                    <th>Fim</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -316,8 +282,6 @@
                     <tr>
                       <td>${ticket.numero}</td>
                       <td>${ticket.tempo}</td>
-                      <td>${ticket.inicio}</td>
-                      <td>${ticket.fim}</td>
                     </tr>
                   `).join('')}
                 </tbody>
