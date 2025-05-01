@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Análise de Outages</title>
+  <title>Análise de Outages Empresarial</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
@@ -90,25 +90,36 @@
 </head>
 <body>
   <div class="container">
-    <h2>Análise de Outages</h2>
+    <h2>Análise de Outages Empresarial</h2>
     <input type="file" id="fileInput" />
     <button onclick="analisarPlanilha()">Analisar</button>
 
     <div class="resultados">
-      <p><strong>Casos Ganhos:</strong> <span id="casosGanho">0</span></p>
-      <p><strong>Casos Perdidos:</strong> <span id="casosPerdidos">0</span></p>
-      <p><strong>Casos Perdidos em até 15 minutos:</strong> <span id="casosPerdidos15">0</span> (<span id="percentagem15">0</span>%)</p>
+      <p><strong>Total de Outages:</strong> <span id="totalOutages">0</span></p>
+      <p><strong>Casos Resolvidos (Indicador=1):</strong> <span id="casosResolvidos">0</span></p>
+      <p><strong>Casos Não Resolvidos (Indicador=0):</strong> <span id="casosNaoResolvidos">0</span></p>
+      <p><strong>Casos ≤15 minutos:</strong> <span id="casosAte15min">0</span> (<span id="percentagem15">0</span>%)</p>
     </div>
 
     <div class="outage-container">
-      <h3>Outages Perdidos em até 15 minutos:</h3>
-      <div class="outage-cards" id="outagesLista"></div>
+      <h3>Outages Não Resolvidos:</h3>
+      <div class="outage-cards" id="outagesNaoResolvidos"></div>
+      
+      <h3>Outages Resolvidos em até 15 minutos:</h3>
+      <div class="outage-cards" id="outagesResolvidos15min"></div>
     </div>
   </div>
 
   <script>
-    function excelDateToJSDate(serial) {
-      return new Date((serial - 25569) * 86400 * 1000);
+    function parseExcelDate(excelDate) {
+      // Verifica se é um número (formato Excel) ou string (formato ISO)
+      if (typeof excelDate === 'number') {
+        return new Date((excelDate - 25569) * 86400 * 1000);
+      } else {
+        // Remove caracteres não numéricos e formata como ISO
+        const dateStr = excelDate.toString().replace(/[^\d-: ]/g, '');
+        return new Date(dateStr);
+      }
     }
 
     function analisarPlanilha() {
@@ -125,66 +136,102 @@
         let sheet = workbook.Sheets[workbook.SheetNames[0]];
         let jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        let totalGanho = 0;
-        let totalPerdidos = 0;
-        let perdidosAte15min = 0;
-        let outagesAte15min = [];
+        let totalOutages = 0;
+        let casosResolvidos = 0;
+        let casosNaoResolvidos = 0;
+        let casosAte15min = 0;
+        let outagesNaoResolvidos = [];
+        let outagesResolvidos15min = [];
 
         jsonData.forEach(row => {
-          const outage = String(row["Outage"]).trim();
-          if (outage.startsWith("0") || !outage) return;
+          const outage = String(row["Outage"] || '').trim();
+          if (!outage || outage.startsWith("0")) continue;
 
-          const hfcVolume = Number(row["HFC - Volume"]);
-          const hfcIndicador = Number(row["HFC - Indicador"]);
-          const gponVolume = Number(row["Gpon - Volume"]);
-          const gponIndicador = Number(row["Gpon - Indicador"]);
+          totalOutages++;
 
-          let inicioRaw = row["Inicio"];
-          let fimRaw = row["Fim"];
+          const indicador = Number(row["Indicador"]);
+          const volume = Number(row["Volume"]);
 
+          // Verifica se Volume = 1 (caso contrário, não deve ser considerado)
+          if (volume !== 1) return;
+
+          let inicio = row["Inicio"];
+          let fim = row["Fim"];
           let tempoMin = null;
-          if (inicioRaw && fimRaw) {
+
+          if (inicio && fim) {
             try {
-              let inicio = !isNaN(inicioRaw) ? excelDateToJSDate(inicioRaw) : new Date(inicioRaw);
-              let fim = !isNaN(fimRaw) ? excelDateToJSDate(fimRaw) : new Date(fimRaw);
-              tempoMin = (fim - inicio) / (1000 * 60);
+              const dataInicio = parseExcelDate(inicio);
+              const dataFim = parseExcelDate(fim);
+              tempoMin = (dataFim - dataInicio) / (1000 * 60);
             } catch (e) {
-              console.warn("Erro ao converter datas:", e);
+              console.warn(`Erro ao calcular tempo para outage ${outage}:`, e);
             }
           }
 
-          const ganhou = (hfcVolume === 1 && hfcIndicador === 1) || (gponVolume === 1 && gponIndicador === 1);
-          const perdeu = (hfcVolume === 1 && hfcIndicador === 0) || (gponVolume === 1 && gponIndicador === 0);
-
-          if (ganhou) totalGanho++;
-
-          if (perdeu) {
-            totalPerdidos++;
-
+          if (indicador === 1) {
+            casosResolvidos++;
+            
             if (tempoMin !== null && tempoMin > 0 && tempoMin <= 15) {
-              perdidosAte15min++;
-              outagesAte15min.push({
+              casosAte15min++;
+              outagesResolvidos15min.push({
                 outageNum: outage,
-                tempo: tempoMin.toFixed(2)
+                tempo: tempoMin.toFixed(2),
+                login: row["Login"] || 'N/A',
+                inicio: inicio,
+                fim: fim
               });
             }
+          } else if (indicador === 0) {
+            casosNaoResolvidos++;
+            outagesNaoResolvidos.push({
+              outageNum: outage,
+              tempo: tempoMin !== null ? tempoMin.toFixed(2) : 'N/A',
+              login: row["Login"] || 'N/A',
+              inicio: inicio,
+              fim: fim
+            });
           }
         });
 
-        let porcentagemAte15min = totalPerdidos > 0 ? ((perdidosAte15min / totalPerdidos) * 100).toFixed(2) : 0;
+        let porcentagemAte15min = casosResolvidos > 0 ? ((casosAte15min / casosResolvidos) * 100).toFixed(2) : 0;
 
-        document.getElementById("casosGanho").innerText = totalGanho;
-        document.getElementById("casosPerdidos").innerText = totalPerdidos;
-        document.getElementById("casosPerdidos15").innerText = perdidosAte15min;
+        // Atualiza a interface
+        document.getElementById("totalOutages").innerText = totalOutages;
+        document.getElementById("casosResolvidos").innerText = casosResolvidos;
+        document.getElementById("casosNaoResolvidos").innerText = casosNaoResolvidos;
+        document.getElementById("casosAte15min").innerText = casosAte15min;
         document.getElementById("percentagem15").innerText = porcentagemAte15min;
 
-        let outagesLista = document.getElementById("outagesLista");
-        outagesLista.innerHTML = "";
-        outagesAte15min.forEach(({ outageNum, tempo }) => {
+        // Exibe os outages não resolvidos
+        let listaNaoResolvidos = document.getElementById("outagesNaoResolvidos");
+        listaNaoResolvidos.innerHTML = "";
+        outagesNaoResolvidos.forEach(item => {
           let div = document.createElement("div");
           div.className = "outage-card";
-          div.innerHTML = `<div><strong>${outageNum}</strong></div><div><span>Tempo: ${tempo} min</span></div>`;
-          outagesLista.appendChild(div);
+          div.innerHTML = `
+            <div><strong>${item.outageNum}</strong></div>
+            <div><span>Login: ${item.login}</span></div>
+            <div><span>Tempo: ${item.tempo} min</span></div>
+            <div><small>${item.inicio} → ${item.fim}</small></div>
+          `;
+          listaNaoResolvidos.appendChild(div);
+        });
+
+        // Exibe os outages resolvidos em ≤15min
+        let listaResolvidos15min = document.getElementById("outagesResolvidos15min");
+        listaResolvidos15min.innerHTML = "";
+        outagesResolvidos15min.forEach(item => {
+          let div = document.createElement("div");
+          div.className = "outage-card";
+          div.style.background = "#28a745"; // Verde para casos resolvidos
+          div.innerHTML = `
+            <div><strong>${item.outageNum}</strong></div>
+            <div><span>Login: ${item.login}</span></div>
+            <div><span>Tempo: ${item.tempo} min</span></div>
+            <div><small>${item.inicio} → ${item.fim}</small></div>
+          `;
+          listaResolvidos15min.appendChild(div);
         });
       };
       reader.readAsArrayBuffer(fileInput);
