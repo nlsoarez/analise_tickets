@@ -92,7 +92,7 @@
   <div class="container">
     <h2>Análise de Outages Empresarial</h2>
     <input type="file" id="fileInput" />
-    <button onclick="analisarPlanilha()">Analisar</button>
+    <button id="analisarBtn">Analisar</button>
 
     <div class="resultados">
       <p><strong>Total de Outages:</strong> <span id="totalOutages">0</span></p>
@@ -145,15 +145,19 @@
 
         jsonData.forEach(row => {
           const outage = String(row["Outage"] || '').trim();
-          if (!outage || outage.startsWith("0")) continue;
+          if (!outage || outage.startsWith("0")) {
+            return; // Substitui o continue por return
+          }
 
           totalOutages++;
 
           const indicador = Number(row["Indicador"]);
           const volume = Number(row["Volume"]);
 
-          // Verifica se Volume = 1 (caso contrário, não deve ser considerado)
-          if (volume !== 1) return;
+          // Verifica se Volume = 1 (caso contrário, ignora este registro)
+          if (volume !== 1) {
+            return;
+          }
 
           let inicio = row["Inicio"];
           let fim = row["Fim"];
@@ -236,6 +240,9 @@
       };
       reader.readAsArrayBuffer(fileInput);
     }
+
+    // Adiciona o event listener corretamente
+    document.getElementById('analisarBtn').addEventListener('click', analisarPlanilha);
   </script>
 </body>
 </html>
