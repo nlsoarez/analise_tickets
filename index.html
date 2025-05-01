@@ -9,17 +9,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #E31937;
+            --primary-color: #E31937; /* Vermelho Claro */
             --secondary-color: #C0102C;
             --success-color: #2ecc71;
-            --danger-color: #e74c3c;
+            --danger-color: #E31937;
             --warning-color: #FFA500;
             --light-color: #F8F8F8;
             --dark-color: #333333;
             --text-color: #333333;
             --border-color: #DDDDDD;
         }
-
+        
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
@@ -28,61 +28,38 @@
             color: var(--text-color);
             line-height: 1.6;
         }
-
+        
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-
+        
         header {
             background-color: var(--primary-color);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 20px 0;
             margin-bottom: 30px;
         }
-
+        
         header h1 {
             color: white;
             margin: 0;
             font-size: 28px;
             font-weight: 700;
-            text-align: center;
         }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 8px;
-            color: white;
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(-20px);
-            animation: slideIn 0.3s ease-out forwards;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        
+        h2, h3, h4 {
+            color: var(--dark-color);
+            margin-top: 0;
         }
-
-        @keyframes slideIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        
+        h2 {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 20px;
         }
-
-        .notification.success {
-            background-color: var(--success-color);
-        }
-
-        .notification.error {
-            background-color: var(--danger-color);
-        }
-
-        .notification.info {
-            background-color: #3498db;
-        }
-
+        
         .card {
             background-color: white;
             border-radius: 8px;
@@ -91,7 +68,7 @@
             margin-bottom: 30px;
             border-top: 4px solid var(--primary-color);
         }
-
+        
         .upload-container {
             text-align: center;
             padding: 30px;
@@ -100,7 +77,7 @@
             margin-bottom: 30px;
             background-color: white;
         }
-
+        
         .btn {
             display: inline-block;
             background-color: var(--primary-color);
@@ -113,21 +90,21 @@
             font-weight: 500;
             transition: all 0.3s ease;
         }
-
+        
         .btn:hover {
             background-color: var(--secondary-color);
             transform: translateY(-2px);
         }
-
+        
         .btn-upload {
             background-color: var(--primary-color);
             margin-left: 10px;
         }
-
+        
         .file-input {
             display: none;
         }
-
+        
         .file-label {
             display: inline-block;
             padding: 10px 20px;
@@ -137,17 +114,17 @@
             transition: all 0.3s ease;
             border: 1px solid var(--border-color);
         }
-
+        
         .file-label:hover {
             background-color: #e6e6e6;
         }
-
+        
         .tabs {
             display: flex;
             margin-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
         }
-
+        
         .tab-btn {
             padding: 12px 25px;
             background: none;
@@ -159,43 +136,43 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-
+        
         .tab-btn.active {
             border-bottom: 3px solid var(--primary-color);
             color: var(--primary-color);
         }
-
+        
         .tab-content {
             display: none;
         }
-
+        
         .tab-content.active {
             display: block;
         }
-
+        
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
-
+        
         th, td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
         }
-
+        
         th {
             background-color: var(--light-color);
             font-weight: 500;
             position: sticky;
             top: 0;
         }
-
+        
         tr:hover {
             background-color: rgba(227, 25, 55, 0.05);
         }
-
+        
         .badge {
             display: inline-block;
             padding: 4px 8px;
@@ -203,28 +180,28 @@
             font-size: 12px;
             font-weight: 500;
         }
-
+        
         .badge-success {
             background-color: rgba(46, 204, 113, 0.1);
             color: var(--success-color);
         }
-
+        
         .badge-danger {
             background-color: rgba(227, 25, 55, 0.1);
             color: var(--danger-color);
         }
-
+        
         .ticket-list {
             max-height: 500px;
             overflow-y: auto;
             border: 1px solid var(--border-color);
             border-radius: 8px;
         }
-
+        
         .turno-section {
             margin-bottom: 30px;
         }
-
+        
         .turno-header {
             background-color: var(--light-color);
             padding: 15px;
@@ -234,12 +211,12 @@
             justify-content: space-between;
             border-left: 4px solid var(--primary-color);
         }
-
+        
         .turno-title {
             font-size: 18px;
             color: var(--dark-color);
         }
-
+        
         .turno-count {
             background-color: var(--primary-color);
             color: white;
@@ -247,26 +224,26 @@
             border-radius: 20px;
             font-size: 14px;
         }
-
+        
         .no-tickets {
             padding: 20px;
             text-align: center;
             color: #7f8c8d;
             font-style: italic;
         }
-
+        
         .duration-warning {
             color: var(--warning-color);
             font-weight: 500;
         }
-
+        
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-
+        
         .summary-card {
             background-color: white;
             border-radius: 8px;
@@ -274,25 +251,25 @@
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             border-top: 4px solid var(--primary-color);
         }
-
+        
         .summary-card h3 {
             font-size: 16px;
             font-weight: 500;
             margin-top: 0;
             color: #7f8c8d;
         }
-
+        
         .summary-card .value {
             font-size: 28px;
             font-weight: 700;
             margin: 10px 0;
         }
-
+        
         .summary-card .description {
             font-size: 14px;
             color: #7f8c8d;
         }
-
+        
         .spinner {
             display: inline-block;
             width: 20px;
@@ -302,24 +279,24 @@
             border-top-color: var(--primary-color);
             animation: spin 1s ease-in-out infinite;
         }
-
+        
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
+        
         .loading-container {
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-
+        
         .chart-container {
             position: relative;
             height: 400px;
             margin-bottom: 30px;
         }
-
+        
         .chart-title {
             text-align: center;
             margin-bottom: 15px;
@@ -327,19 +304,20 @@
             font-weight: 500;
             color: var(--dark-color);
         }
-
+        
         .chart-row {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             margin-bottom: 30px;
         }
-
+        
         .chart-col {
             flex: 1;
             min-width: 300px;
         }
 
+        /* Estilo para a tabela com barra de rolagem */
         .table-container {
             max-height: 300px;
             overflow-y: auto;
@@ -438,23 +416,21 @@
                 
                 <div class="card">
                     <h3>Desempenho por Turno</h3>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Turno</th>
-                                    <th>Total Tickets</th>
-                                    <th>Dentro SLA</th>
-                                    <th>Fora SLA</th>
-                                    <th>Fora SLA <30min</th>
-                                    <th>% Fora SLA <30min</th>
-                                </tr>
-                            </thead>
-                            <tbody id="turnoTableBody">
-                                <!-- Dados serão inseridos aqui -->
-                            </tbody>
-                        </table>
-                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Turno</th>
+                                <th>Total Tickets</th>
+                                <th>Dentro SLA</th>
+                                <th>Fora SLA</th>
+                                <th>Fora SLA <30min</th>
+                                <th>% Fora SLA <30min</th>
+                            </tr>
+                        </thead>
+                        <tbody id="turnoTableBody">
+                            <!-- Dados serão inseridos aqui -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
             
@@ -509,25 +485,13 @@
 
         // Configurar eventos após o carregamento da página
         document.addEventListener('DOMContentLoaded', function() {
-            // Carregar último processamento do localStorage
-            const lastProcess = localStorage.getItem('lastProcess');
-            if(lastProcess) {
-                try {
-                    processedData = JSON.parse(lastProcess);
-                    updateAllViews();
-                    document.getElementById('results').style.display = 'block';
-                } catch (e) {
-                    console.error('Erro ao carregar último processamento:', e);
-                    localStorage.removeItem('lastProcess');
-                }
-            }
-
             // Evento para o botão de processar
             document.getElementById('processBtn').addEventListener('click', processFile);
             
             // Evento para mostrar o nome do arquivo selecionado
             document.getElementById('fileInput').addEventListener('change', function(e) {
-                document.getElementById('fileName').textContent = e.target.files[0]?.name || 'Nenhum arquivo selecionado';
+                const fileName = e.target.files[0] ? e.target.files[0].name : 'Nenhum arquivo selecionado';
+                document.getElementById('fileName').textContent = fileName;
             });
             
             // Eventos para as abas
@@ -561,16 +525,13 @@
             const file = fileInput.files[0];
             
             if (!file) {
-                showNotification('Por favor, selecione um arquivo primeiro.', 'error');
+                alert('Por favor, selecione um arquivo primeiro.');
                 return;
             }
             
             // Mostrar indicador de carregamento
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const processBtn = document.getElementById('processBtn');
-            
-            loadingIndicator.style.display = 'flex';
-            processBtn.disabled = true;
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('processBtn').disabled = true;
             
             const reader = new FileReader();
             
@@ -587,21 +548,19 @@
                     
                     analyzeData(jsonData);
                     document.getElementById('results').style.display = 'block';
-                    showNotification('Arquivo processado com sucesso!', 'success');
-                    
                 } catch (error) {
-                    showNotification(`Erro ao processar o arquivo: ${error.message}`, 'error');
+                    alert('Erro ao processar o arquivo: ' + error.message);
                     console.error(error);
                 } finally {
-                    loadingIndicator.style.display = 'none';
-                    processBtn.disabled = false;
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    document.getElementById('processBtn').disabled = false;
                 }
             };
             
             reader.onerror = function() {
-                showNotification('Erro ao ler o arquivo.', 'error');
-                loadingIndicator.style.display = 'none';
-                processBtn.disabled = false;
+                alert('Erro ao ler o arquivo.');
+                document.getElementById('loadingIndicator').style.display = 'none';
+                    document.getElementById('processBtn').disabled = false;
             };
             
             reader.readAsArrayBuffer(file);
@@ -622,113 +581,63 @@
                     totalForaSLA: 0,
                     foraSlaMenos30: 0
                 },
-                rawData: data
+                rawData: processedData.rawData
             };
 
-            try {
-                // Processar cada linha
-                data.forEach((row, index) => {
-                    try {
-                        validateData(row);
-                        if(row.Volume !== 1) return; // Considerar apenas tickets com Volume=1
-                        
-                        // Manter o turno original (MANHÃ, TARDE ou MADRUGADA)
-                        let turno = row.Turno.toUpperCase();
-                        
-                        if(!processedData.turnos[turno]) return; // Ignorar turnos não mapeados
-                        
-                        processedData.summary.totalTickets++;
-                        processedData.turnos[turno].total++;
-                        
-                        // Verificar se está dentro ou fora do SLA
-                        const isDentroSLA = row.Indicador === 1;
-                        const isForaSLA = row.Indicador === 0;
-                        
-                        // Calcular duração
-                        const duracaoMinutos = parseDuration(row.Tempo);
-                        
-                        // Criar objeto de ticket para detalhamento
-                        const ticketInfo = {
-                            id: row.Outage || "N/A",
-                            login: row.Login || "N/A",
-                            duracaoMinutos: duracaoMinutos,
-                            turno: turno
-                        };
-                        
-                        // Atualizar contadores gerais
-                        if(isDentroSLA) {
-                            processedData.summary.totalDentroSLA++;
-                            processedData.turnos[turno].dentro++;
-                        } else if(isForaSLA) {
-                            processedData.summary.totalForaSLA++;
-                            processedData.ticketsForaSLA.push(ticketInfo);
-                            processedData.turnos[turno].fora++;
-                            
-                            if(duracaoMinutos < 30) {
-                                processedData.summary.foraSlaMenos30++;
-                                processedData.turnos[turno].foraMenos30++;
-                                processedData.turnos[turno].tickets.push(ticketInfo);
-                            }
-                        }
-                    } catch (error) {
-                        throw new Error(`Linha ${index + 2}: ${error.message}`);
+            // Processar cada linha
+            data.forEach(row => {
+                if (!row.Turno || row.Volume !== 1) return; // Considerar apenas tickets com Volume=1
+                
+                // Manter o turno original (MANHÃ, TARDE ou MADRUGADA)
+                let turno = row.Turno.toUpperCase();
+                
+                if (!processedData.turnos[turno]) return; // Ignorar turnos não mapeados
+                
+                processedData.summary.totalTickets++;
+                processedData.turnos[turno].total++;
+                
+                // Verificar se está dentro ou fora do SLA
+                const isDentroSLA = row.Indicador === 1;
+                const isForaSLA = row.Indicador === 0;
+                
+                // Calcular duração
+                let duracaoMinutos = 0;
+                
+                if (row.Tempo) {
+                    if (typeof row.Tempo === 'string') {
+                        const [hours, minutes, seconds] = row.Tempo.split(':').map(Number);
+                        duracaoMinutos = hours * 60 + minutes + seconds / 60;
+                    } else if (typeof row.Tempo === 'number') {
+                        duracaoMinutos = row.Tempo * 24 * 60;
                     }
-                });
-                
-                // Salvar no localStorage
-                localStorage.setItem('lastProcess', JSON.stringify(processedData));
-                
-                // Atualizar a interface
-                updateAllViews();
-                
-            } catch (error) {
-                showNotification(error.message, 'error');
-                throw error;
-            }
-        }
-        
-        function validateData(row) {
-            const requiredColumns = ['Turno', 'Volume', 'Indicador', 'Tempo'];
-            const missingColumns = requiredColumns.filter(col => !(col in row));
-            
-            if(missingColumns.length > 0) {
-                throw new Error(`Colunas obrigatórias ausentes: ${missingColumns.join(', ')}`);
-            }
-
-            if(![0, 1].includes(row.Indicador)) {
-                throw new Error(`Valor inválido no Indicador: ${row.Indicador} (deve ser 0 ou 1)`);
-            }
-
-            if(typeof row.Volume !== 'number' || row.Volume < 0) {
-                throw new Error(`Volume inválido: ${row.Volume}`);
-            }
-        }
-        
-        function parseDuration(time) {
-            try {
-                if(typeof time === 'number') {
-                    return Math.round(time * 24 * 60 * 100) / 100; // Decimal format
                 }
                 
-                if(typeof time === 'string') {
-                    if(time.includes('.')) {
-                        const hours = parseFloat(time);
-                        return Math.round(hours * 60 * 100) / 100;
-                    }
+                // Criar objeto de ticket para detalhamento
+                const ticketInfo = {
+                    id: row.Outage || "N/A",
+                    login: row.Login || "N/A",
+                    duracaoMinutos: duracaoMinutos,
+                    turno: turno
+                };
+                
+                // Atualizar contadores gerais
+                if (isDentroSLA) {
+                    processedData.summary.totalDentroSLA++;
+                    processedData.turnos[turno].dentro++;
+                } else if (isForaSLA) {
+                    processedData.summary.totalForaSLA++;
+                    processedData.ticketsForaSLA.push(ticketInfo);
+                    processedData.turnos[turno].fora++;
                     
-                    const parts = time.split(':').map(Number);
-                    if(parts.length === 3) {
-                        return parts[0] * 60 + parts[1] + parts[2]/60;
+                    if (duracaoMinutos < 30) {
+                        processedData.summary.foraSlaMenos30++;
+                        processedData.turnos[turno].foraMenos30++;
+                        processedData.turnos[turno].tickets.push(ticketInfo);
                     }
                 }
-                
-                throw new Error(`Formato de tempo não reconhecido: ${time}`);
-            } catch (e) {
-                throw new Error(`Tempo inválido: ${time}`);
-            }
-        }
-        
-        function updateAllViews() {
+            });
+            
+            // Atualizar a interface
             updateSummaryView();
             updateTicketsPerdidosView();
             updateCharts();
@@ -752,7 +661,7 @@
             // Ordem dos turnos para exibição: Manhã, Tarde, Madrugada
             const turnosOrdenados = ['MANHÃ', 'TARDE', 'MADRUGADA'];
             
-            for(const turno of turnosOrdenados) {
+            for (const turno of turnosOrdenados) {
                 const dados = processedData.turnos[turno];
                 const row = turnoTableBody.insertRow();
                 
@@ -782,8 +691,8 @@
             ];
             
             // Percorrer os turnos na ordem definida
-            for(const {nome, dados} of turnosOrdenados) {
-                if(dados.tickets.length === 0) continue;
+            for (const {nome, dados} of turnosOrdenados) {
+                if (dados.tickets.length === 0) continue;
                 
                 hasTickets = true;
                 
@@ -830,7 +739,7 @@
                     minutosCell.textContent = ticket.duracaoMinutos.toFixed(2);
                     
                     // Destacar duração
-                    if(ticket.duracaoMinutos < 30) {
+                    if (ticket.duracaoMinutos < 30) {
                         minutosCell.classList.add('duration-warning');
                     }
                 });
@@ -840,7 +749,7 @@
                 container.appendChild(turnoSection);
             }
             
-            if(!hasTickets) {
+            if (!hasTickets) {
                 const noTickets = document.createElement('div');
                 noTickets.className = 'no-tickets';
                 noTickets.textContent = 'Nenhum ticket perdido com menos de 30 minutos encontrado.';
@@ -850,8 +759,8 @@
         
         function updateCharts() {
             // Destruir gráficos existentes se houver
-            if(turnoChart) turnoChart.destroy();
-            if(slaChart) slaChart.destroy();
+            if (turnoChart) turnoChart.destroy();
+            if (slaChart) slaChart.destroy();
             
             // Ordem dos turnos para os gráficos
             const turnosOrdenados = ['MANHÃ', 'TARDE', 'MADRUGADA'];
@@ -975,18 +884,6 @@
                     }
                 }
             });
-        }
-        
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
         }
     </script>
 </body>
