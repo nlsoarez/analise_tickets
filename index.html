@@ -316,6 +316,25 @@
             flex: 1;
             min-width: 300px;
         }
+
+        /* Estilo para a tabela com barra de rolagem */
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 8px 8px;
+        }
+
+        .table-container table {
+            margin-bottom: 0;
+        }
+
+        .table-container thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background-color: var(--light-color);
+        }
         
         @media (max-width: 768px) {
             .summary-grid {
@@ -683,6 +702,10 @@
                 turnoHeader.appendChild(turnoCount);
                 turnoSection.appendChild(turnoHeader);
                 
+                // Container da tabela com barra de rolagem
+                const tableContainer = document.createElement('div');
+                tableContainer.className = 'table-container';
+                
                 // Tabela de tickets
                 const table = document.createElement('table');
                 
@@ -707,7 +730,8 @@
                     }
                 });
                 
-                turnoSection.appendChild(table);
+                tableContainer.appendChild(table);
+                turnoSection.appendChild(tableContainer);
                 container.appendChild(turnoSection);
             }
             
