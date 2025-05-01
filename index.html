@@ -6,7 +6,117 @@
   <title>Análise de Tickets Perdidos por Turno</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    /* (Manter os estilos existentes) */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 800px;
+      text-align: center;
+    }
+    h2 {
+      color: #D6001C;
+      margin-top: 0;
+    }
+    input[type="file"] {
+      display: block;
+      margin: 15px auto;
+      font-size: 16px;
+    }
+    button {
+      background-color: #D6001C;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-bottom: 20px;
+    }
+    button:hover {
+      background-color: #A80017;
+    }
+    .stats {
+      background: #fff5f5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .stats p {
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    .highlight {
+      font-weight: bold;
+      color: #D6001C;
+    }
+    .ticket-list {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    .ticket-list th, .ticket-list td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    .ticket-list th {
+      background-color: #D6001C;
+      color: white;
+    }
+    .ticket-list tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .turno-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .turno-table th, .turno-table td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    .turno-table th {
+      background-color: #333;
+      color: white;
+    }
+    .turno-table tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    .turno-table tr:hover {
+      background-color: #e6e6e6;
+    }
+    .conclusion {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-left: 5px solid #D6001C;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .section-title {
+      color: #333;
+      border-bottom: 2px solid #D6001C;
+      padding-bottom: 5px;
+      margin-top: 30px;
+    }
+    .warning {
+      color: #FF5722;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -22,17 +132,17 @@
 
   <script>
     function parseExcelDate(excelDate) {
-      // Primeiro tenta como string
-      if (typeof excelDate === 'string') {
-        // Remove caracteres não numéricos exceto : - e espaço
-        const dateStr = excelDate.replace(/[^\d-: ]/g, '');
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) return date;
-      }
-      
-      // Se não funcionar, tenta como número (formato Excel)
+      // Se for número (formato Excel)
       if (typeof excelDate === 'number') {
         return new Date((excelDate - 25569) * 86400 * 1000);
+      }
+      
+      // Se for string
+      if (typeof excelDate === 'string') {
+        // Padroniza formato de data
+        const dateStr = excelDate.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/, '$1/$2/$3 $4:$5:$6');
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) return date;
       }
       
       return null;
@@ -65,9 +175,9 @@
         let totalPerdidosAte30min = 0;
 
         jsonData.forEach(row => {
-          // Verifica se é um ticket válido
+          // Verifica se é um ticket válido (pula cabeçalhos)
           const outage = String(row["Outage"] || row["Outage"] || '').trim();
-          if (!outage || outage === "Outage") return; // Pula cabeçalho
+          if (!outage || outage === "Outage") return;
 
           totalTickets++;
           
@@ -75,14 +185,13 @@
           let turno = String(row["Turno"] || '').trim().toUpperCase();
           if (!turno) turno = 'OUTROS';
           
-          // Mapeia variações de nome para os turnos padrão
+          // Padroniza nomes de turnos
           if (turno.includes('MADRUGADA')) turno = 'MADRUGADA';
           else if (turno.includes('MANHÃ') || turno.includes('MANHA')) turno = 'MANHÃ';
           else if (turno.includes('TARDE')) turno = 'TARDE';
           else turno = 'OUTROS';
 
           // Incrementa contagem total por turno
-          turnos[turno] = turnos[turno] || { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] };
           turnos[turno].total++;
 
           // Verifica se é ticket perdido (Indicador = 0 e Volume = 1)
@@ -93,7 +202,7 @@
             totalPerdidos++;
             turnos[turno].perdidos++;
 
-            // Calcula duração
+            // Calcula duração em minutos
             let tempoMin = null;
             try {
               const inicio = parseExcelDate(row["Inicio"]);
@@ -106,6 +215,7 @@
               console.warn(`Erro ao calcular tempo para ticket ${outage}:`, e);
             }
 
+            // Contabiliza tickets perdidos com ≤30 minutos
             if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
               totalPerdidosAte30min++;
               turnos[turno].perdidosAte30min++;
@@ -127,6 +237,8 @@
           turnos[turno].porcentagemImpacto = turnos[turno].perdidos > 0
             ? ((turnos[turno].perdidosAte30min / turnos[turno].perdidos) * 100).toFixed(2)
             : '0.00';
+          
+          turnos[turno].porcentagemTotal = ((turnos[turno].total / totalTickets) * 100).toFixed(2);
         }
 
         // Exibe os resultados
@@ -138,13 +250,13 @@
           <h3 class="section-title">Dados Gerais</h3>
           <div class="stats">
             <p><strong>Total de Tickets Analisados:</strong> <span class="highlight">${totalTickets}</span></p>
-            <p><strong>Tickets Perdidos:</strong> <span class="highlight">${totalPerdidos}</span></p>
+            <p><strong>Tickets Perdidos (Indicador = 0):</strong> <span class="highlight">${totalPerdidos}</span></p>
             <p><strong>Perdidos com ≤30min:</strong> <span class="highlight">${totalPerdidosAte30min}</span></p>
-            <p><strong>Representam:</strong> <span class="highlight">${porcentagemGeral}%</span> do total de perdidos</p>
+            <p><strong>% Perdidos com ≤30min:</strong> <span class="highlight">${porcentagemGeral}%</span></p>
           </div>
         `;
 
-        // Tabela por Turno (incluindo apenas turnos relevantes)
+        // Tabela por Turno (mostra apenas turnos principais)
         resultadoDiv.innerHTML += `
           <h3 class="section-title">Distribuição por Turno</h3>
           <table class="turno-table">
@@ -161,12 +273,11 @@
             <tbody>
               ${['MADRUGADA', 'MANHÃ', 'TARDE'].map(turno => {
                 const dados = turnos[turno];
-                const porcentagemTotal = ((dados.total / totalTickets) * 100).toFixed(2);
                 return `
                   <tr>
                     <td>${turno}</td>
                     <td>${dados.total}</td>
-                    <td>${porcentagemTotal}%</td>
+                    <td>${dados.porcentagemTotal}%</td>
                     <td>${dados.perdidos}</td>
                     <td>${dados.perdidosAte30min}</td>
                     <td class="highlight">${dados.porcentagemImpacto}%</td>
@@ -177,22 +288,37 @@
           </table>
         `;
 
+        // Se houver tickets em OUTROS, mostra aviso
+        if (turnos.OUTROS.total > 0) {
+          resultadoDiv.innerHTML += `
+            <p class="warning">Atenção: ${turnos.OUTROS.total} tickets não puderam ser classificados em turnos específicos.</p>
+          `;
+        }
+
+        // Determina turno com maior e menor impacto
+        const turnosPrincipais = ['MADRUGADA', 'MANHÃ', 'TARDE'];
+        const turnosComDados = turnosPrincipais.filter(t => turnos[t].perdidos > 0);
+        
+        let maiorImpacto = { turno: 'N/A', valor: 0 };
+        let menorImpacto = { turno: 'N/A', valor: 100 };
+        
+        turnosComDados.forEach(t => {
+          const impacto = parseFloat(turnos[t].porcentagemImpacto);
+          if (impacto > maiorImpacto.valor) {
+            maiorImpacto = { turno: t, valor: impacto };
+          }
+          if (impacto < menorImpacto.valor) {
+            menorImpacto = { turno: t, valor: impacto };
+          }
+        });
+
         // Conclusões
         resultadoDiv.innerHTML += `
           <h3 class="section-title">Principais Conclusões</h3>
           <div class="conclusion">
-            <p><strong>Turno com maior impacto:</strong> <span class="highlight">${Object.entries(turnos)
-              .filter(([t]) => t !== 'OUTROS')
-              .reduce((a, b) => parseFloat(a[1].porcentagemImpacto) > parseFloat(b[1].porcentagemImpacto) ? a : b)[0]}</span>
-              (${Object.values(turnos)
-                .filter(t => t !== turnos.OUTROS)
-                .reduce((a, b) => parseFloat(a.porcentagemImpacto) > parseFloat(b.porcentagemImpacto) ? a : b).porcentagemImpacto}% dos tickets perdidos têm ≤30min)</p>
-            <p><strong>Turno com menor impacto:</strong> <span class="highlight">${Object.entries(turnos)
-              .filter(([t]) => t !== 'OUTROS')
-              .reduce((a, b) => parseFloat(a[1].porcentagemImpacto) < parseFloat(b[1].porcentagemImpacto) ? a : b)[0]}</span>
-              (${Object.values(turnos)
-                .filter(t => t !== turnos.OUTROS)
-                .reduce((a, b) => parseFloat(a.porcentagemImpacto) < parseFloat(b.porcentagemImpacto) ? a : b).porcentagemImpacto}% dos tickets perdidos têm ≤30min)</p>
+            <p><strong>Turno com maior impacto:</strong> <span class="highlight">${maiorImpacto.turno}</span> (${maiorImpacto.valor}% dos tickets perdidos têm ≤30min)</p>
+            <p><strong>Turno com menor impacto:</strong> <span class="highlight">${menorImpacto.turno}</span> (${menorImpacto.valor}% dos tickets perdidos têm ≤30min)</p>
+            ${turnosComDados.includes('MADRUGADA') ? `<p><strong>MADRUGADA:</strong> ${turnos.MADRUGADA.porcentagemImpacto}% dos tickets perdidos têm ≤30min</p>` : ''}
           </div>
         `;
 
