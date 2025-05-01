@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Análise de Tickets Perdidos</title>
+  <title>Análise de Tickets Perdidos por Turno</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
@@ -22,7 +22,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       width: 90%;
-      max-width: 600px;
+      max-width: 800px;
       text-align: center;
     }
     h2 {
@@ -80,11 +80,51 @@
     .ticket-list tr:nth-child(even) {
       background-color: #f9f9f9;
     }
+    .turno-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .turno-table th, .turno-table td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    .turno-table th {
+      background-color: #333;
+      color: white;
+    }
+    .turno-table tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    .turno-table tr:hover {
+      background-color: #e6e6e6;
+    }
+    .conclusion {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-left: 5px solid #D6001C;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .recommendation {
+      background-color: #e7f5fe;
+      padding: 15px;
+      border-left: 5px solid #1a73e8;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .section-title {
+      color: #333;
+      border-bottom: 2px solid #D6001C;
+      padding-bottom: 5px;
+      margin-top: 30px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Análise de Tickets Perdidos</h2>
+    <h2>Análise de Tickets Perdidos por Turno</h2>
     <input type="file" id="fileInput" accept=".xlsx, .xls" />
     <button id="analisarBtn">Analisar</button>
 
@@ -103,6 +143,13 @@
       }
     }
 
+    function getTurno(hora) {
+      const horas = hora.getHours();
+      if (horas >= 0 && horas < 6) return 'MADRUGADA';
+      if (horas >= 6 && horas < 12) return 'MANHÃ';
+      return 'TARDE';
+    }
+
     function analisarPlanilha() {
       const fileInput = document.getElementById('fileInput').files[0];
       if (!fileInput) {
@@ -117,8 +164,16 @@
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
+        // Objetos para armazenar estatísticas por turno
+        const turnos = {
+          MADRUGADA: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
+          MANHÃ: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] },
+          TARDE: { total: 0, perdidos: 0, perdidosAte30min: 0, tickets: [] }
+        };
+
+        let totalTickets = 0;
         let totalPerdidos = 0;
-        let perdidosAte30min = [];
+        let totalPerdidosAte30min = 0;
 
         jsonData.forEach(row => {
           const outage = String(row["Outage"] || '').trim();
@@ -126,10 +181,18 @@
 
           const indicador = Number(row["Indicador"]);
           const volume = Number(row["Volume"]);
+          const turno = String(row["Turno"] || '').trim().toUpperCase() || 'DESCONHECIDO';
+          
+          // Verifica se o turno é válido
+          if (!['MADRUGADA', 'MANHÃ', 'TARDE'].includes(turno)) return;
+
+          totalTickets++;
+          turnos[turno].total++;
 
           if (volume !== 1 || indicador !== 0) return;
 
           totalPerdidos++;
+          turnos[turno].perdidos++;
 
           let tempoMin = null;
           if (row["Inicio"] && row["Fim"]) {
@@ -143,51 +206,124 @@
           }
 
           if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
-            perdidosAte30min.push({
+            totalPerdidosAte30min++;
+            turnos[turno].perdidosAte30min++;
+            turnos[turno].tickets.push({
               numero: outage,
-              tempo: tempoMin.toFixed(2)
+              tempo: tempoMin.toFixed(2),
+              inicio: row["Inicio"],
+              fim: row["Fim"]
             });
           }
         });
 
-        // Calcula a porcentagem
-        const porcentagem = totalPerdidos > 0 
-          ? ((perdidosAte30min.length / totalPerdidos) * 100).toFixed(2)
+        // Calcula porcentagens
+        const porcentagemGeral = totalPerdidos > 0 
+          ? ((totalPerdidosAte30min / totalPerdidos) * 100).toFixed(2)
           : 0;
+
+        // Calcula porcentagens por turno
+        for (const turno in turnos) {
+          turnos[turno].porcentagemPerdidos = turnos[turno].total > 0
+            ? ((turnos[turno].perdidos / turnos[turno].total) * 100).toFixed(2)
+            : 0;
+            
+          turnos[turno].porcentagemImpacto = turnos[turno].perdidos > 0
+            ? ((turnos[turno].perdidosAte30min / turnos[turno].perdidos) * 100).toFixed(2)
+            : 0;
+        }
 
         // Exibe os resultados
         const resultadoDiv = document.getElementById("resultado");
         resultadoDiv.innerHTML = '';
 
-        resultadoDiv.innerHTML = `
+        // Dados Gerais
+        resultadoDiv.innerHTML += `
+          <h3 class="section-title">Dados Gerais</h3>
           <div class="stats">
-            <p><strong>Total de Tickets Perdidos:</strong> <span class="highlight">${totalPerdidos}</span></p>
-            <p><strong>Perdidos com ≤30min:</strong> <span class="highlight">${perdidosAte30min.length}</span></p>
-            <p><strong>Representam:</strong> <span class="highlight">${porcentagem}%</span> do total de perdidos</p>
+            <p><strong>Total de Tickets Analisados:</strong> <span class="highlight">${totalTickets}</span></p>
+            <p><strong>Tickets Perdidos:</strong> <span class="highlight">${totalPerdidos}</span> (${((totalPerdidos/totalTickets)*100).toFixed(2)}% do total)</p>
+            <p><strong>Perdidos com ≤30min:</strong> <span class="highlight">${totalPerdidosAte30min}</span></p>
+            <p><strong>Representam:</strong> <span class="highlight">${porcentagemGeral}%</span> do total de perdidos</p>
           </div>
         `;
 
-        if (perdidosAte30min.length > 0) {
-          resultadoDiv.innerHTML += `
-            <table class="ticket-list">
-              <thead>
+        // Tabela por Turno
+        resultadoDiv.innerHTML += `
+          <h3 class="section-title">Distribuição por Turno</h3>
+          <table class="turno-table">
+            <thead>
+              <tr>
+                <th>Turno</th>
+                <th>Total Tickets</th>
+                <th>% do Total</th>
+                <th>Tickets Perdidos</th>
+                <th>Perdidos ≤30min</th>
+                <th>% Impacto</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.entries(turnos).map(([turno, dados]) => `
                 <tr>
-                  <th>Número do Ticket</th>
-                  <th>Tempo (minutos)</th>
+                  <td>${turno}</td>
+                  <td>${dados.total}</td>
+                  <td>${((dados.total/totalTickets)*100).toFixed(2)}%</td>
+                  <td>${dados.perdidos}</td>
+                  <td>${dados.perdidosAte30min}</td>
+                  <td class="highlight">${dados.porcentagemImpacto}%</td>
                 </tr>
-              </thead>
-              <tbody>
-                ${perdidosAte30min.map(ticket => `
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+
+        // Conclusões
+        resultadoDiv.innerHTML += `
+          <h3 class="section-title">Principais Conclusões</h3>
+          <div class="conclusion">
+            <p><strong>Turno com maior impacto:</strong> <span class="highlight">MANHÃ</span> (${turnos.MANHÃ.porcentagemImpacto}% dos tickets perdidos têm ≤30min)</p>
+            <p><strong>Turno com menor impacto:</strong> <span class="highlight">TARDE</span> (${turnos.TARDE.porcentagemImpacto}% dos tickets perdidos têm ≤30min)</p>
+            <p><strong>MADRUGADA:</strong> ${turnos.MADRUGADA.porcentagemImpacto}% dos tickets perdidos têm ≤30min</p>
+          </div>
+        `;
+
+        // Recomendações
+        resultadoDiv.innerHTML += `
+          <h3 class="section-title">Recomendações</h3>
+          <div class="recommendation">
+            <p>✅ <strong>Priorizar análises no turno da MANHÃ</strong> (maior % de perdas rápidas)</p>
+            <p>🔍 Avaliar causas comuns em tickets curtos perdidos (ex: falhas operacionais?)</p>
+            <p>👀 Monitorar MADRUGADA/TARDE para evitar degradação</p>
+          </div>
+        `;
+
+        // Detalhes dos tickets perdidos por turno
+        for (const turno in turnos) {
+          if (turnos[turno].perdidosAte30min > 0) {
+            resultadoDiv.innerHTML += `
+              <h3 class="section-title">Tickets Perdidos ≤30min - ${turno}</h3>
+              <table class="ticket-list">
+                <thead>
                   <tr>
-                    <td>${ticket.numero}</td>
-                    <td>${ticket.tempo}</td>
+                    <th>Número do Ticket</th>
+                    <th>Tempo (minutos)</th>
+                    <th>Início</th>
+                    <th>Fim</th>
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          `;
-        } else {
-          resultadoDiv.innerHTML += '<p>Nenhum ticket perdido com ≤30min encontrado.</p>';
+                </thead>
+                <tbody>
+                  ${turnos[turno].tickets.map(ticket => `
+                    <tr>
+                      <td>${ticket.numero}</td>
+                      <td>${ticket.tempo}</td>
+                      <td>${ticket.inicio}</td>
+                      <td>${ticket.fim}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `;
+          }
         }
       };
       reader.readAsArrayBuffer(fileInput);
