@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Análise de Tickets</title>
+  <title>Tickets Fora do SLA ≤30min</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
@@ -48,40 +48,38 @@
     button:hover {
       background-color: #A80017;
     }
-    .resultados {
+    .ticket-list {
       margin-top: 20px;
-      padding: 15px;
-      background: #fff5f5;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .ticket-list th, .ticket-list td {
+      padding: 10px;
+      border: 1px solid #ddd;
       text-align: left;
     }
-    .resultados p {
-      font-size: 18px;
-      margin: 10px 0;
-      padding: 8px;
-      border-bottom: 1px solid #eee;
+    .ticket-list th {
+      background-color: #D6001C;
+      color: white;
     }
-    .resultados p:last-child {
-      border-bottom: none;
+    .ticket-list tr:nth-child(even) {
+      background-color: #f9f9f9;
     }
-    .destaque {
+    .count {
       font-weight: bold;
+      margin: 15px 0;
       color: #D6001C;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Análise de Tickets</h2>
+    <h2>Tickets Fora do SLA (≤30min)</h2>
     <input type="file" id="fileInput" accept=".xlsx, .xls" />
     <button id="analisarBtn">Analisar</button>
 
-    <div class="resultados">
-      <p><strong>Total de Tickets:</strong> <span id="totalTickets" class="destaque">0</span></p>
-      <p><strong>Tickets Dentro do SLA:</strong> <span id="dentroSLA" class="destaque">0</span></p>
-      <p><strong>Tickets Fora do SLA:</strong> <span id="foraSLA" class="destaque">0</span></p>
-      <p><strong>Fora do SLA por ≤30min:</strong> <span id="fora30min" class="destaque">0</span></p>
+    <div id="resultado">
+      <!-- Os resultados serão inseridos aqui -->
     </div>
   </div>
 
@@ -109,21 +107,16 @@
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        let totalTickets = 0;
-        let dentroSLA = 0;
-        let foraSLA = 0;
-        let foraSLA30min = 0;
+        let ticketsFora30min = [];
 
         jsonData.forEach(row => {
           const outage = String(row["Outage"] || '').trim();
           if (!outage || outage.startsWith("0")) return;
 
-          totalTickets++;
-
           const indicador = Number(row["Indicador"]);
           const volume = Number(row["Volume"]);
 
-          if (volume !== 1) return;
+          if (volume !== 1 || indicador !== 0) return;
 
           let tempoMin = null;
           if (row["Inicio"] && row["Fim"]) {
@@ -136,21 +129,42 @@
             }
           }
 
-          if (indicador === 1) {
-            dentroSLA++;
-          } else if (indicador === 0) {
-            foraSLA++;
-            if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
-              foraSLA30min++;
-            }
+          if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
+            ticketsFora30min.push({
+              numero: outage,
+              tempo: tempoMin.toFixed(2)
+            });
           }
         });
 
-        // Atualiza a interface
-        document.getElementById("totalTickets").textContent = totalTickets;
-        document.getElementById("dentroSLA").textContent = dentroSLA;
-        document.getElementById("foraSLA").textContent = foraSLA;
-        document.getElementById("fora30min").textContent = foraSLA30min;
+        // Exibe os resultados
+        const resultadoDiv = document.getElementById("resultado");
+        resultadoDiv.innerHTML = '';
+
+        if (ticketsFora30min.length === 0) {
+          resultadoDiv.innerHTML = '<p class="count">Nenhum ticket fora do SLA com ≤30min encontrado.</p>';
+          return;
+        }
+
+        resultadoDiv.innerHTML = `
+          <p class="count">Total de Tickets Fora do SLA com ≤30min: ${ticketsFora30min.length}</p>
+          <table class="ticket-list">
+            <thead>
+              <tr>
+                <th>Número do Ticket</th>
+                <th>Tempo (minutos)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ticketsFora30min.map(ticket => `
+                <tr>
+                  <td>${ticket.numero}</td>
+                  <td>${ticket.tempo}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
       };
       reader.readAsArrayBuffer(fileInput);
     }
