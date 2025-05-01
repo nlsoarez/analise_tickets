@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tickets Fora do SLA ≤30min</title>
+  <title>Análise de Tickets Perdidos</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
@@ -48,10 +48,25 @@
     button:hover {
       background-color: #A80017;
     }
+    .stats {
+      background: #fff5f5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .stats p {
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    .highlight {
+      font-weight: bold;
+      color: #D6001C;
+    }
     .ticket-list {
-      margin-top: 20px;
       width: 100%;
       border-collapse: collapse;
+      margin-top: 15px;
     }
     .ticket-list th, .ticket-list td {
       padding: 10px;
@@ -65,21 +80,16 @@
     .ticket-list tr:nth-child(even) {
       background-color: #f9f9f9;
     }
-    .count {
-      font-weight: bold;
-      margin: 15px 0;
-      color: #D6001C;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Tickets Fora do SLA (≤30min)</h2>
+    <h2>Análise de Tickets Perdidos</h2>
     <input type="file" id="fileInput" accept=".xlsx, .xls" />
     <button id="analisarBtn">Analisar</button>
 
     <div id="resultado">
-      <!-- Os resultados serão inseridos aqui -->
+      <!-- Resultados serão inseridos aqui -->
     </div>
   </div>
 
@@ -107,7 +117,8 @@
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        let ticketsFora30min = [];
+        let totalPerdidos = 0;
+        let perdidosAte30min = [];
 
         jsonData.forEach(row => {
           const outage = String(row["Outage"] || '').trim();
@@ -117,6 +128,8 @@
           const volume = Number(row["Volume"]);
 
           if (volume !== 1 || indicador !== 0) return;
+
+          totalPerdidos++;
 
           let tempoMin = null;
           if (row["Inicio"] && row["Fim"]) {
@@ -130,46 +143,56 @@
           }
 
           if (tempoMin !== null && tempoMin > 0 && tempoMin <= 30) {
-            ticketsFora30min.push({
+            perdidosAte30min.push({
               numero: outage,
               tempo: tempoMin.toFixed(2)
             });
           }
         });
 
+        // Calcula a porcentagem
+        const porcentagem = totalPerdidos > 0 
+          ? ((perdidosAte30min.length / totalPerdidos) * 100).toFixed(2)
+          : 0;
+
         // Exibe os resultados
         const resultadoDiv = document.getElementById("resultado");
         resultadoDiv.innerHTML = '';
 
-        if (ticketsFora30min.length === 0) {
-          resultadoDiv.innerHTML = '<p class="count">Nenhum ticket fora do SLA com ≤30min encontrado.</p>';
-          return;
-        }
-
         resultadoDiv.innerHTML = `
-          <p class="count">Total de Tickets Fora do SLA com ≤30min: ${ticketsFora30min.length}</p>
-          <table class="ticket-list">
-            <thead>
-              <tr>
-                <th>Número do Ticket</th>
-                <th>Tempo (minutos)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${ticketsFora30min.map(ticket => `
-                <tr>
-                  <td>${ticket.numero}</td>
-                  <td>${ticket.tempo}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          <div class="stats">
+            <p><strong>Total de Tickets Perdidos:</strong> <span class="highlight">${totalPerdidos}</span></p>
+            <p><strong>Perdidos com ≤30min:</strong> <span class="highlight">${perdidosAte30min.length}</span></p>
+            <p><strong>Representam:</strong> <span class="highlight">${porcentagem}%</span> do total de perdidos</p>
+          </div>
         `;
+
+        if (perdidosAte30min.length > 0) {
+          resultadoDiv.innerHTML += `
+            <table class="ticket-list">
+              <thead>
+                <tr>
+                  <th>Número do Ticket</th>
+                  <th>Tempo (minutos)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${perdidosAte30min.map(ticket => `
+                  <tr>
+                    <td>${ticket.numero}</td>
+                    <td>${ticket.tempo}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } else {
+          resultadoDiv.innerHTML += '<p>Nenhum ticket perdido com ≤30min encontrado.</p>';
+        }
       };
       reader.readAsArrayBuffer(fileInput);
     }
 
-    // Configura o evento de clique
     document.getElementById('analisarBtn').addEventListener('click', analisarPlanilha);
   </script>
 </body>
