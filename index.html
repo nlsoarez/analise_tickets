@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Análise de Tickets</title>
+    <title>Painel de Análise de Tickets - Claro Brasil</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -364,7 +364,7 @@
 <body>
     <header>
         <div class="container">
-            <h1>Painel de Análise de Tickets</h1>
+            <h1>Painel de Análise de Tickets - Claro Brasil</h1>
         </div>
     </header>
     
@@ -467,9 +467,9 @@
         let processedData = {
             ticketsForaSLA: [],
             turnos: {
-                MADRUGADA: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
                 MANHÃ: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
-                TARDE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
+                TARDE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
+                NOITE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
             },
             summary: {
                 totalTickets: 0,
@@ -571,9 +571,9 @@
             processedData = {
                 ticketsForaSLA: [],
                 turnos: {
-                    MADRUGADA: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
                     MANHÃ: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
-                    TARDE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
+                    TARDE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 },
+                    NOITE: { tickets: [], total: 0, dentro: 0, fora: 0, foraMenos30: 0 }
                 },
                 summary: {
                     totalTickets: 0,
@@ -588,7 +588,10 @@
             data.forEach(row => {
                 if (!row.Turno || row.Volume !== 1) return; // Considerar apenas tickets com Volume=1
                 
-                const turno = row.Turno.toUpperCase();
+                // Converter "MADRUGADA" para "NOITE" para consistência
+                let turno = row.Turno.toUpperCase();
+                turno = turno === 'MADRUGADA' ? 'NOITE' : turno;
+                
                 if (!processedData.turnos[turno]) return; // Ignorar turnos não mapeados
                 
                 processedData.summary.totalTickets++;
@@ -656,7 +659,11 @@
             const turnoTableBody = document.getElementById('turnoTableBody');
             turnoTableBody.innerHTML = '';
             
-            for (const [turno, dados] of Object.entries(processedData.turnos)) {
+            // Ordem dos turnos para exibição: Manhã, Tarde, Noite
+            const turnosOrdenados = ['MANHÃ', 'TARDE', 'NOITE'];
+            
+            for (const turno of turnosOrdenados) {
+                const dados = processedData.turnos[turno];
                 const row = turnoTableBody.insertRow();
                 
                 const percentForaMenos30 = dados.fora > 0 ? 
@@ -677,7 +684,15 @@
             
             let hasTickets = false;
             
-            for (const [turno, dados] of Object.entries(processedData.turnos)) {
+            // Ordem dos turnos: Manhã, Tarde, Noite
+            const turnosOrdenados = [
+                { nome: 'MANHÃ', dados: processedData.turnos.MANHÃ },
+                { nome: 'TARDE', dados: processedData.turnos.TARDE },
+                { nome: 'NOITE', dados: processedData.turnos.NOITE }
+            ];
+            
+            // Percorrer os turnos na ordem definida
+            for (const {nome, dados} of turnosOrdenados) {
                 if (dados.tickets.length === 0) continue;
                 
                 hasTickets = true;
@@ -692,7 +707,7 @@
                 
                 const turnoTitle = document.createElement('span');
                 turnoTitle.className = 'turno-title';
-                turnoTitle.textContent = `Turno: ${turno}`;
+                turnoTitle.textContent = `Turno: ${nome}`;
                 
                 const turnoCount = document.createElement('span');
                 turnoCount.className = 'turno-count';
@@ -748,30 +763,33 @@
             if (turnoChart) turnoChart.destroy();
             if (slaChart) slaChart.destroy();
             
+            // Ordem dos turnos para os gráficos
+            const turnosOrdenados = ['MANHÃ', 'TARDE', 'NOITE'];
+            
             // Gráfico de distribuição por turno
             const turnoCtx = document.getElementById('turnoChart').getContext('2d');
             turnoChart = new Chart(turnoCtx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(processedData.turnos),
+                    labels: turnosOrdenados,
                     datasets: [
                         {
                             label: 'Dentro SLA',
-                            data: Object.values(processedData.turnos).map(t => t.dentro),
+                            data: turnosOrdenados.map(t => processedData.turnos[t].dentro),
                             backgroundColor: '#2ecc71',
                             borderColor: '#27ae60',
                             borderWidth: 1
                         },
                         {
                             label: 'Fora SLA',
-                            data: Object.values(processedData.turnos).map(t => t.fora),
+                            data: turnosOrdenados.map(t => processedData.turnos[t].fora),
                             backgroundColor: '#E31937',
                             borderColor: '#C0102C',
                             borderWidth: 1
                         },
                         {
                             label: 'Fora SLA <30min',
-                            data: Object.values(processedData.turnos).map(t => t.foraMenos30),
+                            data: turnosOrdenados.map(t => processedData.turnos[t].foraMenos30),
                             backgroundColor: '#FFA500',
                             borderColor: '#CC8400',
                             borderWidth: 1
