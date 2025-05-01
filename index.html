@@ -581,19 +581,13 @@
                 
                 // Calcular duração
                 let duracaoMinutos = 0;
-                let tempoFormatado = "00:00:00";
                 
                 if (row.Tempo) {
                     if (typeof row.Tempo === 'string') {
                         const [hours, minutes, seconds] = row.Tempo.split(':').map(Number);
                         duracaoMinutos = hours * 60 + minutes + seconds / 60;
-                        tempoFormatado = row.Tempo;
                     } else if (typeof row.Tempo === 'number') {
                         duracaoMinutos = row.Tempo * 24 * 60;
-                        const hours = Math.floor(duracaoMinutos / 60);
-                        const minutes = Math.floor(duracaoMinutos % 60);
-                        const seconds = Math.floor((duracaoMinutos * 60) % 60);
-                        tempoFormatado = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     }
                 }
                 
@@ -601,7 +595,6 @@
                 const ticketInfo = {
                     id: row.Outage || "N/A",
                     login: row.Login || "N/A",
-                    tempo: tempoFormatado,
                     duracaoMinutos: duracaoMinutos,
                     turno: turno
                 };
@@ -697,17 +690,15 @@
                 const headerRow = table.insertRow();
                 headerRow.insertCell(0).textContent = 'Ticket ID';
                 headerRow.insertCell(1).textContent = 'Login';
-                headerRow.insertCell(2).textContent = 'Duração';
-                headerRow.insertCell(3).textContent = 'Tempo (min)';
+                headerRow.insertCell(2).textContent = 'Tempo (min)';
                 
                 // Adicionar tickets
                 dados.tickets.forEach(ticket => {
                     const row = table.insertRow();
                     row.insertCell(0).textContent = ticket.id;
                     row.insertCell(1).textContent = ticket.login;
-                    row.insertCell(2).textContent = ticket.tempo;
                     
-                    const minutosCell = row.insertCell(3);
+                    const minutosCell = row.insertCell(2);
                     minutosCell.textContent = ticket.duracaoMinutos.toFixed(2);
                     
                     // Destacar duração
