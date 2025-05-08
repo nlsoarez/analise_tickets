@@ -1,91 +1,287 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Análise de Outages - Claro Brasil</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banco de Horas | Controle Mensal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f8f9fa;
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --secondary: #3f37c9;
+      --danger: #f72585;
+      --warning: #f77f00;
+      --success: #4cc9f0;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --white: #ffffff;
+      --excesso: #ff9999;
+      --normal: #b3e6b3;
+      --negativo: #ffcccc;
+      --violacao: #ff6666;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f7fa;
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
       padding: 20px;
     }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .upload-area {
-      border: 2px dashed #6c757d;
-      padding: 30px;
-      text-align: center;
-      border-radius: 10px;
-      background-color: white;
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 30px;
-      transition: all 0.3s;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--primary-light);
     }
-    .upload-area:hover {
-      border-color: #00A1E0;
-      background-color: #f8f9ff;
+
+    h1 {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 28px;
     }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      font-size: 32px;
+      color: var(--primary);
+    }
+
     .card {
-      margin-bottom: 20px;
+      background-color: var(--white);
       border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 25px;
+      margin-bottom: 25px;
     }
-    .card-header {
-      font-weight: 600;
-      background-color: #00A1E0;
-      color: white;
-      border-radius: 10px 10px 0 0 !important;
-      cursor: pointer;
+
+    .card-title {
+      font-size: 20px;
+      color: var(--primary);
+      margin-bottom: 20px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 10px;
+
+    .card-title i {
+      font-size: 24px;
+    }
+
+    .legenda {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .legenda-item {
+      display: flex;
+      align-items: center;
       font-size: 14px;
     }
-    th, td {
-      border: 1px solid #dee2e6;
-      padding: 10px;
-      text-align: left;
+
+    .legenda-cor {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      margin-right: 8px;
+      border: 1px solid rgba(0,0,0,0.1);
     }
-    th {
-      background-color: #f1f1f1;
-      font-weight: 600;
+
+    .form-group {
+      margin-bottom: 15px;
     }
-    tr:hover {
-      background-color: #f8f9fa;
-    }
-    .chart-container {
-      position: relative;
-      height: 300px;
-      margin-bottom: 30px;
-    }
-    .filter-section {
-      background-color: white;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-    .total-outages {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #00A1E0;
-    }
-    .scrollable-table {
-      max-height: 400px;
-      overflow-y: auto;
+
+    label {
       display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--dark);
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      font-size: 14px;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--secondary);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #d3166d;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    th {
+      background-color: var(--primary);
+      color: white;
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover {
+      background-color: rgba(67, 97, 238, 0.05);
+    }
+
+    .violacao {
+      background-color: var(--violacao);
+      color: white;
+      font-weight: bold;
+    }
+
+    .excesso {
+      background-color: var(--excesso);
+    }
+
+    .normal {
+      background-color: var(--normal);
+    }
+
+    .saldo-negativo {
+      background-color: var(--negativo);
+    }
+
+    .total {
+      font-weight: bold;
+      background-color: rgba(108, 117, 125, 0.1);
+    }
+
+    .sem-dados {
+      color: var(--gray);
+      font-style: italic;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-ok {
+      background-color: rgba(76, 201, 240, 0.2);
+      color: var(--success);
+    }
+
+    .status-violacao {
+      background-color: rgba(247, 37, 133, 0.2);
+      color: var(--danger);
+    }
+
+    .filtros {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
       margin-bottom: 20px;
     }
-    .loading-overlay {
+
+    .filtro-group {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Modal */
+    .modal {
       position: fixed;
       top: 0;
       left: 0;
@@ -96,693 +292,610 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
-      flex-direction: column;
-      color: white;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
     }
-    .spinner-border {
-      width: 3rem;
-      height: 3rem;
+
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
     }
-    .progress {
-      width: 50%;
-      margin-top: 20px;
+
+    .modal-content {
+      background-color: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transform: translateY(-20px);
+      transition: all 0.3s;
     }
-    .toast-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1100;
+
+    .modal.active .modal-content {
+      transform: translateY(0);
     }
-    .no-data {
-      text-align: center;
-      color: #666;
-      font-style: italic;
+
+    .modal-header {
       padding: 20px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--primary);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--gray);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      .btn-group {
+        width: 100%;
+      }
+      
+      .btn {
+        flex: 1;
+        min-width: 120px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Loading Overlay (inicialmente oculto) -->
-    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Carregando...</span>
+<div class="container">
+  <header>
+    <div class="logo">
+      <span class="logo-icon"><i class="fas fa-clock"></i></span>
+      <h1>Banco de Horas</h1>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-outline" onclick="exportarDados()">
+        <i class="fas fa-file-export"></i> Exportar
+      </button>
+      <button class="btn btn-outline" onclick="importarDados()">
+        <i class="fas fa-file-import"></i> Importar
+      </button>
+      <button class="btn btn-danger" onclick="limparDados()">
+        <i class="fas fa-trash-alt"></i> Limpar
+      </button>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2 class="card-title"><i class="fas fa-info-circle"></i> Legenda</h2>
+    <div class="legenda">
+      <div class="legenda-item">
+        <span class="legenda-cor" style="background-color: var(--violacao);"></span>
+        Violação: 3+ meses consecutivos >10h
       </div>
-      <div class="mt-3">Processando arquivos, por favor aguarde...</div>
-      <div class="progress mt-3">
-        <div id="loadingProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
-             role="progressbar" style="width: 0%"></div>
+      <div class="legenda-item">
+        <span class="legenda-cor" style="background-color: var(--excesso);"></span>
+        Saldo >10h
+      </div>
+      <div class="legenda-item">
+        <span class="legenda-cor" style="background-color: var(--normal);"></span>
+        Saldo entre 0-10h
+      </div>
+      <div class="legenda-item">
+        <span class="legenda-cor" style="background-color: var(--negativo);"></span>
+        Saldo negativo
       </div>
     </div>
+  </div>
 
-    <!-- Toast de conclusão -->
-    <div class="toast-container">
-      <div id="successToast" class="toast align-items-center text-white bg-success" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            Arquivos processados com sucesso!
-          </div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-      </div>
+  <div class="card">
+    <h2 class="card-title"><i class="fas fa-edit"></i> Controle de Dados</h2>
+    <div class="form-group">
+      <label for="selecionarMes">Selecione o mês para edição:</label>
+      <select id="selecionarMes">
+        <option value="maio">Maio</option>
+        <option value="junho">Junho</option>
+        <option value="julho">Julho</option>
+        <option value="agosto">Agosto</option>
+        <option value="setembro">Setembro</option>
+        <option value="outubro">Outubro</option>
+        <option value="novembro">Novembro</option>
+        <option value="dezembro">Dezembro</option>
+      </select>
     </div>
+    <button class="btn btn-primary" onclick="editarMes()">
+      <i class="fas fa-pencil-alt"></i> Editar Mês
+    </button>
+  </div>
 
-    <h1 class="text-center mb-4" style="color: #00A1E0;">Análise de Outages - Claro Brasil</h1>
-    
-    <div class="upload-area">
-      <input type="file" id="fileUpload" class="form-control" multiple accept=".xlsx,.xls" />
-      <p class="mt-2 text-muted">Arraste e solte ou clique para selecionar planilhas Excel</p>
-    </div>
-
-    <div class="filter-section">
-      <div class="row">
-        <div class="col-md-3">
-          <label for="technologyFilter" class="form-label">Filtrar por Tecnologia:</label>
-          <select id="technologyFilter" class="form-select" disabled>
-            <option value="all">Todas</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label for="clusterFilter" class="form-label">Filtrar por Cluster:</label>
-          <select id="clusterFilter" class="form-select" disabled>
-            <option value="all">Todos</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label for="timeFilter" class="form-label">Filtrar por Horário:</label>
-          <select id="timeFilter" class="form-select" disabled>
-            <option value="all">Todos</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label for="loginFilter" class="form-label">Filtrar por Técnico:</label>
-          <select id="loginFilter" class="form-select" disabled>
-            <option value="all">Todos</option>
-          </select>
-        </div>
+  <div class="card">
+    <h2 class="card-title"><i class="fas fa-filter"></i> Filtros</h2>
+    <div class="filtros">
+      <div class="filtro-group">
+        <label for="filtroNome">Buscar por nome:</label>
+        <input type="text" id="filtroNome" onkeyup="filtrarTabela()" placeholder="Digite o nome...">
       </div>
-    </div>
-
-    <div id="summary" class="mb-4" style="display: none;">
-      <div class="row">
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h6 class="card-subtitle mb-2 text-muted">Total de Outages</h6>
-              <div class="total-outages" id="totalOutages">0</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h6 class="card-subtitle mb-2 text-muted">Tecnologia Principal</h6>
-              <div class="total-outages" id="mainTech">-</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h6 class="card-subtitle mb-2 text-muted">Cluster Principal</h6>
-              <div class="total-outages" id="mainCluster">-</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h6 class="card-subtitle mb-2 text-muted">Horário Pico</h6>
-              <div class="total-outages" id="peakTime">-</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">Volume por Técnico</div>
-          <div class="card-body">
-            <div class="chart-container">
-              <canvas id="loginChart"></canvas>
-            </div>
-            <div class="scrollable-table">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Técnico</th>
-                    <th>Volume</th>
-                    <th>%</th>
-                  </tr>
-                </thead>
-                <tbody id="loginTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">Volume por Cluster</div>
-          <div class="card-body">
-            <div class="chart-container">
-              <canvas id="clusterChart"></canvas>
-            </div>
-            <div class="scrollable-table">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Cluster</th>
-                    <th>Volume</th>
-                    <th>%</th>
-                  </tr>
-                </thead>
-                <tbody id="clusterTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row mt-4">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">Volume por Horário</div>
-          <div class="card-body">
-            <div class="chart-container">
-              <canvas id="timeChart"></canvas>
-            </div>
-            <div class="scrollable-table">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Horário</th>
-                    <th>Volume</th>
-                    <th>%</th>
-                  </tr>
-                </thead>
-                <tbody id="timeTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">Volume por Tecnologia</div>
-          <div class="card-body">
-            <div class="chart-container">
-              <canvas id="techChart"></canvas>
-            </div>
-            <div class="scrollable-table">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Tecnologia</th>
-                    <th>Volume</th>
-                    <th>%</th>
-                  </tr>
-                </thead>
-                <tbody id="techTableBody"></tbody>
-              </table>
-            </div>
-          </div>
+      <div class="filtro-group">
+        <label>Filtros avançados:</label>
+        <div class="checkbox-group">
+          <input type="checkbox" id="filtroViolacao" onchange="filtrarTabela()">
+          <label for="filtroViolacao">Mostrar apenas violações</label>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    // Objeto para armazenar os toasts
-    const toasts = {};
+  <div class="card">
+    <h2 class="card-title"><i class="fas fa-table"></i> Dados dos Analistas</h2>
+    <div class="table-container">
+      <table id="tabelaHoras">
+        <thead>
+          <tr>
+            <th>Analista</th>
+            <!-- Meses serão adicionados dinamicamente -->
+            <th>Total</th>
+            <th>Meses >10h</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dados serão inseridos via JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-    // Lista de técnicos que devem ser exibidos individualmente
-    const tecnicosEspecificos = {
-      "N0238475": "MARLEY MARQUES RIBEIRO",
-      "N5923221": "KELLY PINHEIRO LIRA",
-      "F160641": "JENNIFER MARIA ANDRADE SANTOS",
-      "N5772086": "THIAGO PEREIRA DA SILVA",
-      "N0239871": "LEONARDO FERREIRA LIMA DE ALMEIDA",
-      "N5577565": "MARISTELLA MARCIA DOS SANTOS",
-      "N5737414": "SANDRO DA SILVA CARVALHO",
-      "N5972428": "CRISTIANE HERMOGENES DA SILVA",
-      "N6173055": "JEFFERSON LUIS GONÇALVES COITINHO",
-      "N5932090": "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA",
-      "N0255801": "ELBERTON ANICETO HENRIQUE",
-      "N4014011": "ALAN MARINHO DIAS",
-      "N5923996": "JULIO CESAR SANTOS SOARES"
-    };
+<!-- Modal -->
+<div class="modal" id="modalEdicao">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitulo">Editar Mês</h3>
+      <button class="modal-close" onclick="fecharModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Analista</th>
+              <th>Horas</th>
+            </tr>
+          </thead>
+          <tbody id="modalBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="fecharModal()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn btn-primary" id="salvarModal">
+        <i class="fas fa-save"></i> Salvar
+      </button>
+    </div>
+  </div>
+</div>
 
-    let allData = [];
-    let currentFilters = {
-      technology: 'all',
-      cluster: 'all',
-      time: 'all',
-      login: 'all'
-    };
+<script>
+  // Estrutura de dados inicial
+  let bancoHoras = {
+    meses: [], // Ordem dos meses adicionados
+    funcionarios: [] // Dados dos funcionários
+  };
 
-    // Inicializar toasts quando o DOM estiver carregado
-    document.addEventListener('DOMContentLoaded', function() {
-      // Inicializar toast de sucesso
-      const successToastEl = document.getElementById('successToast');
-      toasts.success = new bootstrap.Toast(successToastEl, {
-        autohide: true,
-        delay: 5000
+  // Nomes dos funcionários
+  const nomesFuncionarios = [
+    "LEANDRO GONÇALVES DE CARVALHO",
+    "BRUNO COSTA BUCARD",
+    "IGOR MARCELINO DE MARINS",
+    "GABRIELA TAVARES DA SILVA",
+    "MAGNO FERRAREZ DE MORAIS",
+    "DANIEL MARCELO FELISBERTO OLIVEIRA",
+    "FERNANDA MESQUITA DE FREITAS",
+    "ROBERTO SILVA DO NASCIMENTO",
+    "RODRIGO PIRES BERNARDINO",
+    "SUELLEN HERNANDEZ DA SILVA",
+    "MONICA DA SILVA RODRIGUES",
+    "MARLEY MARQUES RIBEIRO",
+    "KELLY PINHEIRO LIRA",
+    "JENNIFER MARIA ANDRADE SANTOS",
+    "THIAGO PEREIRA DA SILVA",
+    "LEONARDO FERREIRA LIMA DE ALMEIDA",
+    "MARISTELLA MARCIA DOS SANTOS",
+    "SANDRO DA SILVA CARVALHO",
+    "CRISTIANE HERMOGENES DA SILVA",
+    "JEFFERSON LUIS GONÇALVES COITINHO",
+    "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA",
+    "ELBERTON ANICETO HENRIQUE",
+    "ALAN MARINHO DIAS",
+    "JULIO CESAR SANTOS SOARES",
+    "CARLOS EDUARDO BARRETO DE ABREU",
+    "ROSANA RIEGER MATOS",
+    "THIAGO DE SOUZA INACIO"
+  ];
+
+  // Dados iniciais de Maio
+  const dadosIniciaisMaio = {
+    "LEANDRO GONÇALVES DE CARVALHO": -4.22,
+    "BRUNO COSTA BUCARD": 4.59,
+    "IGOR MARCELINO DE MARINS": -0.16,
+    "GABRIELA TAVARES DA SILVA": -10.34,
+    "MAGNO FERRAREZ DE MORAIS": null,
+    "DANIEL MARCELO FELISBERTO OLIVEIRA": 8.02,
+    "FERNANDA MESQUITA DE FREITAS": 2.42,
+    "ROBERTO SILVA DO NASCIMENTO": 2.04,
+    "RODRIGO PIRES BERNARDINO": 0.04,
+    "SUELLEN HERNANDEZ DA SILVA": 10.08,
+    "MONICA DA SILVA RODRIGUES": 10.57,
+    "MARLEY MARQUES RIBEIRO": 11.51,
+    "KELLY PINHEIRO LIRA": 1.56,
+    "JENNIFER MARIA ANDRADE SANTOS": 6.08,
+    "THIAGO PEREIRA DA SILVA": 9.39,
+    "LEONARDO FERREIRA LIMA DE ALMEIDA": 9.27,
+    "MARISTELLA MARCIA DOS SANTOS": 1.55,
+    "SANDRO DA SILVA CARVALHO": -6.49,
+    "CRISTIANE HERMOGENES DA SILVA": 9.55,
+    "JEFFERSON LUIS GONÇALVES COITINHO": 14.36,
+    "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA": -59,
+    "ELBERTON ANICETO HENRIQUE": 8.35,
+    "ALAN MARINHO DIAS": 11.45,
+    "JULIO CESAR SANTOS SOARES": 13.12,
+    "CARLOS EDUARDO BARRETO DE ABREU": 7.07,
+    "ROSANA RIEGER MATOS": 10.50,
+    "THIAGO DE SOUZA INACIO": 8.40
+  };
+
+  // Nomes dos meses para exibição
+  const mesesNomes = {
+    "maio": "Maio",
+    "junho": "Junho",
+    "julho": "Julho",
+    "agosto": "Agosto",
+    "setembro": "Setembro",
+    "outubro": "Outubro",
+    "novembro": "Novembro",
+    "dezembro": "Dezembro"
+  };
+
+  // Carregar dados salvos ao iniciar
+  document.addEventListener('DOMContentLoaded', function() {
+    carregarDados();
+    inicializarTabela();
+  });
+
+  // Carrega dados do localStorage ou inicializa com Maio
+  function carregarDados() {
+    const dadosSalvos = localStorage.getItem('bancoHoras');
+    if (dadosSalvos) {
+      bancoHoras = JSON.parse(dadosSalvos);
+    } else {
+      // Inicializar com dados de Maio
+      bancoHoras.meses = ["maio"];
+      bancoHoras.funcionarios = nomesFuncionarios.map(nome => {
+        return {
+          nome: nome,
+          maio: dadosIniciaisMaio[nome]
+        };
       });
+      salvarDados();
+    }
+  }
+
+  // Salva dados no localStorage
+  function salvarDados() {
+    localStorage.setItem('bancoHoras', JSON.stringify(bancoHoras));
+  }
+
+  // Inicializa a tabela com os dados atuais
+  function inicializarTabela() {
+    const tbody = document.querySelector("#tabelaHoras tbody");
+    tbody.innerHTML = "";
+
+    // Configurar cabeçalho com meses
+    const thead = document.querySelector("#tabelaHoras thead tr");
+    thead.innerHTML = "<th>Analista</th>";
+    
+    bancoHoras.meses.forEach(mesId => {
+      thead.innerHTML += `<th>${mesesNomes[mesId]}</th>`;
+    });
+    
+    thead.innerHTML += "<th>Total</th><th>Meses >10h</th><th>Status</th>";
+
+    // Adicionar linhas para cada funcionário
+    bancoHoras.funcionarios.forEach(funcionario => {
+      const row = document.createElement("tr");
+      
+      // Nome do funcionário
+      const nomeCell = document.createElement("td");
+      nomeCell.textContent = funcionario.nome;
+      row.appendChild(nomeCell);
+
+      // Células para cada mês
+      bancoHoras.meses.forEach(mesId => {
+        const cell = document.createElement("td");
+        const valor = funcionario[mesId];
+        
+        if (valor !== null && valor !== undefined) {
+          cell.textContent = valor.toFixed(2);
+          aplicarEstiloCelula(cell, valor);
+        } else {
+          cell.textContent = "";
+          cell.classList.add("sem-dados");
+        }
+        
+        row.appendChild(cell);
+      });
+
+      // Célula de total
+      const totalCell = document.createElement("td");
+      totalCell.classList.add("total");
+      row.appendChild(totalCell);
+
+      // Célula de meses com excesso
+      const excessoCell = document.createElement("td");
+      row.appendChild(excessoCell);
+
+      // Célula de status
+      const statusCell = document.createElement("td");
+      row.appendChild(statusCell);
+
+      tbody.appendChild(row);
     });
 
-    document.getElementById('fileUpload').addEventListener('change', handleFiles, false);
-    document.getElementById('technologyFilter').addEventListener('change', applyFilters);
-    document.getElementById('clusterFilter').addEventListener('change', applyFilters);
-    document.getElementById('timeFilter').addEventListener('change', applyFilters);
-    document.getElementById('loginFilter').addEventListener('change', applyFilters);
+    atualizarTotais();
+    verificarViolacoes();
+  }
 
-    function showLoading() {
-      document.getElementById('loadingOverlay').style.display = 'flex';
-      document.getElementById('loadingProgress').style.width = '0%';
+  // Aplica o estilo correto para cada célula baseado no valor
+  function aplicarEstiloCelula(cell, valor) {
+    // Limpar classes anteriores
+    cell.className = '';
+    
+    if (valor === null || valor === undefined) {
+      cell.classList.add("sem-dados");
+      return;
     }
-
-    function updateProgress(percent) {
-      document.getElementById('loadingProgress').style.width = `${percent}%`;
+    
+    if (valor > 10) {
+      cell.classList.add("excesso");
+    } else if (valor >= 0) {
+      cell.classList.add("normal");
+    } else {
+      cell.classList.add("saldo-negativo");
     }
+  }
 
-    function hideLoading() {
-      document.getElementById('loadingOverlay').style.display = 'none';
-      // Mostrar toast de sucesso
-      if (toasts.success) {
-        toasts.success.show();
-      }
-    }
-
-    async function handleFiles(e) {
-      const files = e.target.files;
-      allData = [];
+  // Abre modal para editar um mês específico
+  function editarMes() {
+    const mesId = document.getElementById("selecionarMes").value;
+    const mesNome = mesesNomes[mesId];
+    
+    // Verificar se o mês já existe, se não, adicionar
+    if (!bancoHoras.meses.includes(mesId)) {
+      bancoHoras.meses.push(mesId);
       
-      if (files.length === 0) return;
-
-      showLoading();
+      // Adicionar propriedade do mês para cada funcionário
+      bancoHoras.funcionarios.forEach(func => {
+        func[mesId] = null;
+      });
       
-      try {
-        const fileCount = files.length;
-        let processedCount = 0;
-        
-        const results = await Promise.all(Array.from(files).map(async (file) => {
-          const fileData = await readFile(file);
-          processedCount++;
-          updateProgress(Math.round((processedCount / fileCount) * 100));
-          return fileData;
-        }));
-        
-        allData = results.flat();
-        console.log("Total de registros carregados:", allData.length);
-        
-        initializeFilters();
-        processData(allData);
-        hideLoading();
-      } catch (error) {
-        console.error("Erro ao ler arquivos:", error);
-        hideLoading();
-        alert("Erro ao processar arquivos. Verifique se os arquivos estão no formato correto.");
-      }
+      salvarDados();
     }
+    
+    // Atualizar título do modal
+    document.getElementById("modalTitulo").textContent = `Editar ${mesNome}`;
+    
+    // Preencher tabela no modal
+    const modalBody = document.getElementById("modalBody");
+    modalBody.innerHTML = "";
+    
+    bancoHoras.funcionarios.forEach(funcionario => {
+      const row = document.createElement("tr");
+      
+      const nomeCell = document.createElement("td");
+      nomeCell.textContent = funcionario.nome;
+      row.appendChild(nomeCell);
+      
+      const horasCell = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "number";
+      input.step = "0.01";
+      input.value = funcionario[mesId] !== null && funcionario[mesId] !== undefined ? funcionario[mesId] : "";
+      input.style.width = "100%";
+      input.style.padding = "8px";
+      input.style.border = "1px solid #ddd";
+      input.style.borderRadius = "4px";
+      horasCell.appendChild(input);
+      row.appendChild(horasCell);
+      
+      modalBody.appendChild(row);
+    });
+    
+    // Configurar evento de salvar
+    document.getElementById("salvarModal").onclick = function() {
+      salvarDadosMes(mesId);
+    };
+    
+    // Mostrar modal
+    document.getElementById("modalEdicao").classList.add("active");
+  }
 
-    function readFile(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
+  // Salva os dados do mês editado
+  function salvarDadosMes(mesId) {
+    const inputs = document.querySelectorAll("#modalBody input");
+    
+    inputs.forEach((input, index) => {
+      const valor = input.value.trim() === "" ? null : parseFloat(input.value);
+      bancoHoras.funcionarios[index][mesId] = valor;
+    });
+    
+    salvarDados();
+    fecharModal();
+    inicializarTabela();
+  }
+
+  // Fecha o modal
+  function fecharModal() {
+    document.getElementById("modalEdicao").classList.remove("active");
+  }
+
+  // Atualiza totais e contagem de meses com excesso
+  function atualizarTotais() {
+    const rows = document.querySelectorAll("#tabelaHoras tbody tr");
+
+    rows.forEach((row, index) => {
+      let total = 0;
+      let mesesExcesso = 0;
+
+      // Calcular total e meses com excesso
+      for (let i = 1; i < row.cells.length - 3; i++) {
+        const valor = parseFloat(row.cells[i].textContent) || 0;
+        total += valor;
         
-        reader.onload = (evt) => {
-          try {
-            const data = new Uint8Array(evt.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            const sheetData = [];
-            workbook.SheetNames.forEach((sheetName) => {
-              const worksheet = workbook.Sheets[sheetName];
-              const jsonData = XLSX.utils.sheet_to_json(worksheet);
-              sheetData.push(...jsonData);
-            });
-            
-            resolve(sheetData);
-          } catch (error) {
-            reject(error);
+        if (valor > 10) {
+          mesesExcesso++;
+        }
+      }
+
+      // Atualizar células de total e excesso
+      row.cells[row.cells.length - 3].textContent = total.toFixed(2);
+      row.cells[row.cells.length - 2].textContent = mesesExcesso;
+    });
+  }
+
+  // Verifica violações (3+ meses consecutivos >10h)
+  function verificarViolacoes() {
+    const rows = document.querySelectorAll("#tabelaHoras tbody tr");
+
+    rows.forEach((row, index) => {
+      let contagem = 0;
+      let violou = false;
+
+      // Verificar células de meses (ignorando nome, total, meses >10h e status)
+      for (let i = 1; i < row.cells.length - 3; i++) {
+        const celula = row.cells[i];
+        const valor = parseFloat(celula.textContent) || 0;
+
+        if (valor > 10) {
+          contagem++;
+          
+          if (contagem >= 3) {
+            violou = true;
           }
-        };
-        
-        reader.onerror = () => {
-          reject(new Error('Erro ao ler o arquivo'));
-        };
-        
-        reader.readAsArrayBuffer(file);
-      });
-    }
-
-    function initializeFilters() {
-      // Tecnologias
-      const techFilter = document.getElementById('technologyFilter');
-      const techSet = new Set();
-      allData.forEach(row => {
-        const tech = (row["TECNOLOGIA"] || row["Tecnologia"] || "Indefinido").toString().trim().toUpperCase();
-        if (tech) techSet.add(tech);
-      });
-      techFilter.innerHTML = '<option value="all">Todas</option>';
-      Array.from(techSet).sort().forEach(tech => {
-        techFilter.innerHTML += `<option value="${tech}">${tech}</option>`;
-      });
-      techFilter.disabled = false;
-
-      // Clusters
-      const clusterFilter = document.getElementById('clusterFilter');
-      const clusterSet = new Set();
-      allData.forEach(row => {
-        const cluster = (row["CLUSTER"] || row["Cluster"] || "Indefinido").toString().trim().toUpperCase();
-        if (cluster) clusterSet.add(cluster);
-      });
-      clusterFilter.innerHTML = '<option value="all">Todos</option>';
-      Array.from(clusterSet).sort().forEach(cluster => {
-        clusterFilter.innerHTML += `<option value="${cluster}">${cluster}</option>`;
-      });
-      clusterFilter.disabled = false;
-
-      // Horários
-      const timeFilter = document.getElementById('timeFilter');
-      const timeSet = new Set();
-      allData.forEach(row => {
-        let horario = "00";
-        if (row["HORA"] !== undefined && row["HORA"] !== null) {
-          horario = row["HORA"].toString().padStart(2, '0').trim();
-        } else if (row["INICIO"] || row["Data/Hora"]) {
-          const dateStr = (row["INICIO"] || row["Data/Hora"]).toString();
-          const match = dateStr.match(/\b(\d{2}):/);
-          if (match) horario = match[1].padStart(2, '0').trim();
-        }
-        timeSet.add(horario);
-      });
-      timeFilter.innerHTML = '<option value="all">Todos</option>';
-      Array.from(timeSet).sort().forEach(time => {
-        timeFilter.innerHTML += `<option value="${time}">${time}h</option>`;
-      });
-      timeFilter.disabled = false;
-
-      // Logins (case insensitive)
-      const loginFilter = document.getElementById('loginFilter');
-      const loginSet = new Set();
-      allData.forEach(row => {
-        const login = (row["LOGIN"] || row["Login"] || "Desconhecido").toString().trim().toUpperCase();
-        if (login) loginSet.add(login);
-      });
-      loginFilter.innerHTML = '<option value="all">Todos</option>';
-      Array.from(loginSet).sort().forEach(login => {
-        const nome = tecnicosEspecificos[login] || login;
-        loginFilter.innerHTML += `<option value="${login}">${nome}</option>`;
-      });
-      loginFilter.disabled = false;
-    }
-
-    function applyFilters() {
-      currentFilters = {
-        technology: document.getElementById('technologyFilter').value,
-        cluster: document.getElementById('clusterFilter').value,
-        time: document.getElementById('timeFilter').value,
-        login: document.getElementById('loginFilter').value
-      };
-      processData(allData);
-    }
-
-    function filterData(data) {
-      return data.filter(row => {
-        if (!row) return false;
-        
-        // Filtro por tecnologia (case insensitive)
-        const tech = ((row["TECNOLOGIA"] || row["Tecnologia"] || "Indefinido").toString().trim().toUpperCase());
-        if (currentFilters.technology !== 'all' && tech !== currentFilters.technology.toUpperCase()) return false;
-        
-        // Filtro por cluster (case insensitive)
-        const cluster = ((row["CLUSTER"] || row["Cluster"] || "Indefinido").toString().trim().toUpperCase());
-        if (currentFilters.cluster !== 'all' && cluster !== currentFilters.cluster.toUpperCase()) return false;
-        
-        // Filtro por horário
-        let horario = "00";
-        if (row["HORA"] !== undefined && row["HORA"] !== null) {
-          horario = row["HORA"].toString().padStart(2, '0').trim();
-        } else if (row["INICIO"] || row["Data/Hora"]) {
-          const dateStr = (row["INICIO"] || row["Data/Hora"]).toString();
-          const match = dateStr.match(/\b(\d{2}):/);
-          if (match) horario = match[1].padStart(2, '0').trim();
-        }
-        if (currentFilters.time !== 'all' && horario !== currentFilters.time) return false;
-        
-        // Filtro por login (case insensitive)
-        const login = ((row["LOGIN"] || row["Login"] || "Desconhecido").toString().trim().toUpperCase());
-        if (currentFilters.login !== 'all' && login !== currentFilters.login.toUpperCase()) return false;
-        
-        return true;
-      });
-    }
-
-    function processData(data) {
-      const filteredData = filterData(data);
-      const totalOutages = filteredData.length;
-      
-      // Mostrar seção de resumo apenas se houver dados
-      const summarySection = document.getElementById('summary');
-      summarySection.style.display = totalOutages > 0 ? 'block' : 'none';
-      document.getElementById('totalOutages').textContent = totalOutages;
-
-      const porLogin = {};
-      const porCluster = {};
-      const porHorario = {};
-      const porTecnologia = {};
-
-      filteredData.forEach((row) => {
-        const login = (row["LOGIN"] || row["Login"] || row["LOGIN"] || "Desconhecido").toString().trim().toUpperCase();
-        const cluster = (row["CLUSTER"] || row["Cluster"] || "Indefinido").toString().trim().toUpperCase();
-        const tecnologia = (row["TECNOLOGIA"] || row["Tecnologia"] || "Indefinido").toString().trim().toUpperCase();
-        let horario = "00";
-
-        if (row["HORA"] !== undefined && row["HORA"] !== null) {
-          horario = row["HORA"].toString().padStart(2, '0').trim();
-        } else if (row["INICIO"] || row["Data/Hora"]) {
-          const dateStr = (row["INICIO"] || row["Data/Hora"]).toString();
-          const match = dateStr.match(/\b(\d{2}):/);
-          if (match) horario = match[1].padStart(2, '0').trim();
-        }
-
-        // Contagem por categoria
-        if (login) porLogin[login] = (porLogin[login] || 0) + 1;
-        if (cluster) porCluster[cluster] = (porCluster[cluster] || 0) + 1;
-        if (horario) porHorario[horario] = (porHorario[horario] || 0) + 1;
-        if (tecnologia) porTecnologia[tecnologia] = (porTecnologia[tecnologia] || 0) + 1;
-      });
-
-      // Atualizar resumo
-      updateSummary(porTecnologia, porCluster, porHorario);
-      
-      // Atualizar tabelas e gráficos básicos
-      updateBasicChartsAndTables(porLogin, porCluster, porHorario, porTecnologia);
-    }
-
-    function updateSummary(porTecnologia, porCluster, porHorario) {
-      // Tecnologia principal
-      let mainTech = Object.entries(porTecnologia).sort((a, b) => b[1] - a[1])[0];
-      document.getElementById('mainTech').textContent = mainTech ? `${mainTech[0]} (${mainTech[1]})` : '-';
-      
-      // Cluster principal
-      let mainCluster = Object.entries(porCluster).sort((a, b) => b[1] - a[1])[0];
-      document.getElementById('mainCluster').textContent = mainCluster ? `${mainCluster[0]} (${mainCluster[1]})` : '-';
-      
-      // Horário pico
-      let peakTime = Object.entries(porHorario).sort((a, b) => b[1] - a[1])[0];
-      document.getElementById('peakTime').textContent = peakTime ? `${peakTime[0]}h (${peakTime[1]})` : '-';
-    }
-
-    function updateBasicChartsAndTables(porLogin, porCluster, porHorario, porTecnologia) {
-      // Atualizar tabelas
-      updateTable('loginTableBody', porLogin, true);
-      updateTable('clusterTableBody', porCluster);
-      updateTable('timeTableBody', porHorario);
-      updateTable('techTableBody', porTecnologia);
-
-      // Cores da Claro Brasil
-      const claroColors = ['#00A1E0', '#FF6D00', '#0033A0', '#00B5AD', '#FFB81C', '#A8A8A8'];
-
-      // Preparar dados para o gráfico de técnicos
-      const loginDataForChart = {};
-      let outrosTecnicos = 0;
-      
-      Object.entries(porLogin).forEach(([login, volume]) => {
-        if (tecnicosEspecificos[login]) {
-          loginDataForChart[login] = volume;
         } else {
-          outrosTecnicos += volume;
+          contagem = 0;
         }
-      });
-      
-      // Adicionar "Outros Técnicos" se houver volume
-      if (outrosTecnicos > 0) {
-        loginDataForChart["OUTROS"] = outrosTecnicos;
       }
-      
-      // Gráfico por Login (apenas técnicos da lista + "Outros")
-      createChart(
-        'loginChart',
-        'bar',
-        Object.entries(loginDataForChart)
-          .sort((a, b) => b[1] - a[1])
-          .map(([key]) => key === "OUTROS" ? "Outros Técnicos" : (tecnicosEspecificos[key] || key)),
-        Object.entries(loginDataForChart)
-          .sort((a, b) => b[1] - a[1])
-          .map(([, value]) => value),
-        'Volume por Técnico',
-        claroColors
-      );
 
-      // Gráfico por Cluster
-      createChart(
-        'clusterChart',
-        'doughnut',
-        Object.entries(porCluster).sort((a, b) => b[1] - a[1]).map(([key]) => key),
-        Object.entries(porCluster).sort((a, b) => b[1] - a[1]).map(([, value]) => value),
-        'Outages por Cluster',
-        claroColors
-      );
+      // Atualizar status
+      const statusCell = row.cells[row.cells.length - 1];
+      statusCell.textContent = violou ? "Violação" : "OK";
+      statusCell.className = violou ? "status status-violacao" : "status status-ok";
 
-      // Gráfico por Horário
-      createChart(
-        'timeChart',
-        'line',
-        Object.entries(porHorario).sort((a, b) => a[0] - b[0]).map(([key]) => `${key}h`),
-        Object.entries(porHorario).sort((a, b) => a[0] - b[0]).map(([, value]) => value),
-        'Outages por Horário',
-        claroColors.slice().reverse()
-      );
-
-      // Gráfico por Tecnologia
-      createChart(
-        'techChart',
-        'polarArea',
-        Object.entries(porTecnologia).sort((a, b) => b[1] - a[1]).map(([key]) => key),
-        Object.entries(porTecnologia).sort((a, b) => b[1] - a[1]).map(([, value]) => value),
-        'Outages por Tecnologia',
-        claroColors
-      );
-    }
-
-    function updateTable(tableId, data, isLogin = false) {
-      const total = Object.values(data).reduce((sum, value) => sum + value, 0);
-      const tableBody = document.getElementById(tableId);
-      
-      if (total === 0) {
-        tableBody.innerHTML = `<tr><td colspan="3" class="no-data">Nenhum dado disponível para os filtros selecionados</td></tr>`;
-        return;
-      }
-      
-      if (isLogin) {
-        // Processamento especial para a tabela de logins
-        let filteredData = {};
-        let outrosTecnicos = 0;
-        
-        // Separar técnicos da lista e consolidar os demais
-        Object.entries(data).forEach(([login, volume]) => {
-          if (tecnicosEspecificos[login]) {
-            filteredData[login] = volume;
-          } else {
-            outrosTecnicos += volume;
-          }
-        });
-        
-        // Adicionar "Outros Técnicos" se houver volume
-        if (outrosTecnicos > 0) {
-          filteredData["OUTROS"] = outrosTecnicos;
-        }
-        
-        // Ordenar por volume (decrescente)
-        const sortedData = Object.entries(filteredData).sort((a, b) => b[1] - a[1]);
-        
-        // Gerar linhas da tabela
-        tableBody.innerHTML = sortedData.map(([key, value]) => {
-          const nome = key === "OUTROS" ? "Outros Técnicos" : (tecnicosEspecificos[key] || key);
-          const percentage = ((value / total) * 100).toFixed(1);
-          return `
-            <tr>
-              <td>${nome}</td>
-              <td>${value}</td>
-              <td>${percentage}%</td>
-            </tr>
-          `;
-        }).join('');
+      // Destacar linha se violou
+      if (violou) {
+        row.classList.add("violacao");
       } else {
-        // Processamento normal para outras tabelas
-        tableBody.innerHTML = Object.entries(data)
-          .sort((a, b) => b[1] - a[1])
-          .map(([key, value]) => {
-            const nome = key;
-            const percentage = ((value / total) * 100).toFixed(1);
-            return `
-              <tr>
-                <td>${nome}</td>
-                <td>${value}</td>
-                <td>${percentage}%</td>
-              </tr>
-            `;
-          }).join('');
+        row.classList.remove("violacao");
       }
-    }
+    });
+  }
 
-    function createChart(id, type, labels, data, title, colors) {
-      const canvas = document.getElementById(id);
-      const ctx = canvas.getContext('2d');
+  // Filtra a tabela por nome e/ou violações
+  function filtrarTabela() {
+    const filtroNome = document.getElementById("filtroNome").value.toUpperCase();
+    const filtroViolacao = document.getElementById("filtroViolacao").checked;
+    const rows = document.querySelectorAll("#tabelaHoras tbody tr");
+
+    rows.forEach(row => {
+      const nome = row.cells[0].textContent.toUpperCase();
+      const violacao = row.classList.contains("violacao");
       
-      // Destruir gráfico anterior se existir
-      if (ctx.chart) {
-        ctx.chart.destroy();
-      }
+      const mostraNome = nome.includes(filtroNome);
+      const mostraViolacao = !filtroViolacao || violacao;
       
-      // Limpar canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      row.style.display = (mostraNome && mostraViolacao) ? "" : "none";
+    });
+  }
+
+  // Exporta dados para JSON
+  function exportarDados() {
+    const dadosParaExportar = bancoHoras;
+    
+    const blob = new Blob([JSON.stringify(dadosParaExportar, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'banco_de_horas.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Importa dados de JSON
+  function importarDados() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
       
-      // Verificar se há dados para mostrar
-      if (data.length === 0 || data.every(val => val === 0)) {
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#666';
-        ctx.textAlign = 'center';
-        ctx.fillText('Nenhum dado disponível', canvas.width / 2, canvas.height / 2);
-        return;
-      }
-      
-      ctx.chart = new Chart(ctx, {
-        type: type,
-        data: {
-          labels: labels,
-          datasets: [{
-            label: title,
-            data: data,
-            backgroundColor: colors,
-            borderColor: '#ddd',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'right',
-            },
-            title: {
-              display: true,
-              text: title,
-              font: {
-                size: 14
-              }
-            }
-          }
+      reader.onload = event => {
+        try {
+          const dados = JSON.parse(event.target.result);
+          bancoHoras = dados;
+          salvarDados();
+          inicializarTabela();
+          alert('Dados importados com sucesso!');
+        } catch (error) {
+          alert('Erro ao importar dados: ' + error.message);
         }
-      });
+      };
+      
+      reader.readAsText(file);
+    };
+    
+    input.click();
+  }
+
+  // Limpa todos os dados
+  function limparDados() {
+    if (confirm('Tem certeza que deseja limpar TODOS os dados? Esta ação não pode ser desfeita.')) {
+      localStorage.removeItem('bancoHoras');
+      location.reload();
     }
-  </script>
+  }
+</script>
 </body>
 </html>
