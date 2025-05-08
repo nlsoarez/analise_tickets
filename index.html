@@ -14,7 +14,7 @@
             background-color: #f5f5f5;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background-color: white;
             padding: 20px;
@@ -57,6 +57,7 @@
         .filter-group {
             display: flex;
             flex-direction: column;
+            min-width: 200px;
         }
         label {
             margin-bottom: 5px;
@@ -108,6 +109,33 @@
             border-radius: 5px;
             margin-bottom: 20px;
         }
+        .file-list {
+            margin: 15px 0;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .file-item button {
+            margin-left: 10px;
+            padding: 3px 8px;
+            background-color: #f44336;
+            font-size: 12px;
+        }
+        .file-item button:hover {
+            background-color: #d32f2f;
+        }
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -116,8 +144,18 @@
         
         <div class="filters">
             <div class="filter-group">
-                <label for="fileInput">Selecione o arquivo Excel:</label>
-                <input type="file" id="fileInput" accept=".xlsx, .xls">
+                <label for="fileInput">Selecione arquivos Excel:</label>
+                <input type="file" id="fileInput" accept=".xlsx, .xls" multiple>
+            </div>
+            
+            <div class="filter-group">
+                <label for="dateRangeStart">Data inicial:</label>
+                <input type="date" id="dateRangeStart">
+            </div>
+            
+            <div class="filter-group">
+                <label for="dateRangeEnd">Data final:</label>
+                <input type="date" id="dateRangeEnd">
             </div>
             
             <div class="filter-group">
@@ -151,6 +189,12 @@
             </div>
             
             <button id="analyzeBtn">Analisar Dados</button>
+            <button id="resetBtn" style="background-color: #f44336;">Limpar Tudo</button>
+        </div>
+        
+        <div class="file-list" id="fileList">
+            <h3>Arquivos carregados:</h3>
+            <!-- Lista de arquivos será preenchida aqui -->
         </div>
         
         <div class="summary-cards">
@@ -170,32 +214,40 @@
                 <h3>Horário com Mais Outages</h3>
                 <p id="peakHour">-</p>
             </div>
+            <div class="card">
+                <h3>Cluster com Mais Outages</h3>
+                <p id="peakCluster">-</p>
+            </div>
+            <div class="card">
+                <h3>Técnico com Mais Atendimentos</h3>
+                <p id="peakTechnician">-</p>
+            </div>
         </div>
         
-        <div class="login-info">
-            <h2>Logins de Atendimento</h2>
-            <p>Os seguintes logins são considerados na análise (case insensitive):</p>
-            <ul id="loginList"></ul>
-        </div>
-        
-        <h2>Distribuição por Tecnologia</h2>
-        <div class="chart-container">
-            <canvas id="techChart"></canvas>
-        </div>
-        
-        <h2>Distribuição por Cluster</h2>
-        <div class="chart-container">
-            <canvas id="clusterChart"></canvas>
-        </div>
-        
-        <h2>Distribuição por Hora do Dia</h2>
-        <div class="chart-container">
-            <canvas id="hourChart"></canvas>
-        </div>
-        
-        <h2>Top 10 Logins por Atendimentos</h2>
-        <div class="chart-container">
-            <canvas id="loginChart"></canvas>
+        <div class="two-columns">
+            <div>
+                <h2>Volume por Cluster</h2>
+                <div class="chart-container">
+                    <canvas id="clusterChart"></canvas>
+                </div>
+                
+                <h2>Volume por Técnico (Top 15)</h2>
+                <div class="chart-container">
+                    <canvas id="loginChart"></canvas>
+                </div>
+            </div>
+            
+            <div>
+                <h2>Volume por Hora do Dia</h2>
+                <div class="chart-container">
+                    <canvas id="hourChart"></canvas>
+                </div>
+                
+                <h2>Volume por Tecnologia</h2>
+                <div class="chart-container">
+                    <canvas id="techChart"></canvas>
+                </div>
+            </div>
         </div>
         
         <h2>Detalhes dos Outages</h2>
@@ -210,6 +262,7 @@
                         <th>Login</th>
                         <th>Acionamento</th>
                         <th>Hora</th>
+                        <th>Arquivo</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -235,45 +288,137 @@
             'N5923996': 'JULIO CESAR SANTOS SOARES'
         };
 
-        // Lista de logins para exibição
-        const loginListElement = document.getElementById('loginList');
-        for (const [login, name] of Object.entries(knownLogins)) {
-            const li = document.createElement('li');
-            li.textContent = `${login} - ${name}`;
-            loginListElement.appendChild(li);
-        }
-
         let outagesData = [];
+        let loadedFiles = [];
         let techChart, clusterChart, hourChart, loginChart;
 
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
                 
-                // Assume que os dados estão na primeira planilha
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
+                // Verificar se o arquivo já foi carregado
+                if (loadedFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
+                    continue;
+                }
                 
-                // Converter para JSON
-                outagesData = XLSX.utils.sheet_to_json(worksheet);
-                
-                // Preencher filtros
+                try {
+                    const data = await readFile(file);
+                    loadedFiles.push({
+                        name: file.name,
+                        size: file.size,
+                        lastModified: file.lastModified,
+                        data: data
+                    });
+                    
+                    // Adicionar à lista de arquivos
+                    addFileToList(file.name, file.size, file.lastModified);
+                } catch (error) {
+                    console.error(`Erro ao processar o arquivo ${file.name}:`, error);
+                    alert(`Erro ao processar o arquivo ${file.name}. Verifique o console para detalhes.`);
+                }
+            }
+            
+            // Se foi o primeiro carregamento, analisar os dados
+            if (outagesData.length === 0 && loadedFiles.length > 0) {
+                mergeDataFromFiles();
                 populateFilters();
-                
-                // Analisar dados
                 analyzeData();
-            };
-            reader.readAsArrayBuffer(file);
+            }
         });
 
+        function readFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // Assume que os dados estão na primeira planilha
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Converter para JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        // Adicionar nome do arquivo a cada registro
+                        const dataWithFilename = jsonData.map(item => ({
+                            ...item,
+                            FILE_NAME: file.name
+                        }));
+                        
+                        resolve(dataWithFilename);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function addFileToList(filename, size, lastModified) {
+            const fileListElement = document.getElementById('fileList');
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.dataset.filename = filename;
+            fileItem.dataset.size = size;
+            fileItem.dataset.lastModified = lastModified;
+            
+            fileItem.innerHTML = `
+                <span>${filename} (${formatFileSize(size)})</span>
+                <button class="remove-file">Remover</button>
+            `;
+            
+            fileListElement.appendChild(fileItem);
+            
+            // Adicionar evento de remoção
+            fileItem.querySelector('.remove-file').addEventListener('click', function() {
+                removeFile(filename, size, lastModified);
+                fileItem.remove();
+            });
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function removeFile(filename, size, lastModified) {
+            loadedFiles = loadedFiles.filter(f => 
+                !(f.name === filename && f.size === size && f.lastModified === lastModified)
+            );
+            
+            // Atualizar dados se houver arquivos restantes
+            if (loadedFiles.length > 0) {
+                mergeDataFromFiles();
+                populateFilters();
+                analyzeData();
+            } else {
+                // Limpar tudo se não houver mais arquivos
+                outagesData = [];
+                resetCharts();
+                clearTable();
+                updateSummaryCards([]);
+            }
+        }
+
+        function mergeDataFromFiles() {
+            outagesData = loadedFiles.flatMap(file => file.data);
+        }
+
         function populateFilters() {
+            if (outagesData.length === 0) return;
+            
             // Tecnologias únicas
             const techFilter = document.getElementById('technologyFilter');
+            techFilter.innerHTML = '<option value="all">Todas</option>';
             const technologies = [...new Set(outagesData.map(item => item.TECNOLOGIA))];
             
             technologies.forEach(tech => {
@@ -285,6 +430,7 @@
             
             // Clusters únicos
             const clusterFilter = document.getElementById('clusterFilter');
+            clusterFilter.innerHTML = '<option value="all">Todos</option>';
             const clusters = [...new Set(outagesData.map(item => item.CLUSTER))];
             
             clusters.forEach(cluster => {
@@ -293,13 +439,49 @@
                 option.textContent = cluster;
                 clusterFilter.appendChild(option);
             });
+            
+            // Definir datas mínima e máxima
+            const dates = outagesData.map(item => {
+                const dateStr = item.INICIO.split(' ')[0];
+                return new Date(dateStr);
+            }).filter(date => !isNaN(date.getTime()));
+            
+            if (dates.length > 0) {
+                const minDate = new Date(Math.min(...dates));
+                const maxDate = new Date(Math.max(...dates));
+                
+                document.getElementById('dateRangeStart').valueAsDate = minDate;
+                document.getElementById('dateRangeEnd').valueAsDate = maxDate;
+            }
         }
 
         document.getElementById('analyzeBtn').addEventListener('click', analyzeData);
+        document.getElementById('resetBtn').addEventListener('click', resetAll);
+
+        function resetAll() {
+            outagesData = [];
+            loadedFiles = [];
+            document.getElementById('fileList').innerHTML = '<h3>Arquivos carregados:</h3>';
+            document.getElementById('fileInput').value = '';
+            resetCharts();
+            clearTable();
+            updateSummaryCards([]);
+        }
+
+        function resetCharts() {
+            if (techChart) techChart.destroy();
+            if (clusterChart) clusterChart.destroy();
+            if (hourChart) hourChart.destroy();
+            if (loginChart) loginChart.destroy();
+        }
+
+        function clearTable() {
+            document.querySelector('#outagesTable tbody').innerHTML = '';
+        }
 
         function analyzeData() {
             if (outagesData.length === 0) {
-                alert('Por favor, carregue um arquivo Excel primeiro.');
+                alert('Por favor, carregue arquivos Excel primeiro.');
                 return;
             }
             
@@ -307,6 +489,8 @@
             const techFilter = document.getElementById('technologyFilter').value;
             const clusterFilter = document.getElementById('clusterFilter').value;
             const hourFilter = document.getElementById('hourFilter').value;
+            const dateStart = document.getElementById('dateRangeStart').valueAsDate;
+            const dateEnd = document.getElementById('dateRangeEnd').valueAsDate;
             
             let filteredData = outagesData;
             
@@ -320,6 +504,15 @@
             
             if (hourFilter !== 'all') {
                 filteredData = filteredData.filter(item => item.HORA == hourFilter);
+            }
+            
+            // Filtrar por data
+            if (dateStart && dateEnd) {
+                filteredData = filteredData.filter(item => {
+                    const dateStr = item.INICIO.split(' ')[0];
+                    const itemDate = new Date(dateStr);
+                    return itemDate >= dateStart && itemDate <= dateEnd;
+                });
             }
             
             // Atualizar cartões de resumo
@@ -352,15 +545,60 @@
             });
             
             let peakHour = '-';
-            let maxCount = 0;
+            let maxHourCount = 0;
             for (const [hour, count] of Object.entries(hourCounts)) {
-                if (count > maxCount) {
-                    maxCount = count;
+                if (count > maxHourCount) {
+                    maxHourCount = count;
                     peakHour = `${hour}h (${count} outages)`;
                 }
             }
             
             document.getElementById('peakHour').textContent = peakHour;
+            
+            // Encontrar cluster com mais outages
+            const clusterCounts = {};
+            data.forEach(item => {
+                const cluster = item.CLUSTER;
+                clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+            });
+            
+            let peakCluster = '-';
+            let maxClusterCount = 0;
+            for (const [cluster, count] of Object.entries(clusterCounts)) {
+                if (count > maxClusterCount) {
+                    maxClusterCount = count;
+                    peakCluster = `${cluster} (${count} outages)`;
+                }
+            }
+            
+            document.getElementById('peakCluster').textContent = peakCluster;
+            
+            // Encontrar técnico com mais atendimentos
+            const loginCounts = {};
+            data.forEach(item => {
+                const login = item.LOGIN;
+                if (login) {
+                    const normalizedLogin = login.trim().toUpperCase();
+                    const knownLogin = Object.keys(knownLogins).find(key => 
+                        key.toUpperCase() === normalizedLogin
+                    );
+                    
+                    if (knownLogin) {
+                        loginCounts[knownLogin] = (loginCounts[knownLogin] || 0) + 1;
+                    }
+                }
+            });
+            
+            let peakTechnician = '-';
+            let maxLoginCount = 0;
+            for (const [login, count] of Object.entries(loginCounts)) {
+                if (count > maxLoginCount) {
+                    maxLoginCount = count;
+                    peakTechnician = `${knownLogins[login]} (${count} atendimentos)`;
+                }
+            }
+            
+            document.getElementById('peakTechnician').textContent = peakTechnician;
         }
 
         function createTechChart(data) {
@@ -387,7 +625,7 @@
             }
             
             techChart = new Chart(ctx, {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
@@ -402,7 +640,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Distribuição por Tecnologia'
+                            text: 'Volume por Tecnologia'
                         },
                         tooltip: {
                             callbacks: {
@@ -435,6 +673,15 @@
             const labels = sortedEntries.map(entry => entry[0]);
             const counts = sortedEntries.map(entry => entry[1]);
             
+            // Cores baseadas no cluster
+            const backgroundColors = labels.map(label => {
+                const hash = Array.from(label).reduce((acc, char) => {
+                    return char.charCodeAt(0) + ((acc << 5) - acc);
+                }, 0);
+                const hue = Math.abs(hash) % 360;
+                return `hsl(${hue}, 70%, 60%)`;
+            });
+            
             if (clusterChart) {
                 clusterChart.destroy();
             }
@@ -446,8 +693,8 @@
                     datasets: [{
                         label: 'Outages',
                         data: counts,
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(c => c.replace('60%)', '40%)')),
                         borderWidth: 1
                     }]
                 },
@@ -472,7 +719,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Distribuição por Cluster'
+                            text: 'Volume por Cluster'
                         }
                     }
                 }
@@ -498,17 +745,15 @@
             }
             
             hourChart = new Chart(ctx, {
-                type: 'line',
+                type: 'bar',
                 data: {
                     labels: hours.map(h => `${h}h`),
                     datasets: [{
                         label: 'Outages',
                         data: counts,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 2,
-                        tension: 0.1,
-                        fill: true
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -532,7 +777,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Distribuição por Hora do Dia'
+                            text: 'Volume por Hora do Dia'
                         }
                     }
                 }
@@ -564,13 +809,20 @@
                 }
             });
             
-            // Ordenar por quantidade (do maior para o menor) e pegar top 10
-            const sortedEntries = Object.entries(loginCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            // Ordenar por quantidade (do maior para o menor) e pegar top 15
+            const sortedEntries = Object.entries(loginCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
             const labels = sortedEntries.map(entry => {
                 const login = entry[0];
-                return login === 'OUTROS' ? 'OUTROS' : `${login} - ${knownLogins[login]}`;
+                return login === 'OUTROS' ? 'OUTROS' : `${knownLogins[login]} (${login})`;
             });
             const counts = sortedEntries.map(entry => entry[1]);
+            
+            // Cores baseadas no login
+            const backgroundColors = labels.map((label, i) => {
+                if (label === 'OUTROS') return 'rgba(169, 169, 169, 0.7)';
+                const hue = (i * 360 / labels.length) % 360;
+                return `hsl(${hue}, 70%, 60%)`;
+            });
             
             if (loginChart) {
                 loginChart.destroy();
@@ -583,8 +835,8 @@
                     datasets: [{
                         label: 'Atendimentos',
                         data: counts,
-                        backgroundColor: 'rgba(153, 102, 255, 0.7)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(c => c.replace('0.7)', '1)')),
                         borderWidth: 1
                     }]
                 },
@@ -603,14 +855,14 @@
                         y: {
                             title: {
                                 display: true,
-                                text: 'Login'
+                                text: 'Técnico (Login)'
                             }
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Top 10 Logins por Atendimentos'
+                            text: 'Volume por Técnico (Top 15)'
                         }
                     }
                 }
@@ -651,7 +903,7 @@
                     );
                     
                     if (knownLogin) {
-                        loginTd.textContent = `${knownLogin} - ${knownLogins[knownLogin]}`;
+                        loginTd.textContent = `${knownLogins[knownLogin]} (${knownLogin})`;
                     } else {
                         loginTd.textContent = item.LOGIN;
                     }
@@ -666,6 +918,10 @@
                 horaTd.textContent = item.HORA;
                 tr.appendChild(horaTd);
                 
+                const fileTd = document.createElement('td');
+                fileTd.textContent = item.FILE_NAME || '-';
+                tr.appendChild(fileTd);
+                
                 tbody.appendChild(tr);
             });
             
@@ -673,7 +929,7 @@
             if (data.length > 100) {
                 const tr = document.createElement('tr');
                 const td = document.createElement('td');
-                td.colSpan = 7;
+                td.colSpan = 8;
                 td.style.textAlign = 'center';
                 td.style.fontWeight = 'bold';
                 td.textContent = `... e mais ${data.length - 100} registros não exibidos`;
