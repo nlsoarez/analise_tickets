@@ -504,13 +504,33 @@
                         // Converter para JSON
                         const jsonData = XLSX.utils.sheet_to_json(worksheet);
                         
-                        // Adicionar nome do arquivo a cada registro
-                        const dataWithFilename = jsonData.map(item => ({
-                            ...item,
-                            FILE_NAME: file.name
-                        }));
+                        // Processar os dados para extrair data e hora
+                        const processedData = jsonData.map(item => {
+                            // Extrair hora da coluna DIA/HORA (assumindo formato "DD/MM/YYYY HH:MM")
+                            let hora = '';
+                            if (item['DIA/HORA']) {
+                                const dateTimeParts = item['DIA/HORA'].toString().split(' ');
+                                if (dateTimeParts.length > 1) {
+                                    const timePart = dateTimeParts[1];
+                                    const hourParts = timePart.split(':');
+                                    if (hourParts.length > 0) {
+                                        hora = hourParts[0];
+                                    }
+                                }
+                            }
+                            
+                            return {
+                                OUTAGE: item.OUTAGE,
+                                TECNOLOGIA: item.TECNOLOGIA,
+                                CLUSTER: item.CLUSTER,
+                                'DIA/HORA': item['DIA/HORA'],
+                                HORA: hora,
+                                LOGIN: item.LOGIN,
+                                FILE_NAME: file.name
+                            };
+                        });
                         
-                        resolve(dataWithFilename);
+                        resolve(processedData);
                     } catch (error) {
                         reject(error);
                     }
@@ -615,7 +635,9 @@
             const hourCounts = {};
             data.forEach(item => {
                 const hour = item.HORA;
-                hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                if (hour) {
+                    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                }
             });
             
             let peakHour = '-';
@@ -633,7 +655,9 @@
             const clusterCounts = {};
             data.forEach(item => {
                 const cluster = item.CLUSTER;
-                clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+                if (cluster) {
+                    clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+                }
             });
             
             let peakCluster = '-';
@@ -682,7 +706,9 @@
             const techCounts = {};
             data.forEach(item => {
                 const tech = item.TECNOLOGIA;
-                techCounts[tech] = (techCounts[tech] || 0) + 1;
+                if (tech) {
+                    techCounts[tech] = (techCounts[tech] || 0) + 1;
+                }
             });
             
             const labels = Object.keys(techCounts);
@@ -758,7 +784,9 @@
             const clusterCounts = {};
             data.forEach(item => {
                 const cluster = item.CLUSTER;
-                clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+                if (cluster) {
+                    clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+                }
             });
             
             // Ordenar por quantidade (do maior para o menor)
@@ -837,7 +865,9 @@
             const hourCounts = {};
             data.forEach(item => {
                 const hour = item.HORA;
-                hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                if (hour) {
+                    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                }
             });
             
             // Definir as horas que queremos mostrar (22h às 6h)
