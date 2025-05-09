@@ -2,34 +2,415 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Dashboard de Volumetria</title>
+  <title>Dashboard de Volumetria Avançado</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f8f9fa; }
-    h2 { color: #343a40; }
-    .charts { display: flex; flex-wrap: wrap; gap: 30px; }
-    canvas { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 0 8px #ccc; }
-    input[type="file"] { margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #dee2e6; }
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --accent-color: #4895ef;
+      --light-color: #f8f9fa;
+      --dark-color: #343a40;
+      --success-color: #4cc9f0;
+      --warning-color: #f8961e;
+      --danger-color: #f94144;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 20px;
+      background: var(--light-color);
+      color: var(--dark-color);
+    }
+    
+    h2, h3 {
+      color: var(--secondary-color);
+      margin-bottom: 15px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .charts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .chart-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .custom-file-upload {
+      border: 2px dashed var(--accent-color);
+      display: inline-block;
+      padding: 12px 20px;
+      cursor: pointer;
+      border-radius: 8px;
+      background-color: rgba(72, 149, 239, 0.1);
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+    
+    .custom-file-upload:hover {
+      background-color: rgba(72, 149, 239, 0.2);
+    }
+    
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      background-color: var(--secondary-color);
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background-color: white;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+    }
+    
+    button.secondary:hover {
+      background-color: var(--light-color);
+    }
+    
+    select, input[type="date"] {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background-color: white;
+    }
+    
+    .table-container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-top: 30px;
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: var(--primary-color);
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    
+    tr:hover {
+      background-color: #e9e9e9;
+    }
+    
+    .loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid var(--primary-color);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .metric-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      margin: 10px 0;
+    }
+    
+    .metric-label {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .positive {
+      color: var(--success-color);
+    }
+    
+    .negative {
+      color: var(--danger-color);
+    }
+    
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    @media (max-width: 768px) {
+      .charts-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
   </style>
 </head>
 <body>
-  <h2>Dashboard de Volumetria</h2>
-  <input type="file" id="fileInput" multiple accept=".xlsx" />
-
-  <div class="charts">
-    <canvas id="chartAnalistas" width="400" height="300"></canvas>
-    <canvas id="chartClusters" width="400" height="300"></canvas>
-    <canvas id="chartHorarios" width="400" height="300"></canvas>
-    <canvas id="chartDias" width="400" height="300"></canvas>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Processando arquivos...</p>
   </div>
 
-  <div id="tabela"></div>
+  <div class="header">
+    <h2>📊 Dashboard de Volumetria Avançado</h2>
+    <div>
+      <label for="fileInput" class="custom-file-upload">
+        <i class="fas fa-upload"></i> Carregar Arquivos XLSX
+      </label>
+      <input type="file" id="fileInput" multiple accept=".xlsx" />
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="filter-group">
+      <label for="dateStart">De:</label>
+      <input type="date" id="dateStart">
+    </div>
+    
+    <div class="filter-group">
+      <label for="dateEnd">Até:</label>
+      <input type="date" id="dateEnd">
+    </div>
+    
+    <div class="filter-group">
+      <label for="analystFilter">Analista:</label>
+      <select id="analystFilter">
+        <option value="all">Todos</option>
+      </select>
+    </div>
+    
+    <div class="filter-group">
+      <label for="clusterFilter">Cluster:</label>
+      <select id="clusterFilter">
+        <option value="all">Todos</option>
+      </select>
+    </div>
+    
+    <button id="applyFilters">Aplicar Filtros</button>
+    <button id="resetFilters" class="secondary">Limpar Filtros</button>
+  </div>
+
+  <div class="metrics" id="metrics">
+    <!-- Metrics will be inserted here -->
+  </div>
+
+  <div class="charts-container">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Volume por Analista</h3>
+        <button class="secondary export-btn" data-chart="chartAnalistas">
+          <i class="fas fa-download"></i> Exportar
+        </button>
+      </div>
+      <canvas id="chartAnalistas"></canvas>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Volume por Cluster</h3>
+        <button class="secondary export-btn" data-chart="chartClusters">
+          <i class="fas fa-download"></i> Exportar
+        </button>
+      </div>
+      <canvas id="chartClusters"></canvas>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Volume por Horário</h3>
+        <button class="secondary export-btn" data-chart="chartHorarios">
+          <i class="fas fa-download"></i> Exportar
+        </button>
+      </div>
+      <canvas id="chartHorarios"></canvas>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Volume por Dia</h3>
+        <button class="secondary export-btn" data-chart="chartDias">
+          <i class="fas fa-download"></i> Exportar
+        </button>
+      </div>
+      <canvas id="chartDias"></canvas>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Distribuição Percentual</h3>
+        <button class="secondary export-btn" data-chart="chartPercentual">
+          <i class="fas fa-download"></i> Exportar
+        </button>
+      </div>
+      <canvas id="chartPercentual"></canvas>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Média Móvel (7 dias)</h3>
+        <button class="secondary export-btn" data-chart="chartMediaMovel">
+          <i class="fas fa-download"></i> Exportar
+        </button>
+      </div>
+      <canvas id="chartMediaMovel"></canvas>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Detalhamento por Analista</h3>
+      <button id="exportData" class="secondary">
+        <i class="fas fa-file-export"></i> Exportar Dados
+      </button>
+    </div>
+    <div id="tabela"></div>
+  </div>
 
   <script>
+    // Mapeamento de login para nome completo
     const loginToName = {
       "n0238475": "MARLEY MARQUES RIBEIRO",
       "n5923221": "KELLY PINHEIRO LIRA",
@@ -46,98 +427,599 @@
       "n5923996": "JULIO CESAR SANTOS SOARES"
     };
 
+    // Variáveis globais
     const charts = {};
+    let allData = [];
+    let filteredData = [];
+    let dateRange = { min: null, max: null };
 
-    function drawChart(id, labels, data, label, type = 'bar') {
+    // Cores para os gráficos
+    const chartColors = [
+      '#4361ee', '#3f37c9', '#4895ef', '#4cc9f0', '#560bad',
+      '#b5179e', '#f72585', '#7209b7', '#3a0ca3', '#480ca8',
+      '#3a86ff', '#8338ec', '#ff006e', '#fb5607', '#ffbe0b'
+    ];
+
+    // Mostrar loading
+    function showLoading() {
+      document.getElementById('loading').style.display = 'flex';
+    }
+
+    // Esconder loading
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    // Calcular média móvel
+    function calculateMovingAverage(data, windowSize = 7) {
+      const result = [];
+      for (let i = 0; i < data.length; i++) {
+        const start = Math.max(0, i - windowSize + 1);
+        const subset = data.slice(start, i + 1);
+        const sum = subset.reduce((acc, val) => acc + val, 0);
+        result.push(sum / subset.length);
+      }
+      return result;
+    }
+
+    // Desenhar gráfico com opções avançadas
+    function drawChart(id, labels, data, label, type = 'bar', options = {}) {
+      const ctx = document.getElementById(id).getContext('2d');
+      
       if (charts[id]) charts[id].destroy();
-      charts[id] = new Chart(document.getElementById(id), {
-        type,
-        data: {
-          labels,
-          datasets: [{
-            label,
-            data,
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-          }]
+      
+      const defaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) label += ': ';
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toLocaleString();
+                }
+                return label;
+              }
+            }
+          },
+          datalabels: {
+            display: type === 'pie' || type === 'doughnut',
+            formatter: (value) => {
+              if (type === 'pie' || type === 'doughnut') {
+                const sum = data.reduce((a, b) => a + b, 0);
+                const percentage = Math.round((value / sum) * 100);
+                return percentage > 5 ? `${percentage}%` : '';
+              }
+              return '';
+            }
+          }
         },
-        options: {
-          responsive: true,
-          scales: {
-            y: { beginAtZero: true }
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString();
+              }
+            }
+          }
+        },
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const chart = charts[id];
+            const clickedElementIndex = elements[0].index;
+            const clickedLabel = chart.data.labels[clickedElementIndex];
+            
+            // Filtra os dados com base no elemento clicado
+            filterDataByChart(id, clickedLabel);
           }
         }
+      };
+
+      const mergedOptions = { ...defaults, ...options };
+      
+      // Configuração do dataset
+      let dataset = {
+        label: label,
+        data: data,
+        backgroundColor: chartColors,
+        borderColor: type === 'line' ? '#4361ee' : chartColors.map(c => c.replace('0.6', '1')),
+        borderWidth: 1,
+        fill: type === 'line' ? true : false,
+        tension: type === 'line' ? 0.4 : 0
+      };
+
+      if (type === 'pie' || type === 'doughnut') {
+        dataset = {
+          label: label,
+          data: data,
+          backgroundColor: chartColors,
+          borderColor: '#fff',
+          borderWidth: 2
+        };
+      }
+
+      charts[id] = new Chart(ctx, {
+        type: type,
+        data: {
+          labels: labels,
+          datasets: [dataset]
+        },
+        options: mergedOptions,
+        plugins: [ChartDataLabels]
       });
     }
 
-    document.getElementById('fileInput').addEventListener('change', async function (e) {
-      const files = e.target.files;
-      const volumesAnalista = {}, volumesCluster = {}, volumesHorario = {}, volumesPorDia = {};
-
-      for (let file of files) {
-        const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        workbook.SheetNames.forEach(sheetName => {
-          const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-          sheet.forEach(row => {
-            const keys = Object.keys(row).reduce((acc, key) => {
-              const norm = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-              if (norm.includes('login')) acc.login = key;
-              else if (norm.includes('volume')) acc.volume = key;
-              else if (norm.includes('cluster')) acc.cluster = key;
-              else if (norm.includes('hora')) acc.hora = key;
-              else if (norm.includes('data')) acc.data = key;
-              return acc;
-            }, {});
-
-            const login = String(row[keys.login] || '').toLowerCase().trim();
-            const volume = Number(row[keys.volume] || 0);
-            const cluster = String(row[keys.cluster] || 'Indefinido').toUpperCase();
-            const hora = String(row[keys.hora] || '00:00').slice(0, 2) + 'h';
-            const data = String(row[keys.data] || '').split('T')[0];
-
-            if (!login || !volume) return;
-
-            volumesAnalista[login] = (volumesAnalista[login] || 0) + volume;
-            volumesCluster[cluster] = (volumesCluster[cluster] || 0) + volume;
-            volumesHorario[hora] = (volumesHorario[hora] || 0) + volume;
-            volumesPorDia[data] = (volumesPorDia[data] || 0) + volume;
-          });
-        });
+    // Filtrar dados com base no gráfico clicado
+    function filterDataByChart(chartId, clickedLabel) {
+      let filterField, filterValue;
+      
+      switch(chartId) {
+        case 'chartAnalistas':
+          filterField = 'login';
+          filterValue = Object.keys(loginToName).find(key => loginToName[key] === clickedLabel) || clickedLabel.toLowerCase();
+          break;
+        case 'chartClusters':
+          filterField = 'cluster';
+          filterValue = clickedLabel;
+          break;
+        case 'chartHorarios':
+          filterField = 'hora';
+          filterValue = clickedLabel;
+          break;
+        case 'chartDias':
+          filterField = 'data';
+          filterValue = clickedLabel;
+          break;
+        default:
+          return;
       }
+      
+      // Atualiza os filtros na UI
+      if (chartId === 'chartAnalistas') {
+        document.getElementById('analystFilter').value = filterValue;
+      } else if (chartId === 'chartClusters') {
+        document.getElementById('clusterFilter').value = filterValue;
+      }
+      
+      // Aplica os filtros
+      applyFilters();
+    }
 
-      // Tabela de analistas
-      let html = '<h3>Resumo por Analista</h3><table><tr><th>Login</th><th>Nome</th><th>Total</th></tr>';
-      Object.entries(volumesAnalista).sort((a, b) => b[1] - a[1]).forEach(([login, total]) => {
-        const nome = loginToName[login] || 'NOME DESCONHECIDO';
-        html += `<tr><td>${login.toUpperCase()}</td><td>${nome}</td><td>${total}</td></tr>`;
+    // Processar dados e atualizar visualizações
+    function processData(data) {
+      // Limpar dados anteriores
+      allData = data;
+      filteredData = [...data];
+      
+      // Atualizar range de datas
+      updateDateRange();
+      
+      // Atualizar filtros
+      updateFilters();
+      
+      // Processar métricas
+      processMetrics();
+      
+      // Processar gráficos
+      processCharts();
+      
+      // Processar tabela
+      processTable();
+    }
+
+    // Atualizar range de datas
+    function updateDateRange() {
+      const dates = allData.map(item => new Date(item.data));
+      dateRange.min = new Date(Math.min(...dates));
+      dateRange.max = new Date(Math.max(...dates));
+      
+      // Atualizar controles de data
+      document.getElementById('dateStart').min = formatDateForInput(dateRange.min);
+      document.getElementById('dateStart').max = formatDateForInput(dateRange.max);
+      document.getElementById('dateEnd').min = formatDateForInput(dateRange.min);
+      document.getElementById('dateEnd').max = formatDateForInput(dateRange.max);
+      
+      document.getElementById('dateStart').value = formatDateForInput(dateRange.min);
+      document.getElementById('dateEnd').value = formatDateForInput(dateRange.max);
+    }
+
+    // Formatador de data para input type="date"
+    function formatDateForInput(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    // Atualizar opções de filtro
+    function updateFilters() {
+      const analystSelect = document.getElementById('analystFilter');
+      const clusterSelect = document.getElementById('clusterFilter');
+      
+      // Limpar opções existentes (mantendo "Todos")
+      while (analystSelect.options.length > 1) analystSelect.remove(1);
+      while (clusterSelect.options.length > 1) clusterSelect.remove(1);
+      
+      // Obter valores únicos
+      const uniqueAnalysts = [...new Set(allData.map(item => item.login))];
+      const uniqueClusters = [...new Set(allData.map(item => item.cluster))];
+      
+      // Adicionar opções de analistas
+      uniqueAnalysts.forEach(login => {
+        const option = document.createElement('option');
+        option.value = login;
+        option.text = loginToName[login] || login.toUpperCase();
+        analystSelect.add(option);
       });
-      html += '</table>';
-      document.getElementById('tabela').innerHTML = html;
+      
+      // Adicionar opções de clusters
+      uniqueClusters.forEach(cluster => {
+        const option = document.createElement('option');
+        option.value = cluster;
+        option.text = cluster;
+        clusterSelect.add(option);
+      });
+    }
 
+    // Aplicar filtros
+    function applyFilters() {
+      const startDate = document.getElementById('dateStart').value;
+      const endDate = document.getElementById('dateEnd').value;
+      const analystFilter = document.getElementById('analystFilter').value;
+      const clusterFilter = document.getElementById('clusterFilter').value;
+      
+      filteredData = allData.filter(item => {
+        // Filtro por data
+        const itemDate = new Date(item.data);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (itemDate < start || itemDate > end) return false;
+        
+        // Filtro por analista
+        if (analystFilter !== 'all' && item.login !== analystFilter) return false;
+        
+        // Filtro por cluster
+        if (clusterFilter !== 'all' && item.cluster !== clusterFilter) return false;
+        
+        return true;
+      });
+      
+      // Reprocessar visualizações com dados filtrados
+      processMetrics();
+      processCharts();
+      processTable();
+    }
+
+    // Processar métricas
+    function processMetrics() {
+      const metricsContainer = document.getElementById('metrics');
+      metricsContainer.innerHTML = '';
+      
+      if (filteredData.length === 0) {
+        metricsContainer.innerHTML = '<p>Nenhum dado encontrado com os filtros aplicados.</p>';
+        return;
+      }
+      
+      // Calcular métricas
+      const totalVolume = filteredData.reduce((sum, item) => sum + item.volume, 0);
+      const avgVolume = totalVolume / filteredData.length;
+      const uniqueAnalysts = new Set(filteredData.map(item => item.login)).size;
+      const uniqueClusters = new Set(filteredData.map(item => item.cluster)).size;
+      
+      // Comparativo com dados totais
+      const totalAllVolume = allData.reduce((sum, item) => sum + item.volume, 0);
+      const percentage = (totalVolume / totalAllVolume * 100).toFixed(1);
+      
+      // Criar cards de métricas
+      const metrics = [
+        { label: 'Volume Total', value: totalVolume.toLocaleString(), change: null },
+        { label: 'Média por Registro', value: avgVolume.toFixed(2), change: null },
+        { label: 'Analistas', value: uniqueAnalysts, change: null },
+        { label: 'Clusters', value: uniqueClusters, change: null },
+        { label: 'Percentual do Total', value: `${percentage}%`, 
+          change: percentage >= 100 ? 'positive' : 'negative' }
+      ];
+      
+      // Adicionar métricas ao DOM
+      metrics.forEach(metric => {
+        const metricCard = document.createElement('div');
+        metricCard.className = 'metric-card';
+        
+        const label = document.createElement('div');
+        label.className = 'metric-label';
+        label.textContent = metric.label;
+        
+        const value = document.createElement('div');
+        value.className = `metric-value ${metric.change || ''}`;
+        value.textContent = metric.value;
+        
+        metricCard.appendChild(label);
+        metricCard.appendChild(value);
+        metricsContainer.appendChild(metricCard);
+      });
+    }
+
+    // Processar gráficos
+    function processCharts() {
+      if (filteredData.length === 0) return;
+      
+      // Agrupar dados para cada gráfico
+      const volumesAnalista = {};
+      const volumesCluster = {};
+      const volumesHorario = {};
+      const volumesPorDia = {};
+      const volumesPorDiaArray = [];
+      
+      filteredData.forEach(item => {
+        // Analista
+        if (!volumesAnalista[item.login]) volumesAnalista[item.login] = 0;
+        volumesAnalista[item.login] += item.volume;
+        
+        // Cluster
+        if (!volumesCluster[item.cluster]) volumesCluster[item.cluster] = 0;
+        volumesCluster[item.cluster] += item.volume;
+        
+        // Horário
+        if (!volumesHorario[item.hora]) volumesHorario[item.hora] = 0;
+        volumesHorario[item.hora] += item.volume;
+        
+        // Data (dia)
+        if (!volumesPorDia[item.data]) volumesPorDia[item.data] = 0;
+        volumesPorDia[item.data] += item.volume;
+      });
+      
+      // Converter volumesPorDia para array ordenada por data
+      const sortedDates = Object.keys(volumesPorDia).sort();
+      sortedDates.forEach(date => {
+        volumesPorDiaArray.push({
+          date,
+          volume: volumesPorDia[date]
+        });
+      });
+      
+      // Gráfico de analistas
+      const sortedAnalysts = Object.entries(volumesAnalista)
+        .sort((a, b) => b[1] - a[1])
+        .map(([login, volume]) => ({
+          name: loginToName[login] || login.toUpperCase(),
+          volume
+        }));
+      
       drawChart('chartAnalistas',
-        Object.keys(volumesAnalista).map(k => loginToName[k] || k.toUpperCase()),
-        Object.values(volumesAnalista),
-        'Volume por Analista');
-
+        sortedAnalysts.map(a => a.name),
+        sortedAnalysts.map(a => a.volume),
+        'Volume por Analista',
+        'bar'
+      );
+      
+      // Gráfico de clusters
+      const sortedClusters = Object.entries(volumesCluster)
+        .sort((a, b) => b[1] - a[1]);
+      
       drawChart('chartClusters',
-        Object.keys(volumesCluster),
-        Object.values(volumesCluster),
-        'Volume por Cluster');
-
+        sortedClusters.map(c => c[0]),
+        sortedClusters.map(c => c[1]),
+        'Volume por Cluster',
+        'bar'
+      );
+      
+      // Gráfico de horários
+      const sortedHours = Object.entries(volumesHorario)
+        .sort((a, b) => a[0].localeCompare(b[0]));
+      
       drawChart('chartHorarios',
-        Object.keys(volumesHorario),
-        Object.values(volumesHorario),
-        'Volume por Horário');
-
+        sortedHours.map(h => h[0]),
+        sortedHours.map(h => h[1]),
+        'Volume por Horário',
+        'bar'
+      );
+      
+      // Gráfico de dias (linha)
       drawChart('chartDias',
-        Object.keys(volumesPorDia),
-        Object.values(volumesPorDia),
+        volumesPorDiaArray.map(d => d.date),
+        volumesPorDiaArray.map(d => d.volume),
         'Volume por Dia',
-        'line');
+        'line'
+      );
+      
+      // Gráfico percentual (pizza)
+      drawChart('chartPercentual',
+        sortedClusters.map(c => c[0]),
+        sortedClusters.map(c => c[1]),
+        'Distribuição por Cluster',
+        'pie'
+      );
+      
+      // Gráfico de média móvel
+      const movingAverages = calculateMovingAverage(volumesPorDiaArray.map(d => d.volume), 7);
+      drawChart('chartMediaMovel',
+        volumesPorDiaArray.map(d => d.date),
+        movingAverages,
+        'Média Móvel (7 dias)',
+        'line',
+        {
+          elements: {
+            point: {
+              radius: 0
+            }
+          }
+        }
+      );
+    }
+
+    // Processar tabela
+    function processTable() {
+      const tabelaContainer = document.getElementById('tabela');
+      
+      if (filteredData.length === 0) {
+        tabelaContainer.innerHTML = '<p>Nenhum dado encontrado com os filtros aplicados.</p>';
+        return;
+      }
+      
+      // Agrupar por analista
+      const volumesAnalista = {};
+      
+      filteredData.forEach(item => {
+        if (!volumesAnalista[item.login]) {
+          volumesAnalista[item.login] = {
+            name: loginToName[item.login] || item.login.toUpperCase(),
+            total: 0,
+            clusters: {}
+          };
+        }
+        
+        volumesAnalista[item.login].total += item.volume;
+        
+        if (!volumesAnalista[item.login].clusters[item.cluster]) {
+          volumesAnalista[item.login].clusters[item.cluster] = 0;
+        }
+        
+        volumesAnalista[item.login].clusters[item.cluster] += item.volume;
+      });
+      
+      // Converter para array e ordenar
+      const sortedAnalysts = Object.entries(volumesAnalista)
+        .sort((a, b) => b[1].total - a[1].total);
+      
+      // Gerar HTML da tabela
+      let tabelaHtml = `
+        <table>
+          <thead>
+            <tr>
+              <th>Analista</th>
+              <th>Total</th>
+              <th>Clusters (Volume)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      sortedAnalysts.forEach(([login, data]) => {
+        const clustersHtml = Object.entries(data.clusters)
+          .sort((a, b) => b[1] - a[1])
+          .map(([cluster, volume]) => `${cluster}: ${volume.toLocaleString()}`)
+          .join('<br>');
+        
+        tabelaHtml += `
+          <tr>
+            <td>${data.name}</td>
+            <td>${data.total.toLocaleString()}</td>
+            <td>${clustersHtml}</td>
+          </tr>
+        `;
+      });
+      
+      tabelaHtml += `
+          </tbody>
+        </table>
+      `;
+      
+      tabelaContainer.innerHTML = tabelaHtml;
+    }
+
+    // Exportar gráfico como imagem
+    function exportChart(chartId) {
+      const chart = charts[chartId];
+      if (!chart) return;
+      
+      const link = document.createElement('a');
+      link.download = `${chartId}.png`;
+      link.href = chart.toBase64Image();
+      link.click();
+    }
+
+    // Exportar dados como CSV
+    function exportData() {
+      if (filteredData.length === 0) {
+        alert('Nenhum dado para exportar.');
+        return;
+      }
+      
+      // Criar CSV
+      let csv = 'Data,Login,Analista,Cluster,Hora,Volume\n';
+      
+      filteredData.forEach(item => {
+        csv += `"${item.data}","${item.login}","${loginToName[item.login] || item.login}","${item.cluster}","${item.hora}",${item.volume}\n`;
+      });
+      
+      // Criar link de download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'volumetria.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Event Listeners
+    document.getElementById('fileInput').addEventListener('change', async function(e) {
+      const files = e.target.files;
+      if (files.length === 0) return;
+      
+      showLoading();
+      
+      try {
+        const allData = [];
+        
+        for (let file of files) {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          workbook.SheetNames.forEach(sheetName => {
+            const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            
+            sheet.forEach(row => {
+              const login = String(row['LOGIN'] || '').toLowerCase().trim();
+              const volume = Number(row['VOLUME'] || 0);
+              const cluster = String(row['CLUSTER'] || 'Indefinido').toUpperCase();
+              const hora = String(row['HORA'] || '00:00').slice(0, 2) + 'h';
+              const data = String(row['DATA'] || '').split('T')[0];
+              
+              if (!login) return;
+              
+              allData.push({
+                login,
+                volume,
+                cluster,
+                hora,
+                data
+              });
+            });
+          });
+        }
+        
+        processData(allData);
+      } catch (error) {
+        console.error('Erro ao processar arquivos:', error);
+        alert('Ocorreu um erro ao processar os arquivos. Verifique o console para mais detalhes.');
+      } finally {
+        hideLoading();
+      }
+    });
+
+    document.getElementById('applyFilters').addEventListener('click', applyFilters);
+    
+    document.getElementById('resetFilters').addEventListener('click', function() {
+      document.getElementById('dateStart').value = formatDateForInput(dateRange.min);
+      document.getElementById('dateEnd').value = formatDateForInput(dateRange.max);
+      document.getElementById('analystFilter').value = 'all';
+      document.getElementById('clusterFilter').value = 'all';
+      applyFilters();
+    });
+    
+    document.getElementById('exportData').addEventListener('click', exportData);
+    
+    // Adicionar listeners para exportação de gráficos
+    document.querySelectorAll('.export-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        exportChart(this.getAttribute('data-chart'));
+      });
     });
   </script>
 </body>
