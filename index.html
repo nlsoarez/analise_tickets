@@ -6,436 +6,175 @@
     <title>Análise de Volumetria de Outages</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #3f37c9;
-            --danger: #f72585;
-            --success: #4cc9f0;
-            --dark: #212529;
-            --light: #f8f9fa;
-            --gray: #6c757d;
-            --gray-light: #e9ecef;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f5f7fb;
-            color: var(--dark);
+            font-family: Arial, sans-serif;
+            margin: 20px;
             line-height: 1.6;
-            padding: 20px;
         }
-        
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
         }
-        
-        .header {
-            padding: 24px 32px;
-            border-bottom: 1px solid var(--gray-light);
-            background-color: white;
+        h1, h2, h3 {
+            color: #2c3e50;
         }
-        
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-        }
-        
-        .header h1 svg {
-            margin-right: 12px;
-            color: var(--primary);
-        }
-        
-        .content {
-            padding: 24px 32px;
-        }
-        
-        .upload-section {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-            background-color: var(--light);
-            padding: 16px;
-            border-radius: 8px;
-        }
-        
-        .file-input-wrapper {
-            position: relative;
-            flex-grow: 1;
-        }
-        
-        .file-input-label {
-            display: block;
-            padding: 12px 16px;
-            background-color: white;
-            border: 1px dashed var(--gray);
-            border-radius: 6px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .file-input-label:hover {
-            border-color: var(--primary);
-            background-color: rgba(67, 97, 238, 0.05);
-        }
-        
-        .file-input-label span {
-            color: var(--gray);
-            font-size: 14px;
-        }
-        
-        .file-input-label strong {
-            color: var(--primary);
-            font-weight: 500;
-        }
-        
-        #fileInput {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-        
-        .btn {
-            padding: 12px 20px;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-        }
-        
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background-color: #e5177b;
-        }
-        
-        .btn svg {
-            width: 16px;
-            height: 16px;
-        }
-        
-        .filters {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-group {
-            min-width: 200px;
-            flex-grow: 1;
-        }
-        
-        .filter-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--gray);
-        }
-        
-        .filter-group select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--gray-light);
-            border-radius: 6px;
-            font-size: 14px;
-            background-color: white;
-            transition: all 0.2s;
-        }
-        
-        .filter-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-        
-        .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        
         .card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        
-        .card h3 {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--gray);
-            margin-bottom: 8px;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
         }
-        
-        .card p {
-            font-size: 28px;
-            font-weight: 600;
-            color: var(--dark);
+        th {
+            background-color: #f2f2f2;
         }
-        
-        .charts-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-top: 24px;
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
-        
-        .chart-wrapper {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-        
-        .chart-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .chart-title svg {
-            color: var(--primary);
-        }
-        
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 400px;
+            margin-bottom: 30px;
         }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            background-color: var(--gray-light);
-            color: var(--gray);
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #eef;
+            border-radius: 5px;
         }
-        
-        .status-badge.primary {
-            background-color: rgba(67, 97, 238, 0.1);
-            color: var(--primary);
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
         }
-        
-        @media (max-width: 1024px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
+        button:hover {
+            background: #2980b9;
         }
-        
-        @media (max-width: 768px) {
-            .content {
-                padding: 16px;
-            }
-            
-            .filters {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .upload-section {
-                flex-direction: column;
-                align-items: stretch;
-            }
+        .login-mapping {
+            font-size: 0.9em;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                Análise de Volumetria de Outages
-            </h1>
+        <h1>Análise de Volumetria de Outages</h1>
+        
+        <div class="filter-section">
+            <h3>Filtros</h3>
+            <div>
+                <label for="technologyFilter">Tecnologia:</label>
+                <select id="technologyFilter">
+                    <option value="all">Todas</option>
+                    <option value="GPON">GPON</option>
+                    <option value="HFC">HFC</option>
+                </select>
+                
+                <label for="clusterFilter">Cluster:</label>
+                <select id="clusterFilter">
+                    <option value="all">Todos</option>
+                </select>
+                
+                <label for="loginFilter">Login:</label>
+                <select id="loginFilter">
+                    <option value="all">Todos</option>
+                </select>
+            </div>
+            <button id="applyFilters">Aplicar Filtros</button>
+            <button id="resetFilters">Resetar Filtros</button>
         </div>
         
-        <div class="content">
-            <div class="upload-section">
-                <div class="file-input-wrapper">
-                    <label for="fileInput" class="file-input-label">
-                        <span>Arraste e solte arquivos Excel ou <strong>clique para selecionar</strong></span>
-                    </label>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls" multiple>
-                </div>
-                <button id="resetBtn" class="btn btn-danger">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    Limpar
-                </button>
+        <div class="card">
+            <h2>Resumo Geral</h2>
+            <div id="summaryStats"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Distribuição por Tecnologia</h2>
+            <div class="chart-container">
+                <canvas id="techChart"></canvas>
             </div>
-            
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="technologyFilter">TECNOLOGIA</label>
-                    <select id="technologyFilter">
-                        <option value="all">Todas as tecnologias</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="clusterFilter">CLUSTER</label>
-                    <select id="clusterFilter">
-                        <option value="all">Todos os clusters</option>
-                    </select>
-                </div>
-                
-                <button id="analyzeBtn" class="btn btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="12" x2="2" y2="12"></line>
-                        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
-                        <line x1="6" y1="16" x2="6.01" y2="16"></line>
-                        <line x1="10" y1="16" x2="10.01" y2="16"></line>
-                    </svg>
-                    Analisar Dados
-                </button>
+        </div>
+        
+        <div class="card">
+            <h2>Distribuição por Cluster</h2>
+            <div class="chart-container">
+                <canvas id="clusterChart"></canvas>
             </div>
-            
-            <div class="summary-cards">
-                <div class="card">
-                    <h3>TOTAL DE OUTAGES</h3>
-                    <p id="totalOutages">-</p>
-                </div>
-                <div class="card">
-                    <h3>OUTAGES GPON</h3>
-                    <p id="gponOutages">-</p>
-                </div>
-                <div class="card">
-                    <h3>OUTAGES HFC</h3>
-                    <p id="hfcOutages">-</p>
-                </div>
-                <div class="card">
-                    <h3>PICO HORÁRIO</h3>
-                    <p id="peakHour">-</p>
-                </div>
-                <div class="card">
-                    <h3>CLUSTER COM MAIS OUTAGES</h3>
-                    <p id="peakCluster">-</p>
-                </div>
-                <div class="card">
-                    <h3>TÉCNICO COM MAIS ATENDIMENTOS</h3>
-                    <p id="peakTechnician">-</p>
-                </div>
+        </div>
+        
+        <div class="card">
+            <h2>Top 10 Logins com Mais Outages</h2>
+            <div class="chart-container">
+                <canvas id="loginChart"></canvas>
             </div>
-            
-            <div class="charts-container">
-                <div class="chart-wrapper">
-                    <div class="chart-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 21H6.2a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9.8a2 2 0 0 1 2 2V21z"></path>
-                            <path d="M16 21V9a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v12"></path>
-                        </svg>
-                        Volume por Cluster
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="clusterChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="chart-wrapper">
-                    <div class="chart-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                        </svg>
-                        Volume por Técnico (Top 15)
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="loginChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="chart-wrapper">
-                    <div class="chart-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                        Volume por Hora do Dia (22h às 6h)
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="hourChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="chart-wrapper">
-                    <div class="chart-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                        </svg>
-                        Volume por Tecnologia
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="techChart"></canvas>
-                    </div>
-                </div>
+        </div>
+        
+        <div class="card">
+            <h2>Distribuição por Dia</h2>
+            <div class="chart-container">
+                <canvas id="dayChart"></canvas>
             </div>
+        </div>
+        
+        <div class="card">
+            <h2>Distribuição por Hora</h2>
+            <div class="chart-container">
+                <canvas id="hourChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Detalhes por Login</h2>
+            <div id="loginDetails"></div>
+        </div>
+        
+        <div class="card login-mapping">
+            <h3>Mapeamento de Logins</h3>
+            <table id="loginMappingTable">
+                <thead>
+                    <tr>
+                        <th>Login</th>
+                        <th>Nome</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>N0238475</td><td>MARLEY MARQUES RIBEIRO</td></tr>
+                    <tr><td>N5923221</td><td>KELLY PINHEIRO LIRA</td></tr>
+                    <tr><td>F160641</td><td>JENNIFER MARIA ANDRADE SANTOS</td></tr>
+                    <tr><td>N5772086</td><td>THIAGO PEREIRA DA SILVA</td></tr>
+                    <tr><td>N0239871</td><td>LEONARDO FERREIRA LIMA DE ALMEIDA</td></tr>
+                    <tr><td>N5577565</td><td>MARISTELLA MARCIA DOS SANTOS</td></tr>
+                    <tr><td>N5737414</td><td>SANDRO DA SILVA CARVALHO</td></tr>
+                    <tr><td>N5972428</td><td>CRISTIANE HERMOGENES DA SILVA</td></tr>
+                    <tr><td>N6173055</td><td>JEFFERSON LUIS GONÇALVES COITINHO</td></tr>
+                    <tr><td>N5932090</td><td>EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA</td></tr>
+                    <tr><td>N0255801</td><td>ELBERTON ANICETO HENRIQUE</td></tr>
+                    <tr><td>N4014011</td><td>ALAN MARINHO DIAS</td></tr>
+                    <tr><td>N5923996</td><td>JULIO CESAR SANTOS SOARES</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        // Dados dos logins conhecidos (case insensitive)
-        const knownLogins = {
+        // Dados de mapeamento de login para nome
+        const loginMapping = {
             'N0238475': 'MARLEY MARQUES RIBEIRO',
             'N5923221': 'KELLY PINHEIRO LIRA',
             'F160641': 'JENNIFER MARIA ANDRADE SANTOS',
@@ -451,317 +190,162 @@
             'N5923996': 'JULIO CESAR SANTOS SOARES'
         };
 
-        let outagesData = [];
-        let loadedFiles = [];
-        let techChart, clusterChart, hourChart, loginChart;
+        // Normaliza logins (remove diferenças de maiúsculas/minúsculas)
+        function normalizeLogin(login) {
+            if (!login) return '';
+            return login.toUpperCase();
+        }
 
-        document.getElementById('fileInput').addEventListener('change', async function(e) {
-            const files = e.target.files;
-            if (!files || files.length === 0) return;
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+        // Processa os dados da planilha
+        function processData(data) {
+            const processedData = [];
+            const clusters = new Set();
+            const technologies = new Set();
+            const logins = new Set();
+            const dates = new Set();
+            
+            data.forEach(row => {
+                if (!row.OUTAGE || !row.TECNOLOGIA || !row.CLUSTER || !row['DIA / HORA']) return;
                 
-                try {
-                    const data = await readFile(file);
-                    loadedFiles.push({
-                        name: file.name,
-                        size: file.size,
-                        lastModified: file.lastModified,
-                        data: data
-                    });
-                    
-                    // Mostrar feedback visual de arquivo carregado
-                    document.querySelector('.file-input-label span').innerHTML = 
-                        `<strong>${files.length} arquivo(s) carregado(s)</strong>`;
-                    
-                } catch (error) {
-                    console.error(`Erro ao processar o arquivo ${file.name}:`, error);
-                    alert(`Erro ao processar o arquivo ${file.name}. Verifique o console para detalhes.`);
-                }
-            }
+                const dateTime = new Date(row['DIA / HORA']);
+                const date = dateTime.toISOString().split('T')[0];
+                const hour = dateTime.getHours();
+                const login = normalizeLogin(row.LOGIN);
+                
+                clusters.add(row.CLUSTER);
+                technologies.add(row.TECNOLOGIA);
+                if (login) logins.add(login);
+                dates.add(date);
+                
+                processedData.push({
+                    outage: row.OUTAGE,
+                    technology: row.TECNOLOGIA,
+                    cluster: row.CLUSTER,
+                    datetime: dateTime,
+                    date: date,
+                    hour: hour,
+                    login: login
+                });
+            });
             
-            // Se foi o primeiro carregamento, analisar os dados
-            if (outagesData.length === 0 && loadedFiles.length > 0) {
-                mergeDataFromFiles();
-                populateFilters();
-                analyzeData();
-            }
-        });
+            return {
+                data: processedData,
+                clusters: Array.from(clusters).sort(),
+                technologies: Array.from(technologies).sort(),
+                logins: Array.from(logins).sort(),
+                dates: Array.from(dates).sort()
+            };
+        }
 
-        function readFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        
-                        // Assume que os dados estão na primeira planilha
-                        const firstSheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[firstSheetName];
-                        
-                        // Converter para JSON
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                        
-                        // Processar os dados para extrair data e hora
-                        const processedData = jsonData.map(item => {
-                            // Extrair hora da coluna DIA/HORA (assumindo formato "DD/MM/YYYY HH:MM")
-                            let hora = '';
-                            if (item['DIA/HORA']) {
-                                const dateTimeParts = item['DIA/HORA'].toString().split(' ');
-                                if (dateTimeParts.length > 1) {
-                                    const timePart = dateTimeParts[1];
-                                    const hourParts = timePart.split(':');
-                                    if (hourParts.length > 0) {
-                                        hora = hourParts[0];
-                                    }
-                                }
-                            }
-                            
-                            return {
-                                OUTAGE: item.OUTAGE,
-                                TECNOLOGIA: item.TECNOLOGIA,
-                                CLUSTER: item.CLUSTER,
-                                'DIA/HORA': item['DIA/HORA'],
-                                HORA: hora,
-                                LOGIN: item.LOGIN,
-                                FILE_NAME: file.name
-                            };
-                        });
-                        
-                        resolve(processedData);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file);
+        // Filtra os dados com base nos filtros selecionados
+        function filterData(data, filters) {
+            return data.filter(item => {
+                if (filters.technology !== 'all' && item.technology !== filters.technology) return false;
+                if (filters.cluster !== 'all' && item.cluster !== filters.cluster) return false;
+                if (filters.login !== 'all' && item.login !== filters.login) return false;
+                return true;
             });
         }
 
-        function mergeDataFromFiles() {
-            outagesData = loadedFiles.flatMap(file => file.data);
-        }
-
-        function populateFilters() {
-            if (outagesData.length === 0) return;
+        // Gera estatísticas resumidas
+        function generateSummaryStats(data) {
+            const total = data.length;
+            const byTech = {};
+            const byCluster = {};
+            const byLogin = {};
+            const byDay = {};
+            const byHour = Array(24).fill(0);
             
-            // Tecnologias únicas
-            const techFilter = document.getElementById('technologyFilter');
-            techFilter.innerHTML = '<option value="all">Todas as tecnologias</option>';
-            const technologies = [...new Set(outagesData.map(item => item.TECNOLOGIA))];
-            
-            technologies.forEach(tech => {
-                const option = document.createElement('option');
-                option.value = tech;
-                option.textContent = tech;
-                techFilter.appendChild(option);
-            });
-            
-            // Clusters únicos
-            const clusterFilter = document.getElementById('clusterFilter');
-            clusterFilter.innerHTML = '<option value="all">Todos os clusters</option>';
-            const clusters = [...new Set(outagesData.map(item => item.CLUSTER))];
-            
-            clusters.forEach(cluster => {
-                const option = document.createElement('option');
-                option.value = cluster;
-                option.textContent = cluster;
-                clusterFilter.appendChild(option);
-            });
-        }
-
-        document.getElementById('analyzeBtn').addEventListener('click', analyzeData);
-        document.getElementById('resetBtn').addEventListener('click', resetAll);
-
-        function resetAll() {
-            outagesData = [];
-            loadedFiles = [];
-            document.querySelector('.file-input-label span').innerHTML = 
-                'Arraste e solte arquivos Excel ou <strong>clique para selecionar</strong>';
-            document.getElementById('fileInput').value = '';
-            resetCharts();
-            updateSummaryCards([]);
-        }
-
-        function resetCharts() {
-            if (techChart) techChart.destroy();
-            if (clusterChart) clusterChart.destroy();
-            if (hourChart) hourChart.destroy();
-            if (loginChart) loginChart.destroy();
-        }
-
-        function analyzeData() {
-            if (outagesData.length === 0) {
-                alert('Por favor, carregue arquivos Excel primeiro.');
-                return;
-            }
-            
-            // Aplicar filtros
-            const techFilter = document.getElementById('technologyFilter').value;
-            const clusterFilter = document.getElementById('clusterFilter').value;
-            
-            let filteredData = outagesData;
-            
-            if (techFilter !== 'all') {
-                filteredData = filteredData.filter(item => item.TECNOLOGIA === techFilter);
-            }
-            
-            if (clusterFilter !== 'all') {
-                filteredData = filteredData.filter(item => item.CLUSTER === clusterFilter);
-            }
-            
-            // Atualizar cartões de resumo
-            updateSummaryCards(filteredData);
-            
-            // Criar/atualizar gráficos
-            createTechChart(filteredData);
-            createClusterChart(filteredData);
-            createHourChart(filteredData);
-            createLoginChart(filteredData);
-        }
-
-        function updateSummaryCards(data) {
-            document.getElementById('totalOutages').textContent = data.length;
-            
-            const gponCount = data.filter(item => item.TECNOLOGIA === 'GPON').length;
-            const hfcCount = data.filter(item => item.TECNOLOGIA === 'HFC').length;
-            
-            document.getElementById('gponOutages').textContent = gponCount;
-            document.getElementById('hfcOutages').textContent = hfcCount;
-            
-            // Encontrar horário com mais outages
-            const hourCounts = {};
             data.forEach(item => {
-                const hour = item.HORA;
-                if (hour) {
-                    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                // Por tecnologia
+                byTech[item.technology] = (byTech[item.technology] || 0) + 1;
+                
+                // Por cluster
+                byCluster[item.cluster] = (byCluster[item.cluster] || 0) + 1;
+                
+                // Por login (se houver)
+                if (item.login) {
+                    byLogin[item.login] = (byLogin[item.login] || 0) + 1;
                 }
+                
+                // Por dia
+                byDay[item.date] = (byDay[item.date] || 0) + 1;
+                
+                // Por hora
+                byHour[item.hour]++;
             });
             
-            let peakHour = '-';
-            let maxHourCount = 0;
-            for (const [hour, count] of Object.entries(hourCounts)) {
-                if (count > maxHourCount) {
-                    maxHourCount = count;
-                    peakHour = `${hour}h (${count})`;
-                }
-            }
+            // Top 10 logins
+            const topLogins = Object.entries(byLogin)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
             
-            document.getElementById('peakHour').textContent = peakHour;
-            
-            // Encontrar cluster com mais outages
-            const clusterCounts = {};
-            data.forEach(item => {
-                const cluster = item.CLUSTER;
-                if (cluster) {
-                    clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
-                }
-            });
-            
-            let peakCluster = '-';
-            let maxClusterCount = 0;
-            for (const [cluster, count] of Object.entries(clusterCounts)) {
-                if (count > maxClusterCount) {
-                    maxClusterCount = count;
-                    peakCluster = `${cluster} (${count})`;
-                }
-            }
-            
-            document.getElementById('peakCluster').textContent = peakCluster;
-            
-            // Encontrar técnico com mais atendimentos
-            const loginCounts = {};
-            data.forEach(item => {
-                const login = item.LOGIN;
-                if (login) {
-                    const normalizedLogin = login.trim().toUpperCase();
-                    const knownLogin = Object.keys(knownLogins).find(key => 
-                        key.toUpperCase() === normalizedLogin
-                    );
-                    
-                    if (knownLogin) {
-                        loginCounts[knownLogin] = (loginCounts[knownLogin] || 0) + 1;
-                    }
-                }
-            });
-            
-            let peakTechnician = '-';
-            let maxLoginCount = 0;
-            for (const [login, count] of Object.entries(loginCounts)) {
-                if (count > maxLoginCount) {
-                    maxLoginCount = count;
-                    peakTechnician = `${knownLogins[login]} (${count})`;
-                }
-            }
-            
-            document.getElementById('peakTechnician').textContent = peakTechnician;
+            return {
+                total,
+                byTech,
+                byCluster,
+                byLogin,
+                byDay,
+                byHour,
+                topLogins
+            };
         }
 
-        function createTechChart(data) {
+        // Atualiza os gráficos
+        function updateCharts(stats) {
+            // Gráfico por tecnologia
+            updateTechChart(stats.byTech);
+            
+            // Gráfico por cluster
+            updateClusterChart(stats.byCluster);
+            
+            // Gráfico por login (top 10)
+            updateLoginChart(stats.topLogins);
+            
+            // Gráfico por dia
+            updateDayChart(stats.byDay);
+            
+            // Gráfico por hora
+            updateHourChart(stats.byHour);
+        }
+
+        // Atualiza o gráfico de tecnologia
+        function updateTechChart(data) {
             const ctx = document.getElementById('techChart').getContext('2d');
             
-            // Contar por tecnologia
-            const techCounts = {};
-            data.forEach(item => {
-                const tech = item.TECNOLOGIA;
-                if (tech) {
-                    techCounts[tech] = (techCounts[tech] || 0) + 1;
-                }
-            });
-            
-            const labels = Object.keys(techCounts);
-            const counts = Object.values(techCounts);
-            
-            // Cores dinâmicas
-            const backgroundColors = [
-                'rgba(67, 97, 238, 0.7)',
-                'rgba(111, 207, 151, 0.7)',
-                'rgba(249, 168, 37, 0.7)',
-                'rgba(247, 37, 133, 0.7)',
-                'rgba(76, 201, 240, 0.7)'
-            ];
-            
-            if (techChart) {
-                techChart.destroy();
+            if (window.techChart) {
+                window.techChart.destroy();
             }
             
-            techChart = new Chart(ctx, {
-                type: 'doughnut',
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            
+            window.techChart = new Chart(ctx, {
+                type: 'pie',
                 data: {
                     labels: labels,
                     datasets: [{
-                        data: counts,
-                        backgroundColor: backgroundColors,
-                        borderWidth: 0
+                        data: values,
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 99, 132, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 99, 132, 1)'
+                        ],
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '70%',
                     plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
+                        title: {
+                            display: true,
+                            text: 'Distribuição de Outages por Tecnologia'
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleFont: {
-                                family: 'Inter',
-                                size: 14
-                            },
-                            bodyFont: {
-                                family: 'Inter',
-                                size: 12
-                            },
                             callbacks: {
                                 label: function(context) {
                                     const label = context.label || '';
@@ -777,263 +361,400 @@
             });
         }
 
-        function createClusterChart(data) {
+        // Atualiza o gráfico de cluster
+        function updateClusterChart(data) {
             const ctx = document.getElementById('clusterChart').getContext('2d');
             
-            // Contar por cluster
-            const clusterCounts = {};
-            data.forEach(item => {
-                const cluster = item.CLUSTER;
-                if (cluster) {
-                    clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
-                }
-            });
-            
-            // Ordenar por quantidade (do maior para o menor)
-            const sortedEntries = Object.entries(clusterCounts).sort((a, b) => b[1] - a[1]);
-            const labels = sortedEntries.map(entry => entry[0]);
-            const counts = sortedEntries.map(entry => entry[1]);
-            
-            if (clusterChart) {
-                clusterChart.destroy();
+            if (window.clusterChart) {
+                window.clusterChart.destroy();
             }
             
-            clusterChart = new Chart(ctx, {
+            const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+            const labels = entries.map(entry => entry[0]);
+            const values = entries.map(entry => entry[1]);
+            
+            window.clusterChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Outages',
-                        data: counts,
-                        backgroundColor: 'rgba(67, 97, 238, 0.7)',
-                        borderColor: 'rgba(67, 97, 238, 1)',
-                        borderWidth: 0,
-                        borderRadius: 4
+                        label: 'Número de Outages',
+                        data: values,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Distribuição de Outages por Cluster'
                         }
                     },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleFont: {
-                                family: 'Inter',
-                                size: 14
-                            },
-                            bodyFont: {
-                                family: 'Inter',
-                                size: 12
-                            }
+                    scales: {
+                        y: {
+                            beginAtZero: true
                         }
                     }
                 }
             });
         }
 
-        function createHourChart(data) {
-            const ctx = document.getElementById('hourChart').getContext('2d');
-            
-            // Contar por hora
-            const hourCounts = {};
-            data.forEach(item => {
-                const hour = item.HORA;
-                if (hour) {
-                    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-                }
-            });
-            
-            // Definir as horas que queremos mostrar (22h às 6h)
-            const nightHours = ['22', '23', '0', '1', '2', '3', '4', '5', '6'];
-            const counts = nightHours.map(hour => hourCounts[hour] || 0);
-            
-            if (hourChart) {
-                hourChart.destroy();
-            }
-            
-            hourChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: nightHours.map(h => `${h}h`),
-                    datasets: [{
-                        label: 'Outages',
-                        data: counts,
-                        backgroundColor: 'rgba(111, 207, 151, 0.7)',
-                        borderColor: 'rgba(111, 207, 151, 1)',
-                        borderWidth: 0,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleFont: {
-                                family: 'Inter',
-                                size: 14
-                            },
-                            bodyFont: {
-                                family: 'Inter',
-                                size: 12
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function createLoginChart(data) {
+        // Atualiza o gráfico de login (top 10)
+        function updateLoginChart(data) {
             const ctx = document.getElementById('loginChart').getContext('2d');
             
-            // Contar atendimentos por login (case insensitive)
-            const loginCounts = {};
-            data.forEach(item => {
-                const login = item.LOGIN;
-                if (login) {
-                    const normalizedLogin = login.trim().toUpperCase();
-                    
-                    // Verificar se é um login conhecido
-                    const knownLogin = Object.keys(knownLogins).find(key => 
-                        key.toUpperCase() === normalizedLogin
-                    );
-                    
-                    if (knownLogin) {
-                        loginCounts[knownLogin] = (loginCounts[knownLogin] || 0) + 1;
-                    } else {
-                        // Se não for um login conhecido, contar como "Outros"
-                        loginCounts['OUTROS'] = (loginCounts['OUTROS'] || 0) + 1;
-                    }
-                }
-            });
-            
-            // Ordenar por quantidade (do maior para o menor) e pegar top 15
-            const sortedEntries = Object.entries(loginCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
-            const labels = sortedEntries.map(entry => {
-                const login = entry[0];
-                return login === 'OUTROS' ? 'OUTROS' : `${knownLogins[login]}`;
-            });
-            const counts = sortedEntries.map(entry => entry[1]);
-            
-            if (loginChart) {
-                loginChart.destroy();
+            if (window.loginChart) {
+                window.loginChart.destroy();
             }
             
-            loginChart = new Chart(ctx, {
+            const labels = data.map(entry => {
+                const login = entry[0];
+                const name = loginMapping[login] || 'Desconhecido';
+                return `${login} (${name})`;
+            });
+            const values = data.map(entry => entry[1]);
+            
+            window.loginChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Atendimentos',
-                        data: counts,
-                        backgroundColor: 'rgba(249, 168, 37, 0.7)',
-                        borderColor: 'rgba(249, 168, 37, 1)',
-                        borderWidth: 0,
-                        borderRadius: 4
+                        label: 'Número de Outages',
+                        data: values,
+                        backgroundColor: 'rgba(153, 102, 255, 0.7)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
                     }]
                 },
                 options: {
-                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
-                        },
-                        y: {
-                            grid: {
-                                display: false,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Top 10 Logins com Mais Outages'
                         }
                     },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleFont: {
-                                family: 'Inter',
-                                size: 14
-                            },
-                            bodyFont: {
-                                family: 'Inter',
-                                size: 12
-                            }
+                    scales: {
+                        y: {
+                            beginAtZero: true
                         }
                     }
                 }
             });
         }
+
+        // Atualiza o gráfico por dia
+        function updateDayChart(data) {
+            const ctx = document.getElementById('dayChart').getContext('2d');
+            
+            if (window.dayChart) {
+                window.dayChart.destroy();
+            }
+            
+            const sortedDates = Object.keys(data).sort();
+            const values = sortedDates.map(date => data[date]);
+            
+            window.dayChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: 'Outages por Dia',
+                        data: values,
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Distribuição de Outages por Dia'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Atualiza o gráfico por hora
+        function updateHourChart(data) {
+            const ctx = document.getElementById('hourChart').getContext('2d');
+            
+            if (window.hourChart) {
+                window.hourChart.destroy();
+            }
+            
+            const labels = Array.from({length: 24}, (_, i) => `${i}h`);
+            
+            window.hourChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Outages por Hora',
+                        data: data,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Distribuição de Outages por Hora do Dia'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Atualiza o resumo estatístico
+        function updateSummaryStats(stats, filteredData) {
+            const summaryDiv = document.getElementById('summaryStats');
+            
+            // Calcula porcentagens
+            const techPercentages = {};
+            for (const tech in stats.byTech) {
+                techPercentages[tech] = ((stats.byTech[tech] / stats.total) * 100).toFixed(1);
+            }
+            
+            // Encontra o cluster com mais outages
+            let maxCluster = '';
+            let maxClusterCount = 0;
+            for (const cluster in stats.byCluster) {
+                if (stats.byCluster[cluster] > maxClusterCount) {
+                    maxCluster = cluster;
+                    maxClusterCount = stats.byCluster[cluster];
+                }
+            }
+            
+            // Encontra o dia com mais outages
+            let maxDay = '';
+            let maxDayCount = 0;
+            for (const day in stats.byDay) {
+                if (stats.byDay[day] > maxDayCount) {
+                    maxDay = day;
+                    maxDayCount = stats.byDay[day];
+                }
+            }
+            
+            // Encontra a hora com mais outages
+            let maxHour = 0;
+            let maxHourCount = 0;
+            stats.byHour.forEach((count, hour) => {
+                if (count > maxHourCount) {
+                    maxHour = hour;
+                    maxHourCount = count;
+                }
+            });
+            
+            // Formata a data
+            const formattedMaxDay = maxDay ? new Date(maxDay).toLocaleDateString('pt-BR') : '';
+            
+            // Cria o HTML
+            summaryDiv.innerHTML = `
+                <table>
+                    <tr>
+                        <th>Total de Outages</th>
+                        <td>${stats.total}</td>
+                    </tr>
+                    <tr>
+                        <th>Por Tecnologia</th>
+                        <td>
+                            ${Object.entries(stats.byTech).map(([tech, count]) => 
+                                `${tech}: ${count} (${techPercentages[tech]}%)`).join('<br>')}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Cluster com Mais Outages</th>
+                        <td>${maxCluster}: ${maxClusterCount} (${((maxClusterCount / stats.total) * 100).toFixed(1)}%)</td>
+                    </tr>
+                    <tr>
+                        <th>Dia com Mais Outages</th>
+                        <td>${formattedMaxDay}: ${maxDayCount}</td>
+                    </tr>
+                    <tr>
+                        <th>Hora com Mais Outages</th>
+                        <td>${maxHour}h: ${maxHourCount}</td>
+                    </tr>
+                    <tr>
+                        <th>Outages sem Login</th>
+                        <td>${filteredData.filter(item => !item.login).length} (${((filteredData.filter(item => !item.login).length / stats.total) * 100).toFixed(1)}%)</td>
+                    </tr>
+                </table>
+            `;
+        }
+
+        // Atualiza os detalhes por login
+        function updateLoginDetails(stats) {
+            const loginDetailsDiv = document.getElementById('loginDetails');
+            
+            // Ordena os logins por quantidade de outages
+            const sortedLogins = Object.entries(stats.byLogin)
+                .sort((a, b) => b[1] - a[1]);
+            
+            // Cria a tabela
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Login</th>
+                            <th>Nome</th>
+                            <th>Outages</th>
+                            <th>% do Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            sortedLogins.forEach(([login, count]) => {
+                const name = loginMapping[login] || 'Desconhecido';
+                const percentage = ((count / stats.total) * 100).toFixed(1);
+                
+                html += `
+                    <tr>
+                        <td>${login}</td>
+                        <td>${name}</td>
+                        <td>${count}</td>
+                        <td>${percentage}%</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            loginDetailsDiv.innerHTML = html;
+        }
+
+        // Carrega os dados do arquivo Excel
+        async function loadData() {
+            try {
+                // Aqui você pode substituir por um upload de arquivo real
+                // Por enquanto, vamos usar os dados fornecidos na pergunta
+                
+                // Simulando o processamento dos dados
+                const response = await fetch('Volume - Janeiro.xlsx');
+                const arrayBuffer = await response.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Supondo que a primeira planilha é a que contém os dados
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Converter para JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                // Processar os dados
+                const processed = processData(jsonData);
+                
+                // Preencher os filtros
+                fillFilters(processed);
+                
+                // Atualizar a análise com todos os dados
+                updateAnalysis(processed.data, {
+                    technology: 'all',
+                    cluster: 'all',
+                    login: 'all'
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                alert('Erro ao carregar dados. Verifique o console para mais detalhes.');
+            }
+        }
+
+        // Preenche os dropdowns de filtro
+        function fillFilters(processedData) {
+            const clusterFilter = document.getElementById('clusterFilter');
+            const loginFilter = document.getElementById('loginFilter');
+            
+            // Clusters
+            processedData.clusters.forEach(cluster => {
+                const option = document.createElement('option');
+                option.value = cluster;
+                option.textContent = cluster;
+                clusterFilter.appendChild(option);
+            });
+            
+            // Logins
+            processedData.logins.forEach(login => {
+                const option = document.createElement('option');
+                option.value = login;
+                
+                // Adiciona o nome do login se estiver no mapeamento
+                const name = loginMapping[login] || '';
+                option.textContent = name ? `${login} (${name})` : login;
+                
+                loginFilter.appendChild(option);
+            });
+        }
+
+        // Atualiza toda a análise com base nos filtros
+        function updateAnalysis(data, filters) {
+            const filteredData = filterData(data, filters);
+            const stats = generateSummaryStats(filteredData);
+            
+            updateSummaryStats(stats, filteredData);
+            updateCharts(stats);
+            updateLoginDetails(stats);
+        }
+
+        // Inicializa a aplicação
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configura os eventos dos botões de filtro
+            document.getElementById('applyFilters').addEventListener('click', () => {
+                const filters = {
+                    technology: document.getElementById('technologyFilter').value,
+                    cluster: document.getElementById('clusterFilter').value,
+                    login: document.getElementById('loginFilter').value
+                };
+                
+                // Aqui você precisaria ter acesso aos dados processados
+                // Por enquanto, vamos apenas logar os filtros
+                console.log('Filtros aplicados:', filters);
+                
+                // Na implementação real, você chamaria updateAnalysis() com os filtros
+            });
+            
+            document.getElementById('resetFilters').addEventListener('click', () => {
+                document.getElementById('technologyFilter').value = 'all';
+                document.getElementById('clusterFilter').value = 'all';
+                document.getElementById('loginFilter').value = 'all';
+                
+                // Na implementação real, você chamaria updateAnalysis() com filtros resetados
+                console.log('Filtros resetados');
+            });
+            
+            // Carrega os dados
+            loadData();
+        });
     </script>
 </body>
 </html>
