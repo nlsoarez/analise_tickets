@@ -101,7 +101,7 @@
     }
 
     .chart-container {
-      height: 300px;
+      height: 400px; /* Aumentado para melhor visualização */
       width: 100%;
     }
 
@@ -161,6 +161,11 @@
       background-color: #f8d7da;
       color: #721c24;
       border: 1px solid #f5c6cb;
+    }
+
+    .highlight {
+      background-color: rgba(244, 67, 54, 0.1);
+      font-weight: bold;
     }
   </style>
 </head>
@@ -229,7 +234,7 @@
   </div>
 
   <script>
-    // Mapeamento de login para nome completo
+    // Mapeamento de login para nome completo (apenas analistas conhecidos)
     const loginToName = {
       "n0238475": "MARLEY MARQUES RIBEIRO",
       "n5923221": "KELLY PINHEIRO LIRA",
@@ -301,10 +306,52 @@
       }
     }
 
-    function drawChart(id, labels, data, label, type = 'bar') {
+    function drawChart(id, labels, data, label, type = 'bar', options = {}) {
       if (charts[id]) charts[id].destroy();
       
       const ctx = document.getElementById(id).getContext('2d');
+      
+      const defaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) label += ': ';
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toLocaleString();
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString();
+              }
+            }
+          },
+          x: {
+            ticks: {
+              autoSkip: false,
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        }
+      };
+
+      const mergedOptions = { ...defaults, ...options };
+      
       charts[id] = new Chart(ctx, {
         type: type,
         data: {
@@ -314,18 +361,12 @@
             data: data,
             backgroundColor: '#4361ee',
             borderColor: '#3a0ca3',
-            borderWidth: 1
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
+        options: mergedOptions
       });
     }
 
@@ -341,8 +382,8 @@
           const data = await file.arrayBuffer();
           const workbook = XLSX.read(data, { 
             type: 'array',
-            cellDates: true, // Crucial para interpretar datas corretamente
-            raw: false       // Obter valores formatados
+            cellDates: true,
+            raw: false
           });
           
           workbook.SheetNames.forEach(sheetName => {
@@ -366,13 +407,13 @@
             }
             
             const jsonData = XLSX.utils.sheet_to_json(sheet, {
-              defval: '', // Valor padrão para células vazias
-              raw: false  // Obter valores formatados
+              defval: '',
+              raw: false
             });
             
             jsonData.forEach((row, index) => {
               try {
-                const linha = index + 2; // Linha na planilha (+1 para header, +1 para base 1)
+                const linha = index + 2;
                 
                 // Verifica valores obrigatórios
                 if (!row['LOGIN'] || !row['DIA / HORA'] || !row['CLUSTER']) {
@@ -381,6 +422,13 @@
                 }
                 
                 const login = String(row['LOGIN']).toLowerCase().trim();
+                
+                // Filtra apenas analistas conhecidos
+                if (!loginToName[login]) {
+                  console.warn(`Linha ${linha} ignorada - analista não mapeado: ${login}`);
+                  return;
+                }
+                
                 const diaHora = parseDateTime(row['DIA / HORA']);
                 
                 if (!login || !diaHora.date || !diaHora.time) {
@@ -406,7 +454,7 @@
         }
         
         if (!hasValidData) {
-          throw new Error('Nenhum dado válido encontrado nos arquivos. Verifique se as colunas contêm dados válidos.');
+          throw new Error('Nenhum dado válido encontrado nos arquivos. Verifique se os dados correspondem aos analistas mapeados.');
         }
         
         updateDashboard(processedData);
@@ -424,10 +472,13 @@
       const volumesCluster = {};
       const volumesHorario = {};
       const volumesDia = {};
+      const volumesPorMes = {};
 
       data.forEach(item => {
-        // Analista
-        volumesAnalista[item.login] = (volumesAnalista[item.login] || 0) + 1;
+        // Analista (apenas os mapeados)
+        if (loginToName[item.login]) {
+          volumesAnalista[item.login] = (volumesAnalista[item.login] || 0) + 1;
+        }
         
         // Cluster
         volumesCluster[item.cluster] = (volumesCluster[item.cluster] || 0) + 1;
@@ -437,46 +488,155 @@
         
         // Data
         volumesDia[item.date] = (volumesDia[item.date] || 0) + 1;
+        
+        // Mês (para destacar dias com maior volume)
+        const mes = item.date.substring(0, 7); // Formato YYYY-MM
+        if (!volumesPorMes[mes]) {
+          volumesPorMes[mes] = { date: null, volume: 0 };
+        }
+        if (volumesDia[item.date] > volumesPorMes[mes].volume) {
+          volumesPorMes[mes] = { date: item.date, volume: volumesDia[item.date] };
+        }
       });
 
-      // Gráfico de Analistas
-      const analistas = Object.entries(volumesAnalista)
+      // Gráfico de Analistas (ordenado por volume)
+      const analistasOrdenados = Object.entries(volumesAnalista)
         .sort((a, b) => b[1] - a[1])
-        .map(([login]) => loginToName[login] || login.toUpperCase());
+        .map(([login]) => ({
+          nome: loginToName[login],
+          volume: volumesAnalista[login]
+        }));
       
-      const valoresAnalistas = Object.entries(volumesAnalista)
-        .sort((a, b) => b[1] - a[1])
-        .map(([, count]) => count);
+      drawChart(
+        'chartAnalistas',
+        analistasOrdenados.map(a => a.nome),
+        analistasOrdenados.map(a => a.volume),
+        'Volume por Analista',
+        'bar',
+        {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      );
+
+      // Gráfico de Clusters (ordenado por volume)
+      const clustersOrdenados = Object.entries(volumesCluster)
+        .sort((a, b) => b[1] - a[1]);
       
-      drawChart('chartAnalistas', analistas, valoresAnalistas, 'Volume por Analista');
+      drawChart(
+        'chartClusters',
+        clustersOrdenados.map(c => c[0]),
+        clustersOrdenados.map(c => c[1]),
+        'Volume por Cluster',
+        'bar',
+        {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      );
 
-      // Gráfico de Clusters
-      const clusters = Object.keys(volumesCluster);
-      const valoresClusters = Object.values(volumesCluster);
-      drawChart('chartClusters', clusters, valoresClusters, 'Volume por Cluster');
+      // Gráfico de Horários (ordenado por volume)
+      const horariosOrdenados = Object.entries(volumesHorario)
+        .sort((a, b) => b[1] - a[1]);
+      
+      drawChart(
+        'chartHorarios',
+        horariosOrdenados.map(h => h[0]),
+        horariosOrdenados.map(h => h[1]),
+        'Volume por Horário',
+        'bar',
+        {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      );
 
-      // Gráfico de Horários
-      const horarios = Object.keys(volumesHorario).sort();
-      const valoresHorarios = horarios.map(h => volumesHorario[h]);
-      drawChart('chartHorarios', horarios, valoresHorarios, 'Volume por Horário');
+      // Gráfico de Dias com destaque para dias de maior volume
+      const diasOrdenados = Object.keys(volumesDia).sort();
+      const destaqueDias = Object.values(volumesPorMes).map(d => d.date);
+      
+      const ctx = document.getElementById('chartDias').getContext('2d');
+      if (charts['chartDias']) charts['chartDias'].destroy();
+      
+      charts['chartDias'] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: diasOrdenados,
+          datasets: [{
+            label: 'Volume por Dia',
+            data: diasOrdenados.map(d => volumesDia[d]),
+            backgroundColor: '#4361ee',
+            borderColor: '#4361ee',
+            borderWidth: 1,
+            pointBackgroundColor: diasOrdenados.map(d => 
+              destaqueDias.includes(d) ? '#f94144' : '#4361ee'
+            ),
+            pointRadius: diasOrdenados.map(d => 
+              destaqueDias.includes(d) ? 6 : 3
+            ),
+            pointHoverRadius: diasOrdenados.map(d => 
+              destaqueDias.includes(d) ? 8 : 5
+            )
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) label += ': ';
+                  if (context.parsed.y !== null) {
+                    label += context.parsed.y.toLocaleString();
+                  }
+                  if (destaqueDias.includes(context.label)) {
+                    label += ' (Destaque do mês)';
+                  }
+                  return label;
+                }
+              }
+            }
+          }
+        }
+      });
 
-      // Gráfico de Dias
-      const dias = Object.keys(volumesDia).sort();
-      const valoresDias = dias.map(d => volumesDia[d]);
-      drawChart('chartDias', dias, valoresDias, 'Volume por Dia', 'line');
-
-      // Tabela
-      updateTable(data);
+      // Tabela (apenas analistas mapeados)
+      updateTable(analistasOrdenados.map(a => a.nome), data);
     }
 
-    function updateTable(data) {
+    function updateTable(analistasFiltrados, data) {
       const tabela = document.getElementById('tabela');
       
-      // Agrupar por analista
+      // Agrupar por analista (apenas os filtrados)
       const resumo = data.reduce((acc, item) => {
+        if (!analistasFiltrados.includes(loginToName[item.login])) return acc;
+        
         if (!acc[item.login]) {
           acc[item.login] = {
-            nome: loginToName[item.login] || item.login.toUpperCase(),
+            nome: loginToName[item.login],
             total: 0,
             clusters: {}
           };
@@ -511,7 +671,7 @@
           html += `
             <tr>
               <td>${info.nome}</td>
-              <td>${info.total}</td>
+              <td>${info.total.toLocaleString()}</td>
               <td>${clusters}</td>
             </tr>
           `;
