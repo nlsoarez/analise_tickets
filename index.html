@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Volumetria Profissional</title>
+  <title>Dashboard de Volumetria</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,37 +11,28 @@
     :root {
       --primary: #4361ee;
       --primary-dark: #3a0ca3;
-      --secondary: #3f37c9;
       --accent: #4895ef;
       --light: #f8f9fa;
       --dark: #2b2d42;
       --gray: #6c757d;
       --light-gray: #e9ecef;
-      --success: #4cc9f0;
-      --warning: #f8961e;
       --danger: #f94144;
       --white: #ffffff;
       --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       --border-radius: 8px;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      font-family: 'Segoe UI', Roboto, sans-serif;
       background-color: #f5f7fa;
       color: var(--dark);
       line-height: 1.6;
+      padding: 20px;
     }
 
     .container {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 20px;
     }
 
     header {
@@ -56,13 +47,6 @@
     h1 {
       color: var(--primary-dark);
       font-size: 28px;
-      font-weight: 600;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     .upload-area {
@@ -73,7 +57,7 @@
       margin-bottom: 30px;
       text-align: center;
       border: 2px dashed var(--accent);
-      transition: all 0.3s ease;
+      transition: all 0.3s;
     }
 
     .upload-area:hover {
@@ -92,7 +76,7 @@
       border-radius: 50px;
       font-size: 16px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.3s;
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -117,7 +101,6 @@
     }
 
     .chart-container {
-      position: relative;
       height: 300px;
       width: 100%;
     }
@@ -188,8 +171,8 @@
 
   <div class="container">
     <header>
-      <div class="logo">
-        <i class="fas fa-chart-bar"></i>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-chart-bar" style="font-size: 32px; color: var(--primary);"></i>
         <h1>Dashboard de Volumetria</h1>
       </div>
     </header>
@@ -286,21 +269,29 @@
       if (!dateTimeStr) return { date: null, time: null };
       
       try {
-        // Verifica se já é um objeto Date (quando cellDates: true)
+        // Se for objeto Date (quando cellDates: true)
         if (dateTimeStr instanceof Date) {
           const date = dateTimeStr.toISOString().split('T')[0];
           const hours = String(dateTimeStr.getHours()).padStart(2, '0') + 'h';
           return { date, time: hours };
         }
         
-        // Processa formato dd/mm/aaaa hh:mm
-        const [datePart, timePart] = dateTimeStr.toString().split(' ');
-        const [day, month, year] = datePart.split('/');
-        const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        const [hours] = timePart.split(':');
-        const time = `${hours.padStart(2, '0')}h`;
+        // Se for string no formato "dd/mm/aaaa hh:mm"
+        if (typeof dateTimeStr === 'string') {
+          const [datePart, timePart] = dateTimeStr.split(' ');
+          if (!datePart || !timePart) return { date: null, time: null };
+          
+          const [day, month, year] = datePart.split('/');
+          if (!day || !month || !year) return { date: null, time: null };
+          
+          const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          const [hours] = timePart.split(':');
+          const time = `${hours.padStart(2, '0')}h`;
+          
+          return { date, time };
+        }
         
-        return { date, time };
+        return { date: null, time: null };
       } catch (e) {
         console.error('Erro ao parsear data/hora:', dateTimeStr, e);
         return { date: null, time: null };
@@ -341,26 +332,38 @@
       
       try {
         const processedData = [];
+        let hasValidData = false;
         
         for (const file of files) {
           const data = await file.arrayBuffer();
           const workbook = XLSX.read(data, { 
             type: 'array',
-            cellDates: true // Importante para interpretar datas corretamente
+            cellDates: true, // Crucial para interpretar datas corretamente
+            raw: false      // Obter valores formatados
           });
           
           workbook.SheetNames.forEach(sheetName => {
-            const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
-              raw: false, // Obter valores formatados
-              defval: '' // Valor padrão para células vazias
+            const sheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, {
+              defval: '', // Valor padrão para células vazias
+              raw: false  // Obter valores formatados
             });
             
-            sheet.forEach(row => {
+            jsonData.forEach(row => {
               try {
-                const login = String(row['LOGIN'] || '').toLowerCase().trim();
+                // Verifica se as colunas necessárias existem
+                if (!('LOGIN' in row) || !('DIA/HORA' in row) || !('CLUSTER' in row)) {
+                  console.warn('Linha ignorada - colunas necessárias não encontradas:', row);
+                  return;
+                }
+                
+                const login = String(row['LOGIN']).toLowerCase().trim();
                 const diaHora = parseDateTime(row['DIA/HORA']);
                 
-                if (!login || !diaHora.date || !diaHora.time) return;
+                if (!login || !diaHora.date || !diaHora.time) {
+                  console.warn('Linha ignorada - dados inválidos:', row);
+                  return;
+                }
                 
                 processedData.push({
                   login,
@@ -370,6 +373,8 @@
                   outage: String(row['OUTAGE'] || ''),
                   tecnologia: String(row['TECNOLOGIA'] || '')
                 });
+                
+                hasValidData = true;
               } catch (error) {
                 console.warn('Erro ao processar linha:', row, error);
               }
@@ -377,21 +382,20 @@
           });
         }
         
+        if (!hasValidData) {
+          throw new Error('Nenhum dado válido encontrado nos arquivos. Verifique se as colunas LOGIN, DIA/HORA e CLUSTER existem e contêm dados válidos.');
+        }
+        
         updateDashboard(processedData);
       } catch (error) {
         console.error('Erro no processamento:', error);
-        showError('Erro ao processar arquivos. Verifique o console para detalhes.');
+        showError(error.message);
       } finally {
         hideLoading();
       }
     }
 
     function updateDashboard(data) {
-      if (data.length === 0) {
-        showError('Nenhum dado válido encontrado nos arquivos.');
-        return;
-      }
-
       // Agrupar dados para gráficos
       const volumesAnalista = {};
       const volumesCluster = {};
