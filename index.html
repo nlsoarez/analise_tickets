@@ -51,7 +51,7 @@
     function drawChart(id, labels, data, label, type = 'bar') {
       if (charts[id]) charts[id].destroy();
       charts[id] = new Chart(document.getElementById(id), {
-        type: type,
+        type,
         data: {
           labels,
           datasets: [{
@@ -73,13 +73,7 @@
 
     document.getElementById('fileInput').addEventListener('change', async function (e) {
       const files = e.target.files;
-      const volumesAnalista = {};
-      const volumesCluster = {};
-      const volumesHorario = {};
-      const volumesDia = [];
-
-      const volumesPorDia = {};
-      const output = [];
+      const volumesAnalista = {}, volumesCluster = {}, volumesHorario = {}, volumesPorDia = {};
 
       for (let file of files) {
         const data = await file.arrayBuffer();
@@ -89,64 +83,61 @@
           const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
           sheet.forEach(row => {
-            const login = String(row['LOGIN'] || '').toLowerCase().trim();
-            const volume = Number(row['VOLUME'] || 0);
-            const cluster = String(row['CLUSTER'] || 'Indefinido').toUpperCase();
-            const hora = String(row['HORA'] || '00:00').slice(0, 2) + 'h';
-            const data = String(row['DATA'] || '').split('T')[0];
+            const keys = Object.keys(row).reduce((acc, key) => {
+              const norm = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+              if (norm.includes('login')) acc.login = key;
+              else if (norm.includes('volume')) acc.volume = key;
+              else if (norm.includes('cluster')) acc.cluster = key;
+              else if (norm.includes('hora')) acc.hora = key;
+              else if (norm.includes('data')) acc.data = key;
+              return acc;
+            }, {});
 
-            if (!login) return;
+            const login = String(row[keys.login] || '').toLowerCase().trim();
+            const volume = Number(row[keys.volume] || 0);
+            const cluster = String(row[keys.cluster] || 'Indefinido').toUpperCase();
+            const hora = String(row[keys.hora] || '00:00').slice(0, 2) + 'h';
+            const data = String(row[keys.data] || '').split('T')[0];
 
-            // Analista
-            if (!volumesAnalista[login]) volumesAnalista[login] = 0;
-            volumesAnalista[login] += volume;
+            if (!login || !volume) return;
 
-            // Cluster
-            if (!volumesCluster[cluster]) volumesCluster[cluster] = 0;
-            volumesCluster[cluster] += volume;
-
-            // Horário
-            if (!volumesHorario[hora]) volumesHorario[hora] = 0;
-            volumesHorario[hora] += volume;
-
-            // Data (dia)
-            if (!volumesPorDia[data]) volumesPorDia[data] = 0;
-            volumesPorDia[data] += volume;
+            volumesAnalista[login] = (volumesAnalista[login] || 0) + volume;
+            volumesCluster[cluster] = (volumesCluster[cluster] || 0) + volume;
+            volumesHorario[hora] = (volumesHorario[hora] || 0) + volume;
+            volumesPorDia[data] = (volumesPorDia[data] || 0) + volume;
           });
         });
       }
 
-      // Tabela resumo
-      let tabelaHtml = '<h3>Resumo por Analista</h3><table><tr><th>Login</th><th>Nome</th><th>Total</th></tr>';
+      // Tabela de analistas
+      let html = '<h3>Resumo por Analista</h3><table><tr><th>Login</th><th>Nome</th><th>Total</th></tr>';
       Object.entries(volumesAnalista).sort((a, b) => b[1] - a[1]).forEach(([login, total]) => {
         const nome = loginToName[login] || 'NOME DESCONHECIDO';
-        tabelaHtml += `<tr><td>${login.toUpperCase()}</td><td>${nome}</td><td>${total}</td></tr>`;
+        html += `<tr><td>${login.toUpperCase()}</td><td>${nome}</td><td>${total}</td></tr>`;
       });
-      tabelaHtml += '</table>';
-      document.getElementById('tabela').innerHTML = tabelaHtml;
+      html += '</table>';
+      document.getElementById('tabela').innerHTML = html;
 
-      // Gráficos
       drawChart('chartAnalistas',
         Object.keys(volumesAnalista).map(k => loginToName[k] || k.toUpperCase()),
         Object.values(volumesAnalista),
-        'Volume por Analista'
-      );
+        'Volume por Analista');
+
       drawChart('chartClusters',
         Object.keys(volumesCluster),
         Object.values(volumesCluster),
-        'Volume por Cluster'
-      );
+        'Volume por Cluster');
+
       drawChart('chartHorarios',
         Object.keys(volumesHorario),
         Object.values(volumesHorario),
-        'Volume por Horário'
-      );
+        'Volume por Horário');
+
       drawChart('chartDias',
         Object.keys(volumesPorDia),
         Object.values(volumesPorDia),
         'Volume por Dia',
-        'line'
-      );
+        'line');
     });
   </script>
 </body>
