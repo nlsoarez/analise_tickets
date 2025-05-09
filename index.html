@@ -2,20 +2,32 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Análise de Volumetria</title>
+  <title>Dashboard de Volumetria</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f8f9fa; }
+    h2 { color: #343a40; }
+    .charts { display: flex; flex-wrap: wrap; gap: 30px; }
+    canvas { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 0 8px #ccc; }
+    input[type="file"] { margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    .summary { margin-top: 20px; font-weight: bold; }
+    th { background-color: #dee2e6; }
   </style>
 </head>
 <body>
-  <h2>Análise de Volumetria</h2>
+  <h2>Dashboard de Volumetria</h2>
   <input type="file" id="fileInput" multiple accept=".xlsx" />
-  <div id="output"></div>
+
+  <div class="charts">
+    <canvas id="chartAnalistas" width="400" height="300"></canvas>
+    <canvas id="chartClusters" width="400" height="300"></canvas>
+    <canvas id="chartHorarios" width="400" height="300"></canvas>
+    <canvas id="chartDias" width="400" height="300"></canvas>
+  </div>
+
+  <div id="tabela"></div>
 
   <script>
     const loginToName = {
@@ -34,9 +46,40 @@
       "n5923996": "JULIO CESAR SANTOS SOARES"
     };
 
+    const charts = {};
+
+    function drawChart(id, labels, data, label, type = 'bar') {
+      if (charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+        type: type,
+        data: {
+          labels,
+          datasets: [{
+            label,
+            data,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
     document.getElementById('fileInput').addEventListener('change', async function (e) {
       const files = e.target.files;
-      const volumes = {};
+      const volumesAnalista = {};
+      const volumesCluster = {};
+      const volumesHorario = {};
+      const volumesDia = [];
+
+      const volumesPorDia = {};
+      const output = [];
 
       for (let file of files) {
         const data = await file.arrayBuffer();
@@ -44,55 +87,66 @@
 
         workbook.SheetNames.forEach(sheetName => {
           const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-          
+
           sheet.forEach(row => {
-            const rawLogin = String(row['LOGIN'] || '').toLowerCase().trim();
+            const login = String(row['LOGIN'] || '').toLowerCase().trim();
             const volume = Number(row['VOLUME'] || 0);
-            if (!rawLogin) return;
-            if (!volumes[rawLogin]) volumes[rawLogin] = 0;
-            volumes[rawLogin] += volume;
+            const cluster = String(row['CLUSTER'] || 'Indefinido').toUpperCase();
+            const hora = String(row['HORA'] || '00:00').slice(0, 2) + 'h';
+            const data = String(row['DATA'] || '').split('T')[0];
+
+            if (!login) return;
+
+            // Analista
+            if (!volumesAnalista[login]) volumesAnalista[login] = 0;
+            volumesAnalista[login] += volume;
+
+            // Cluster
+            if (!volumesCluster[cluster]) volumesCluster[cluster] = 0;
+            volumesCluster[cluster] += volume;
+
+            // Horário
+            if (!volumesHorario[hora]) volumesHorario[hora] = 0;
+            volumesHorario[hora] += volume;
+
+            // Data (dia)
+            if (!volumesPorDia[data]) volumesPorDia[data] = 0;
+            volumesPorDia[data] += volume;
           });
         });
       }
 
-      const output = document.getElementById('output');
-      output.innerHTML = '';
-
-      const table = document.createElement('table');
-      const header = table.insertRow();
-      ['Login', 'Nome', 'Total de Volume'].forEach(text => {
-        const th = document.createElement('th');
-        th.textContent = text;
-        header.appendChild(th);
+      // Tabela resumo
+      let tabelaHtml = '<h3>Resumo por Analista</h3><table><tr><th>Login</th><th>Nome</th><th>Total</th></tr>';
+      Object.entries(volumesAnalista).sort((a, b) => b[1] - a[1]).forEach(([login, total]) => {
+        const nome = loginToName[login] || 'NOME DESCONHECIDO';
+        tabelaHtml += `<tr><td>${login.toUpperCase()}</td><td>${nome}</td><td>${total}</td></tr>`;
       });
+      tabelaHtml += '</table>';
+      document.getElementById('tabela').innerHTML = tabelaHtml;
 
-      const sortedLogins = Object.keys(volumes).sort((a, b) => volumes[b] - volumes[a]);
-
-      let total = 0, min = Infinity, max = -Infinity;
-
-      sortedLogins.forEach(login => {
-        const volume = volumes[login];
-        total += volume;
-        if (volume > max) max = volume;
-        if (volume < min) min = volume;
-
-        const row = table.insertRow();
-        row.insertCell().textContent = login.toUpperCase();
-        row.insertCell().textContent = loginToName[login] || 'NOME DESCONHECIDO';
-        row.insertCell().textContent = volume;
-      });
-
-      output.appendChild(table);
-
-      const summary = document.createElement('div');
-      summary.className = 'summary';
-      summary.innerHTML = `
-        Total Geral: ${total}<br/>
-        Média: ${(total / sortedLogins.length).toFixed(2)}<br/>
-        Máximo: ${max}<br/>
-        Mínimo: ${min}
-      `;
-      output.appendChild(summary);
+      // Gráficos
+      drawChart('chartAnalistas',
+        Object.keys(volumesAnalista).map(k => loginToName[k] || k.toUpperCase()),
+        Object.values(volumesAnalista),
+        'Volume por Analista'
+      );
+      drawChart('chartClusters',
+        Object.keys(volumesCluster),
+        Object.values(volumesCluster),
+        'Volume por Cluster'
+      );
+      drawChart('chartHorarios',
+        Object.keys(volumesHorario),
+        Object.values(volumesHorario),
+        'Volume por Horário'
+      );
+      drawChart('chartDias',
+        Object.keys(volumesPorDia),
+        Object.values(volumesPorDia),
+        'Volume por Dia',
+        'line'
+      );
     });
   </script>
 </body>
