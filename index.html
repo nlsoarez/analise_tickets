@@ -17,6 +17,8 @@
       --gray: #6c757d;
       --light-gray: #e9ecef;
       --danger: #f94144;
+      --success: #4cc9f0;
+      --warning: #f8961e;
       --white: #ffffff;
       --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       --border-radius: 8px;
@@ -44,9 +46,8 @@
       border-bottom: 1px solid var(--light-gray);
     }
 
-    h1 {
+    h1, h2, h3 {
       color: var(--primary-dark);
-      font-size: 28px;
     }
 
     .upload-area {
@@ -101,7 +102,7 @@
     }
 
     .chart-container {
-      height: 400px; /* Aumentado para melhor visualização */
+      height: 400px;
       width: 100%;
     }
 
@@ -163,8 +164,32 @@
       border: 1px solid #f5c6cb;
     }
 
+    .tech-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .tech-card {
+      background: var(--white);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+
+    .tech-card h3 {
+      margin-bottom: 15px;
+      color: var(--primary);
+    }
+
     .highlight {
       background-color: rgba(244, 67, 54, 0.1);
+      font-weight: bold;
+    }
+
+    .month-peak {
+      background-color: rgba(76, 201, 240, 0.1);
       font-weight: bold;
     }
   </style>
@@ -197,44 +222,55 @@
       </button>
     </div>
 
+    <div class="tech-stats" id="techStats">
+      <!-- Estatísticas de tecnologia serão inseridas aqui -->
+    </div>
+
     <div class="dashboard-grid">
       <div class="card">
-        <h3 style="margin-bottom: 15px;">Volume por Analista</h3>
+        <h3>Volume por Analista</h3>
         <div class="chart-container">
           <canvas id="chartAnalistas"></canvas>
         </div>
       </div>
 
       <div class="card">
-        <h3 style="margin-bottom: 15px;">Volume por Cluster</h3>
+        <h3>Volume por Cluster</h3>
         <div class="chart-container">
           <canvas id="chartClusters"></canvas>
         </div>
       </div>
 
       <div class="card">
-        <h3 style="margin-bottom: 15px;">Volume por Horário</h3>
+        <h3>Volume por Horário</h3>
         <div class="chart-container">
           <canvas id="chartHorarios"></canvas>
         </div>
       </div>
 
       <div class="card">
-        <h3 style="margin-bottom: 15px;">Volume por Dia</h3>
+        <h3>Volume por Dia (Destaques Mensais)</h3>
         <div class="chart-container">
           <canvas id="chartDias"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: span 2;">
+        <h3>Proporção HFC/GPON por Cluster</h3>
+        <div class="chart-container">
+          <canvas id="chartTechCluster"></canvas>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h3 style="margin-bottom: 15px;">Detalhamento por Analista</h3>
+      <h3>Detalhamento por Analista</h3>
       <div id="tabela"></div>
     </div>
   </div>
 
   <script>
-    // Mapeamento de login para nome completo (apenas analistas conhecidos)
+    // Mapeamento de login para nome completo
     const loginToName = {
       "n0238475": "MARLEY MARQUES RIBEIRO",
       "n5923221": "KELLY PINHEIRO LIRA",
@@ -283,7 +319,6 @@
         
         // Se for string no formato "dd/mm/aaaa hh:mm"
         if (typeof dateTimeStr === 'string') {
-          // Remove espaços extras entre "DIA / HORA"
           const normalizedStr = dateTimeStr.replace(/\s*\/\s*/, '/');
           const [datePart, timePart] = normalizedStr.split(' ');
           
@@ -356,7 +391,7 @@
         type: type,
         data: {
           labels: labels,
-          datasets: [{
+          datasets: Array.isArray(data) ? [{
             label: label,
             data: data,
             backgroundColor: '#4361ee',
@@ -364,7 +399,7 @@
             borderWidth: 1,
             barThickness: 'flex',
             maxBarThickness: 50
-          }]
+          }] : data
         },
         options: mergedOptions
       });
@@ -430,6 +465,7 @@
                 }
                 
                 const diaHora = parseDateTime(row['DIA / HORA']);
+                const tecnologia = String(row['TECNOLOGIA'] || '').toUpperCase();
                 
                 if (!login || !diaHora.date || !diaHora.time) {
                   console.warn(`Linha ${linha} ignorada - dados inválidos:`, row);
@@ -442,7 +478,7 @@
                   date: diaHora.date,
                   time: diaHora.time,
                   outage: String(row['OUTAGE'] || ''),
-                  tecnologia: String(row['TECNOLOGIA'] || '')
+                  tecnologia: tecnologia
                 });
                 
                 hasValidData = true;
@@ -473,6 +509,8 @@
       const volumesHorario = {};
       const volumesDia = {};
       const volumesPorMes = {};
+      const techStats = { HFC: 0, GPON: 0, OUTROS: 0 };
+      const techByCluster = {};
 
       data.forEach(item => {
         // Analista (apenas os mapeados)
@@ -490,14 +528,28 @@
         volumesDia[item.date] = (volumesDia[item.date] || 0) + 1;
         
         // Mês (para destacar dias com maior volume)
-        const mes = item.date.substring(0, 7); // Formato YYYY-MM
+        const mes = item.date.substring(0, 7);
         if (!volumesPorMes[mes]) {
           volumesPorMes[mes] = { date: null, volume: 0 };
         }
         if (volumesDia[item.date] > volumesPorMes[mes].volume) {
           volumesPorMes[mes] = { date: item.date, volume: volumesDia[item.date] };
         }
+        
+        // Estatísticas de tecnologia
+        const tech = item.tecnologia.includes('HFC') ? 'HFC' : 
+                    item.tecnologia.includes('GPON') ? 'GPON' : 'OUTROS';
+        techStats[tech] = (techStats[tech] || 0) + 1;
+        
+        // Tecnologia por cluster
+        if (!techByCluster[item.cluster]) {
+          techByCluster[item.cluster] = { HFC: 0, GPON: 0, OUTROS: 0 };
+        }
+        techByCluster[item.cluster][tech] += 1;
       });
+
+      // Atualizar estatísticas de tecnologia
+      updateTechStats(techStats, techByCluster);
 
       // Gráfico de Analistas (ordenado por volume)
       const analistasOrdenados = Object.entries(volumesAnalista)
@@ -512,14 +564,7 @@
         analistasOrdenados.map(a => a.nome),
         analistasOrdenados.map(a => a.volume),
         'Volume por Analista',
-        'bar',
-        {
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
+        'bar'
       );
 
       // Gráfico de Clusters (ordenado por volume)
@@ -531,14 +576,7 @@
         clustersOrdenados.map(c => c[0]),
         clustersOrdenados.map(c => c[1]),
         'Volume por Cluster',
-        'bar',
-        {
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
+        'bar'
       );
 
       // Gráfico de Horários (ordenado por volume)
@@ -550,81 +588,111 @@
         horariosOrdenados.map(h => h[0]),
         horariosOrdenados.map(h => h[1]),
         'Volume por Horário',
-        'bar',
-        {
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
+        'bar'
       );
 
-      // Gráfico de Dias com destaque para dias de maior volume
-      const diasOrdenados = Object.keys(volumesDia).sort();
-      const destaqueDias = Object.values(volumesPorMes).map(d => d.date);
+      // Gráfico de Dias com apenas os destaques mensais
+      const diasDestaque = Object.values(volumesPorMes).map(d => d.date);
+      const volumesDestaque = diasDestaque.map(d => volumesDia[d]);
       
-      const ctx = document.getElementById('chartDias').getContext('2d');
-      if (charts['chartDias']) charts['chartDias'].destroy();
-      
-      charts['chartDias'] = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: diasOrdenados,
-          datasets: [{
-            label: 'Volume por Dia',
-            data: diasOrdenados.map(d => volumesDia[d]),
-            backgroundColor: '#4361ee',
-            borderColor: '#4361ee',
-            borderWidth: 1,
-            pointBackgroundColor: diasOrdenados.map(d => 
-              destaqueDias.includes(d) ? '#f94144' : '#4361ee'
-            ),
-            pointRadius: diasOrdenados.map(d => 
-              destaqueDias.includes(d) ? 6 : 3
-            ),
-            pointHoverRadius: diasOrdenados.map(d => 
-              destaqueDias.includes(d) ? 8 : 5
-            )
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true
-            },
-            x: {
-              ticks: {
-                autoSkip: false,
-                maxRotation: 45,
-                minRotation: 45
-              }
-            }
-          },
+      drawChart(
+        'chartDias',
+        diasDestaque,
+        volumesDestaque,
+        'Volume nos Dias de Maior Movimento',
+        'bar',
+        {
           plugins: {
             tooltip: {
               callbacks: {
-                label: function(context) {
-                  let label = context.dataset.label || '';
-                  if (label) label += ': ';
-                  if (context.parsed.y !== null) {
-                    label += context.parsed.y.toLocaleString();
-                  }
-                  if (destaqueDias.includes(context.label)) {
-                    label += ' (Destaque do mês)';
-                  }
-                  return label;
+                afterLabel: function(context) {
+                  const date = new Date(context.label);
+                  const month = date.toLocaleString('pt-BR', { month: 'long' });
+                  return `Destaque de ${month.charAt(0).toUpperCase() + month.slice(1)}`;
                 }
               }
             }
           }
         }
-      });
+      );
+
+      // Gráfico de Proporção HFC/GPON por Cluster
+      const clustersTech = Object.keys(techByCluster);
+      const techClusterData = {
+        labels: clustersTech,
+        datasets: [
+          {
+            label: 'HFC',
+            data: clustersTech.map(c => techByCluster[c].HFC),
+            backgroundColor: '#4361ee'
+          },
+          {
+            label: 'GPON',
+            data: clustersTech.map(c => techByCluster[c].GPON),
+            backgroundColor: '#4cc9f0'
+          },
+          {
+            label: 'Outros',
+            data: clustersTech.map(c => techByCluster[c].OUTROS),
+            backgroundColor: '#e9ecef'
+          }
+        ]
+      };
+      
+      drawChart(
+        'chartTechCluster',
+        clustersTech,
+        techClusterData,
+        'Proporção HFC/GPON por Cluster',
+        'bar',
+        {
+          scales: {
+            x: {
+              stacked: true
+            },
+            y: {
+              stacked: true
+            }
+          }
+        }
+      );
 
       // Tabela (apenas analistas mapeados)
       updateTable(analistasOrdenados.map(a => a.nome), data);
+    }
+
+    function updateTechStats(techStats, techByCluster) {
+      const total = techStats.HFC + techStats.GPON + techStats.OUTROS;
+      const statsContainer = document.getElementById('techStats');
+      
+      statsContainer.innerHTML = `
+        <div class="tech-card">
+          <h3><i class="fas fa-network-wired"></i> Distribuição por Tecnologia</h3>
+          <p>HFC: ${techStats.HFC} (${((techStats.HFC / total) * 100).toFixed(1)}%)</p>
+          <p>GPON: ${techStats.GPON} (${((techStats.GPON / total) * 100).toFixed(1)}%)</p>
+          <p>Outros: ${techStats.OUTROS} (${((techStats.OUTROS / total) * 100).toFixed(1)}%)</p>
+        </div>
+        
+        <div class="tech-card">
+          <h3><i class="fas fa-chart-pie"></i> Proporção HFC/GPON</h3>
+          <p>Total HFC: ${techStats.HFC}</p>
+          <p>Total GPON: ${techStats.GPON}</p>
+          <p>Razão: ${(techStats.HFC / techStats.GPON).toFixed(2)}:1</p>
+        </div>
+      `;
+      
+      // Adiciona cards para cada cluster
+      Object.entries(techByCluster).forEach(([cluster, techs]) => {
+        const totalCluster = techs.HFC + techs.GPON + techs.OUTROS;
+        statsContainer.innerHTML += `
+          <div class="tech-card">
+            <h3><i class="fas fa-project-diagram"></i> Cluster ${cluster}</h3>
+            <p>HFC: ${techs.HFC} (${((techs.HFC / totalCluster) * 100).toFixed(1)}%)</p>
+            <p>GPON: ${techs.GPON} (${((techs.GPON / totalCluster) * 100).toFixed(1)}%)</p>
+            <p>Razão: ${(techs.HFC / techs.GPON).toFixed(2)}:1</p>
+          </div>
+        `;
+      });
     }
 
     function updateTable(analistasFiltrados, data) {
@@ -638,12 +706,18 @@
           acc[item.login] = {
             nome: loginToName[item.login],
             total: 0,
-            clusters: {}
+            clusters: {},
+            tecnologias: { HFC: 0, GPON: 0, OUTROS: 0 }
           };
         }
         
         acc[item.login].total++;
         acc[item.login].clusters[item.cluster] = (acc[item.login].clusters[item.cluster] || 0) + 1;
+        
+        const tech = item.tecnologia.includes('HFC') ? 'HFC' : 
+                     item.tecnologia.includes('GPON') ? 'GPON' : 'OUTROS';
+        acc[item.login].tecnologias[tech] += 1;
+        
         return acc;
       }, {});
 
@@ -654,6 +728,9 @@
             <tr>
               <th>Analista</th>
               <th>Total</th>
+              <th>HFC</th>
+              <th>GPON</th>
+              <th>Proporção</th>
               <th>Clusters</th>
             </tr>
           </thead>
@@ -668,10 +745,17 @@
             .map(([cluster, count]) => `${cluster}: ${count}`)
             .join('<br>');
           
+          const proporcao = info.tecnologias.GPON > 0 ? 
+                           (info.tecnologias.HFC / info.tecnologias.GPON).toFixed(2) + ':1' : 
+                           'N/A';
+          
           html += `
             <tr>
               <td>${info.nome}</td>
               <td>${info.total.toLocaleString()}</td>
+              <td>${info.tecnologias.HFC}</td>
+              <td>${info.tecnologias.GPON}</td>
+              <td>${proporcao}</td>
               <td>${clusters}</td>
             </tr>
           `;
