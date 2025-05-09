@@ -278,7 +278,10 @@
         
         // Se for string no formato "dd/mm/aaaa hh:mm"
         if (typeof dateTimeStr === 'string') {
-          const [datePart, timePart] = dateTimeStr.split(' ');
+          // Remove espaços extras entre "DIA / HORA"
+          const normalizedStr = dateTimeStr.replace(/\s*\/\s*/, '/');
+          const [datePart, timePart] = normalizedStr.split(' ');
+          
           if (!datePart || !timePart) return { date: null, time: null };
           
           const [day, month, year] = datePart.split('/');
@@ -339,29 +342,49 @@
           const workbook = XLSX.read(data, { 
             type: 'array',
             cellDates: true, // Crucial para interpretar datas corretamente
-            raw: false      // Obter valores formatados
+            raw: false       // Obter valores formatados
           });
           
           workbook.SheetNames.forEach(sheetName => {
             const sheet = workbook.Sheets[sheetName];
+            
+            // Verifica se as colunas necessárias existem
+            const columnNames = [];
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+              const cellAddress = XLSX.utils.encode_col(C) + "1";
+              const cell = sheet[cellAddress];
+              if (cell) columnNames.push(cell.v);
+            }
+            
+            // Verifica colunas obrigatórias
+            const requiredColumns = ['OUTAGE', 'TECNOLOGIA', 'CLUSTER', 'DIA / HORA', 'LOGIN'];
+            const missingColumns = requiredColumns.filter(col => !columnNames.includes(col));
+            
+            if (missingColumns.length > 0) {
+              throw new Error(`As seguintes colunas estão faltando na planilha: ${missingColumns.join(', ')}`);
+            }
+            
             const jsonData = XLSX.utils.sheet_to_json(sheet, {
               defval: '', // Valor padrão para células vazias
               raw: false  // Obter valores formatados
             });
             
-            jsonData.forEach(row => {
+            jsonData.forEach((row, index) => {
               try {
-                // Verifica se as colunas necessárias existem
-                if (!('LOGIN' in row) || !('DIA/HORA' in row) || !('CLUSTER' in row)) {
-                  console.warn('Linha ignorada - colunas necessárias não encontradas:', row);
+                const linha = index + 2; // Linha na planilha (+1 para header, +1 para base 1)
+                
+                // Verifica valores obrigatórios
+                if (!row['LOGIN'] || !row['DIA / HORA'] || !row['CLUSTER']) {
+                  console.warn(`Linha ${linha} ignorada - dados obrigatórios faltando:`, row);
                   return;
                 }
                 
                 const login = String(row['LOGIN']).toLowerCase().trim();
-                const diaHora = parseDateTime(row['DIA/HORA']);
+                const diaHora = parseDateTime(row['DIA / HORA']);
                 
                 if (!login || !diaHora.date || !diaHora.time) {
-                  console.warn('Linha ignorada - dados inválidos:', row);
+                  console.warn(`Linha ${linha} ignorada - dados inválidos:`, row);
                   return;
                 }
                 
@@ -376,14 +399,14 @@
                 
                 hasValidData = true;
               } catch (error) {
-                console.warn('Erro ao processar linha:', row, error);
+                console.warn(`Erro ao processar linha ${index + 2}:`, row, error);
               }
             });
           });
         }
         
         if (!hasValidData) {
-          throw new Error('Nenhum dado válido encontrado nos arquivos. Verifique se as colunas LOGIN, DIA/HORA e CLUSTER existem e contêm dados válidos.');
+          throw new Error('Nenhum dado válido encontrado nos arquivos. Verifique se as colunas contêm dados válidos.');
         }
         
         updateDashboard(processedData);
