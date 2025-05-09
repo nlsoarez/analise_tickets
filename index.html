@@ -341,68 +341,11 @@
       }
     }
 
-    function drawChart(id, labels, data, label, type = 'bar', options = {}) {
+    function drawChart(id, config) {
       if (charts[id]) charts[id].destroy();
       
       const ctx = document.getElementById(id).getContext('2d');
-      
-      const defaults = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                let label = context.dataset.label || '';
-                if (label) label += ': ';
-                if (context.parsed.y !== null) {
-                  label += context.parsed.y.toLocaleString();
-                }
-                return label;
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return value.toLocaleString();
-              }
-            }
-          },
-          x: {
-            ticks: {
-              autoSkip: false,
-              maxRotation: 45,
-              minRotation: 45
-            }
-          }
-        }
-      };
-
-      const mergedOptions = { ...defaults, ...options };
-      
-      charts[id] = new Chart(ctx, {
-        type: type,
-        data: {
-          labels: labels,
-          datasets: Array.isArray(data) ? [{
-            label: label,
-            data: data,
-            backgroundColor: '#4361ee',
-            borderColor: '#3a0ca3',
-            borderWidth: 1,
-            barThickness: 'flex',
-            maxBarThickness: 50
-          }] : data
-        },
-        options: mergedOptions
-      });
+      charts[id] = new Chart(ctx, config);
     }
 
     async function processFiles(files) {
@@ -559,49 +502,147 @@
           volume: volumesAnalista[login]
         }));
       
-      drawChart(
-        'chartAnalistas',
-        analistasOrdenados.map(a => a.nome),
-        analistasOrdenados.map(a => a.volume),
-        'Volume por Analista',
-        'bar'
-      );
+      drawChart('chartAnalistas', {
+        type: 'bar',
+        data: {
+          labels: analistasOrdenados.map(a => a.nome),
+          datasets: [{
+            label: 'Volume por Analista',
+            data: analistasOrdenados.map(a => a.volume),
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
 
       // Gráfico de Clusters (ordenado por volume)
       const clustersOrdenados = Object.entries(volumesCluster)
         .sort((a, b) => b[1] - a[1]);
       
-      drawChart(
-        'chartClusters',
-        clustersOrdenados.map(c => c[0]),
-        clustersOrdenados.map(c => c[1]),
-        'Volume por Cluster',
-        'bar'
-      );
+      drawChart('chartClusters', {
+        type: 'bar',
+        data: {
+          labels: clustersOrdenados.map(c => c[0]),
+          datasets: [{
+            label: 'Volume por Cluster',
+            data: clustersOrdenados.map(c => c[1]),
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
 
       // Gráfico de Horários (ordenado por volume)
       const horariosOrdenados = Object.entries(volumesHorario)
         .sort((a, b) => b[1] - a[1]);
       
-      drawChart(
-        'chartHorarios',
-        horariosOrdenados.map(h => h[0]),
-        horariosOrdenados.map(h => h[1]),
-        'Volume por Horário',
-        'bar'
-      );
+      drawChart('chartHorarios', {
+        type: 'bar',
+        data: {
+          labels: horariosOrdenados.map(h => h[0]),
+          datasets: [{
+            label: 'Volume por Horário',
+            data: horariosOrdenados.map(h => h[1]),
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
 
-      // Gráfico de Dias com apenas os destaques mensais
-      const diasDestaque = Object.values(volumesPorMes).map(d => d.date);
+      // Gráfico de Dias com apenas os destaques mensais em ordem cronológica
+      const meses = Object.keys(volumesPorMes).sort();
+      const diasDestaque = meses.map(mes => volumesPorMes[mes].date);
       const volumesDestaque = diasDestaque.map(d => volumesDia[d]);
       
-      drawChart(
-        'chartDias',
-        diasDestaque,
-        volumesDestaque,
-        'Volume nos Dias de Maior Movimento',
-        'bar',
-        {
+      drawChart('chartDias', {
+        type: 'bar',
+        data: {
+          labels: diasDestaque,
+          datasets: [{
+            label: 'Volume nos Dias de Maior Movimento',
+            data: volumesDestaque,
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
           plugins: {
             tooltip: {
               callbacks: {
@@ -612,9 +653,26 @@
                 }
               }
             }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
           }
         }
-      );
+      });
 
       // Gráfico de Proporção HFC/GPON por Cluster
       const clustersTech = Object.keys(techByCluster);
@@ -639,26 +697,36 @@
         ]
       };
       
-      drawChart(
-        'chartTechCluster',
-        clustersTech,
-        techClusterData,
-        'Proporção HFC/GPON por Cluster',
-        'bar',
-        {
+      drawChart('chartTechCluster', {
+        type: 'bar',
+        data: techClusterData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
             x: {
-              stacked: true
+              stacked: true,
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
             },
             y: {
-              stacked: true
+              stacked: true,
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
             }
           }
         }
-      );
+      });
 
       // Tabela (apenas analistas mapeados)
-      updateTable(analistasOrdenados.map(a => a.nome), data);
+      updateTable(analistasOrdenados.map(a => a.nome), data, techByCluster);
     }
 
     function updateTechStats(techStats, techByCluster) {
@@ -695,7 +763,7 @@
       });
     }
 
-    function updateTable(analistasFiltrados, data) {
+    function updateTable(analistasFiltrados, data, techByCluster) {
       const tabela = document.getElementById('tabela');
       
       // Agrupar por analista (apenas os filtrados)
