@@ -1,760 +1,99 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Volumetria de Outages</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        h1, h2, h3 {
-            color: #2c3e50;
-        }
-        .card {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .chart-container {
-            position: relative;
-            height: 400px;
-            margin-bottom: 30px;
-        }
-        .filter-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #eef;
-            border-radius: 5px;
-        }
-        button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-        button:hover {
-            background: #2980b9;
-        }
-        .login-mapping {
-            font-size: 0.9em;
-            margin-bottom: 20px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Análise de Volumetria</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .summary { margin-top: 20px; font-weight: bold; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Análise de Volumetria de Outages</h1>
-        
-        <div class="filter-section">
-            <h3>Filtros</h3>
-            <div>
-                <label for="technologyFilter">Tecnologia:</label>
-                <select id="technologyFilter">
-                    <option value="all">Todas</option>
-                    <option value="GPON">GPON</option>
-                    <option value="HFC">HFC</option>
-                </select>
-                
-                <label for="clusterFilter">Cluster:</label>
-                <select id="clusterFilter">
-                    <option value="all">Todos</option>
-                </select>
-                
-                <label for="loginFilter">Login:</label>
-                <select id="loginFilter">
-                    <option value="all">Todos</option>
-                </select>
-            </div>
-            <button id="applyFilters">Aplicar Filtros</button>
-            <button id="resetFilters">Resetar Filtros</button>
-        </div>
-        
-        <div class="card">
-            <h2>Resumo Geral</h2>
-            <div id="summaryStats"></div>
-        </div>
-        
-        <div class="card">
-            <h2>Distribuição por Tecnologia</h2>
-            <div class="chart-container">
-                <canvas id="techChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>Distribuição por Cluster</h2>
-            <div class="chart-container">
-                <canvas id="clusterChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>Top 10 Logins com Mais Outages</h2>
-            <div class="chart-container">
-                <canvas id="loginChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>Distribuição por Dia</h2>
-            <div class="chart-container">
-                <canvas id="dayChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>Distribuição por Hora</h2>
-            <div class="chart-container">
-                <canvas id="hourChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>Detalhes por Login</h2>
-            <div id="loginDetails"></div>
-        </div>
-        
-        <div class="card login-mapping">
-            <h3>Mapeamento de Logins</h3>
-            <table id="loginMappingTable">
-                <thead>
-                    <tr>
-                        <th>Login</th>
-                        <th>Nome</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td>N0238475</td><td>MARLEY MARQUES RIBEIRO</td></tr>
-                    <tr><td>N5923221</td><td>KELLY PINHEIRO LIRA</td></tr>
-                    <tr><td>F160641</td><td>JENNIFER MARIA ANDRADE SANTOS</td></tr>
-                    <tr><td>N5772086</td><td>THIAGO PEREIRA DA SILVA</td></tr>
-                    <tr><td>N0239871</td><td>LEONARDO FERREIRA LIMA DE ALMEIDA</td></tr>
-                    <tr><td>N5577565</td><td>MARISTELLA MARCIA DOS SANTOS</td></tr>
-                    <tr><td>N5737414</td><td>SANDRO DA SILVA CARVALHO</td></tr>
-                    <tr><td>N5972428</td><td>CRISTIANE HERMOGENES DA SILVA</td></tr>
-                    <tr><td>N6173055</td><td>JEFFERSON LUIS GONÇALVES COITINHO</td></tr>
-                    <tr><td>N5932090</td><td>EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA</td></tr>
-                    <tr><td>N0255801</td><td>ELBERTON ANICETO HENRIQUE</td></tr>
-                    <tr><td>N4014011</td><td>ALAN MARINHO DIAS</td></tr>
-                    <tr><td>N5923996</td><td>JULIO CESAR SANTOS SOARES</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+  <h2>Análise de Volumetria</h2>
+  <input type="file" id="fileInput" multiple accept=".xlsx" />
+  <div id="output"></div>
 
-    <script>
-        // Dados de mapeamento de login para nome
-        const loginMapping = {
-            'N0238475': 'MARLEY MARQUES RIBEIRO',
-            'N5923221': 'KELLY PINHEIRO LIRA',
-            'F160641': 'JENNIFER MARIA ANDRADE SANTOS',
-            'N5772086': 'THIAGO PEREIRA DA SILVA',
-            'N0239871': 'LEONARDO FERREIRA LIMA DE ALMEIDA',
-            'N5577565': 'MARISTELLA MARCIA DOS SANTOS',
-            'N5737414': 'SANDRO DA SILVA CARVALHO',
-            'N5972428': 'CRISTIANE HERMOGENES DA SILVA',
-            'N6173055': 'JEFFERSON LUIS GONÇALVES COITINHO',
-            'N5932090': 'EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA',
-            'N0255801': 'ELBERTON ANICETO HENRIQUE',
-            'N4014011': 'ALAN MARINHO DIAS',
-            'N5923996': 'JULIO CESAR SANTOS SOARES'
-        };
+  <script>
+    const loginToName = {
+      "n0238475": "MARLEY MARQUES RIBEIRO",
+      "n5923221": "KELLY PINHEIRO LIRA",
+      "f160641": "JENNIFER MARIA ANDRADE SANTOS",
+      "n5772086": "THIAGO PEREIRA DA SILVA",
+      "n0239871": "LEONARDO FERREIRA LIMA DE ALMEIDA",
+      "n5577565": "MARISTELLA MARCIA DOS SANTOS",
+      "n5737414": "SANDRO DA SILVA CARVALHO",
+      "n5972428": "CRISTIANE HERMOGENES DA SILVA",
+      "n6173055": "JEFFERSON LUIS GONÇALVES COITINHO",
+      "n5932090": "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA",
+      "n0255801": "ELBERTON ANICETO HENRIQUE",
+      "n4014011": "ALAN MARINHO DIAS",
+      "n5923996": "JULIO CESAR SANTOS SOARES"
+    };
 
-        // Normaliza logins (remove diferenças de maiúsculas/minúsculas)
-        function normalizeLogin(login) {
-            if (!login) return '';
-            return login.toUpperCase();
-        }
+    document.getElementById('fileInput').addEventListener('change', async function (e) {
+      const files = e.target.files;
+      const volumes = {};
 
-        // Processa os dados da planilha
-        function processData(data) {
-            const processedData = [];
-            const clusters = new Set();
-            const technologies = new Set();
-            const logins = new Set();
-            const dates = new Set();
-            
-            data.forEach(row => {
-                if (!row.OUTAGE || !row.TECNOLOGIA || !row.CLUSTER || !row['DIA / HORA']) return;
-                
-                const dateTime = new Date(row['DIA / HORA']);
-                const date = dateTime.toISOString().split('T')[0];
-                const hour = dateTime.getHours();
-                const login = normalizeLogin(row.LOGIN);
-                
-                clusters.add(row.CLUSTER);
-                technologies.add(row.TECNOLOGIA);
-                if (login) logins.add(login);
-                dates.add(date);
-                
-                processedData.push({
-                    outage: row.OUTAGE,
-                    technology: row.TECNOLOGIA,
-                    cluster: row.CLUSTER,
-                    datetime: dateTime,
-                    date: date,
-                    hour: hour,
-                    login: login
-                });
-            });
-            
-            return {
-                data: processedData,
-                clusters: Array.from(clusters).sort(),
-                technologies: Array.from(technologies).sort(),
-                logins: Array.from(logins).sort(),
-                dates: Array.from(dates).sort()
-            };
-        }
+      for (let file of files) {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
 
-        // Filtra os dados com base nos filtros selecionados
-        function filterData(data, filters) {
-            return data.filter(item => {
-                if (filters.technology !== 'all' && item.technology !== filters.technology) return false;
-                if (filters.cluster !== 'all' && item.cluster !== filters.cluster) return false;
-                if (filters.login !== 'all' && item.login !== filters.login) return false;
-                return true;
-            });
-        }
-
-        // Gera estatísticas resumidas
-        function generateSummaryStats(data) {
-            const total = data.length;
-            const byTech = {};
-            const byCluster = {};
-            const byLogin = {};
-            const byDay = {};
-            const byHour = Array(24).fill(0);
-            
-            data.forEach(item => {
-                // Por tecnologia
-                byTech[item.technology] = (byTech[item.technology] || 0) + 1;
-                
-                // Por cluster
-                byCluster[item.cluster] = (byCluster[item.cluster] || 0) + 1;
-                
-                // Por login (se houver)
-                if (item.login) {
-                    byLogin[item.login] = (byLogin[item.login] || 0) + 1;
-                }
-                
-                // Por dia
-                byDay[item.date] = (byDay[item.date] || 0) + 1;
-                
-                // Por hora
-                byHour[item.hour]++;
-            });
-            
-            // Top 10 logins
-            const topLogins = Object.entries(byLogin)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-            
-            return {
-                total,
-                byTech,
-                byCluster,
-                byLogin,
-                byDay,
-                byHour,
-                topLogins
-            };
-        }
-
-        // Atualiza os gráficos
-        function updateCharts(stats) {
-            // Gráfico por tecnologia
-            updateTechChart(stats.byTech);
-            
-            // Gráfico por cluster
-            updateClusterChart(stats.byCluster);
-            
-            // Gráfico por login (top 10)
-            updateLoginChart(stats.topLogins);
-            
-            // Gráfico por dia
-            updateDayChart(stats.byDay);
-            
-            // Gráfico por hora
-            updateHourChart(stats.byHour);
-        }
-
-        // Atualiza o gráfico de tecnologia
-        function updateTechChart(data) {
-            const ctx = document.getElementById('techChart').getContext('2d');
-            
-            if (window.techChart) {
-                window.techChart.destroy();
-            }
-            
-            const labels = Object.keys(data);
-            const values = Object.values(data);
-            
-            window.techChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 99, 132, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 99, 132, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Distribuição de Outages por Tecnologia'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Atualiza o gráfico de cluster
-        function updateClusterChart(data) {
-            const ctx = document.getElementById('clusterChart').getContext('2d');
-            
-            if (window.clusterChart) {
-                window.clusterChart.destroy();
-            }
-            
-            const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
-            const labels = entries.map(entry => entry[0]);
-            const values = entries.map(entry => entry[1]);
-            
-            window.clusterChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Número de Outages',
-                        data: values,
-                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Distribuição de Outages por Cluster'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // Atualiza o gráfico de login (top 10)
-        function updateLoginChart(data) {
-            const ctx = document.getElementById('loginChart').getContext('2d');
-            
-            if (window.loginChart) {
-                window.loginChart.destroy();
-            }
-            
-            const labels = data.map(entry => {
-                const login = entry[0];
-                const name = loginMapping[login] || 'Desconhecido';
-                return `${login} (${name})`;
-            });
-            const values = data.map(entry => entry[1]);
-            
-            window.loginChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Número de Outages',
-                        data: values,
-                        backgroundColor: 'rgba(153, 102, 255, 0.7)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Top 10 Logins com Mais Outages'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // Atualiza o gráfico por dia
-        function updateDayChart(data) {
-            const ctx = document.getElementById('dayChart').getContext('2d');
-            
-            if (window.dayChart) {
-                window.dayChart.destroy();
-            }
-            
-            const sortedDates = Object.keys(data).sort();
-            const values = sortedDates.map(date => data[date]);
-            
-            window.dayChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: sortedDates,
-                    datasets: [{
-                        label: 'Outages por Dia',
-                        data: values,
-                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                        borderColor: 'rgba(255, 159, 64, 1)',
-                        borderWidth: 2,
-                        tension: 0.1,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Distribuição de Outages por Dia'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // Atualiza o gráfico por hora
-        function updateHourChart(data) {
-            const ctx = document.getElementById('hourChart').getContext('2d');
-            
-            if (window.hourChart) {
-                window.hourChart.destroy();
-            }
-            
-            const labels = Array.from({length: 24}, (_, i) => `${i}h`);
-            
-            window.hourChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Outages por Hora',
-                        data: data,
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Distribuição de Outages por Hora do Dia'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // Atualiza o resumo estatístico
-        function updateSummaryStats(stats, filteredData) {
-            const summaryDiv = document.getElementById('summaryStats');
-            
-            // Calcula porcentagens
-            const techPercentages = {};
-            for (const tech in stats.byTech) {
-                techPercentages[tech] = ((stats.byTech[tech] / stats.total) * 100).toFixed(1);
-            }
-            
-            // Encontra o cluster com mais outages
-            let maxCluster = '';
-            let maxClusterCount = 0;
-            for (const cluster in stats.byCluster) {
-                if (stats.byCluster[cluster] > maxClusterCount) {
-                    maxCluster = cluster;
-                    maxClusterCount = stats.byCluster[cluster];
-                }
-            }
-            
-            // Encontra o dia com mais outages
-            let maxDay = '';
-            let maxDayCount = 0;
-            for (const day in stats.byDay) {
-                if (stats.byDay[day] > maxDayCount) {
-                    maxDay = day;
-                    maxDayCount = stats.byDay[day];
-                }
-            }
-            
-            // Encontra a hora com mais outages
-            let maxHour = 0;
-            let maxHourCount = 0;
-            stats.byHour.forEach((count, hour) => {
-                if (count > maxHourCount) {
-                    maxHour = hour;
-                    maxHourCount = count;
-                }
-            });
-            
-            // Formata a data
-            const formattedMaxDay = maxDay ? new Date(maxDay).toLocaleDateString('pt-BR') : '';
-            
-            // Cria o HTML
-            summaryDiv.innerHTML = `
-                <table>
-                    <tr>
-                        <th>Total de Outages</th>
-                        <td>${stats.total}</td>
-                    </tr>
-                    <tr>
-                        <th>Por Tecnologia</th>
-                        <td>
-                            ${Object.entries(stats.byTech).map(([tech, count]) => 
-                                `${tech}: ${count} (${techPercentages[tech]}%)`).join('<br>')}
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Cluster com Mais Outages</th>
-                        <td>${maxCluster}: ${maxClusterCount} (${((maxClusterCount / stats.total) * 100).toFixed(1)}%)</td>
-                    </tr>
-                    <tr>
-                        <th>Dia com Mais Outages</th>
-                        <td>${formattedMaxDay}: ${maxDayCount}</td>
-                    </tr>
-                    <tr>
-                        <th>Hora com Mais Outages</th>
-                        <td>${maxHour}h: ${maxHourCount}</td>
-                    </tr>
-                    <tr>
-                        <th>Outages sem Login</th>
-                        <td>${filteredData.filter(item => !item.login).length} (${((filteredData.filter(item => !item.login).length / stats.total) * 100).toFixed(1)}%)</td>
-                    </tr>
-                </table>
-            `;
-        }
-
-        // Atualiza os detalhes por login
-        function updateLoginDetails(stats) {
-            const loginDetailsDiv = document.getElementById('loginDetails');
-            
-            // Ordena os logins por quantidade de outages
-            const sortedLogins = Object.entries(stats.byLogin)
-                .sort((a, b) => b[1] - a[1]);
-            
-            // Cria a tabela
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Login</th>
-                            <th>Nome</th>
-                            <th>Outages</th>
-                            <th>% do Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            sortedLogins.forEach(([login, count]) => {
-                const name = loginMapping[login] || 'Desconhecido';
-                const percentage = ((count / stats.total) * 100).toFixed(1);
-                
-                html += `
-                    <tr>
-                        <td>${login}</td>
-                        <td>${name}</td>
-                        <td>${count}</td>
-                        <td>${percentage}%</td>
-                    </tr>
-                `;
-            });
-            
-            html += `
-                    </tbody>
-                </table>
-            `;
-            
-            loginDetailsDiv.innerHTML = html;
-        }
-
-        // Carrega os dados do arquivo Excel
-        async function loadData() {
-            try {
-                // Aqui você pode substituir por um upload de arquivo real
-                // Por enquanto, vamos usar os dados fornecidos na pergunta
-                
-                // Simulando o processamento dos dados
-                const response = await fetch('Volume - Janeiro.xlsx');
-                const arrayBuffer = await response.arrayBuffer();
-                const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                // Supondo que a primeira planilha é a que contém os dados
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // Converter para JSON
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
-                // Processar os dados
-                const processed = processData(jsonData);
-                
-                // Preencher os filtros
-                fillFilters(processed);
-                
-                // Atualizar a análise com todos os dados
-                updateAnalysis(processed.data, {
-                    technology: 'all',
-                    cluster: 'all',
-                    login: 'all'
-                });
-                
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                alert('Erro ao carregar dados. Verifique o console para mais detalhes.');
-            }
-        }
-
-        // Preenche os dropdowns de filtro
-        function fillFilters(processedData) {
-            const clusterFilter = document.getElementById('clusterFilter');
-            const loginFilter = document.getElementById('loginFilter');
-            
-            // Clusters
-            processedData.clusters.forEach(cluster => {
-                const option = document.createElement('option');
-                option.value = cluster;
-                option.textContent = cluster;
-                clusterFilter.appendChild(option);
-            });
-            
-            // Logins
-            processedData.logins.forEach(login => {
-                const option = document.createElement('option');
-                option.value = login;
-                
-                // Adiciona o nome do login se estiver no mapeamento
-                const name = loginMapping[login] || '';
-                option.textContent = name ? `${login} (${name})` : login;
-                
-                loginFilter.appendChild(option);
-            });
-        }
-
-        // Atualiza toda a análise com base nos filtros
-        function updateAnalysis(data, filters) {
-            const filteredData = filterData(data, filters);
-            const stats = generateSummaryStats(filteredData);
-            
-            updateSummaryStats(stats, filteredData);
-            updateCharts(stats);
-            updateLoginDetails(stats);
-        }
-
-        // Inicializa a aplicação
-        document.addEventListener('DOMContentLoaded', () => {
-            // Configura os eventos dos botões de filtro
-            document.getElementById('applyFilters').addEventListener('click', () => {
-                const filters = {
-                    technology: document.getElementById('technologyFilter').value,
-                    cluster: document.getElementById('clusterFilter').value,
-                    login: document.getElementById('loginFilter').value
-                };
-                
-                // Aqui você precisaria ter acesso aos dados processados
-                // Por enquanto, vamos apenas logar os filtros
-                console.log('Filtros aplicados:', filters);
-                
-                // Na implementação real, você chamaria updateAnalysis() com os filtros
-            });
-            
-            document.getElementById('resetFilters').addEventListener('click', () => {
-                document.getElementById('technologyFilter').value = 'all';
-                document.getElementById('clusterFilter').value = 'all';
-                document.getElementById('loginFilter').value = 'all';
-                
-                // Na implementação real, você chamaria updateAnalysis() com filtros resetados
-                console.log('Filtros resetados');
-            });
-            
-            // Carrega os dados
-            loadData();
+        workbook.SheetNames.forEach(sheetName => {
+          const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+          
+          sheet.forEach(row => {
+            const rawLogin = String(row['LOGIN'] || '').toLowerCase().trim();
+            const volume = Number(row['VOLUME'] || 0);
+            if (!rawLogin) return;
+            if (!volumes[rawLogin]) volumes[rawLogin] = 0;
+            volumes[rawLogin] += volume;
+          });
         });
-    </script>
+      }
+
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      const table = document.createElement('table');
+      const header = table.insertRow();
+      ['Login', 'Nome', 'Total de Volume'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        header.appendChild(th);
+      });
+
+      const sortedLogins = Object.keys(volumes).sort((a, b) => volumes[b] - volumes[a]);
+
+      let total = 0, min = Infinity, max = -Infinity;
+
+      sortedLogins.forEach(login => {
+        const volume = volumes[login];
+        total += volume;
+        if (volume > max) max = volume;
+        if (volume < min) min = volume;
+
+        const row = table.insertRow();
+        row.insertCell().textContent = login.toUpperCase();
+        row.insertCell().textContent = loginToName[login] || 'NOME DESCONHECIDO';
+        row.insertCell().textContent = volume;
+      });
+
+      output.appendChild(table);
+
+      const summary = document.createElement('div');
+      summary.className = 'summary';
+      summary.innerHTML = `
+        Total Geral: ${total}<br/>
+        Média: ${(total / sortedLogins.length).toFixed(2)}<br/>
+        Máximo: ${max}<br/>
+        Mínimo: ${min}
+      `;
+      output.appendChild(summary);
+    });
+  </script>
 </body>
 </html>
