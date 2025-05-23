@@ -119,6 +119,9 @@
         .month-name {
             text-transform: capitalize;
         }
+        .cluster-card {
+            grid-column: span 2;
+        }
     </style>
 </head>
 <body>
@@ -159,13 +162,15 @@
             </div>
 
             <div class="card">
-                <h2>Clusters com Maior Atuação</h2>
-                <ul id="volumeCluster"></ul>
-            </div>
-
-            <div class="card">
                 <h2>Tecnologia com Maior Atuação</h2>
                 <ul id="volumeTecnologia"></ul>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <div class="card cluster-card">
+                <h2>Clusters com Maior Atuação</h2>
+                <ul id="volumeCluster"></ul>
             </div>
         </div>
 
@@ -185,6 +190,13 @@
             <h2>Distribuição por Analista</h2>
             <div class="chart-container">
                 <canvas id="chartAnalistas"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Distribuição por Cluster</h2>
+            <div class="chart-container">
+                <canvas id="chartClusters"></canvas>
             </div>
         </div>
     </div>
@@ -238,6 +250,30 @@
             });
         }
 
+        function parseDate(dateStr) {
+            // Handle both date formats: Excel serial date or dd/mm/yyyy hh:mm string
+            if (typeof dateStr === 'number') {
+                // Excel serial date
+                const excelEpoch = new Date(1899, 11, 30);
+                const excelDate = new Date(excelEpoch.getTime() + dateStr * 24 * 60 * 60 * 1000);
+                return excelDate;
+            } else if (typeof dateStr === 'string') {
+                // dd/mm/yyyy hh:mm format
+                const [datePart, timePart] = dateStr.split(' ');
+                const [day, month, year] = datePart.split('/');
+                const [hours, minutes] = timePart ? timePart.split(':') : ['00', '00'];
+                
+                return new Date(
+                    parseInt(year),
+                    parseInt(month) - 1,
+                    parseInt(day),
+                    parseInt(hours),
+                    parseInt(minutes)
+                );
+            }
+            return new Date(dateStr);
+        }
+
         function processData(data) {
             // Update summary information
             document.getElementById('totalOutages').textContent = data.length;
@@ -252,7 +288,12 @@
             let lastDate = null;
 
             data.forEach(row => {
-                const dataHora = new Date(row['DIA / HORA']);
+                const dataHora = parseDate(row['DIA / HORA']);
+                if (isNaN(dataHora.getTime())) {
+                    console.error('Data inválida:', row['DIA / HORA']);
+                    return;
+                }
+                
                 const mes = dataHora.getMonth() + 1;
                 const dia = dataHora.getDate();
                 const login = (row['LOGIN'] || '').toUpperCase();
@@ -295,6 +336,7 @@
 
             renderAnalystChart(volumeAnalista, analistasFoco);
             renderMonthlyChart(volumeMes);
+            renderClusterChart(volumeCluster);
         }
 
         function renderList(elementId, dataObj, labelsArray = null) {
@@ -511,6 +553,66 @@
                             title: {
                                 display: true,
                                 text: 'Quantidade de Outages'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderClusterChart(volumeCluster) {
+            const ctx = document.getElementById('chartClusters').getContext('2d');
+            
+            // Destroy previous chart if it exists
+            if (window.clusterChart) {
+                window.clusterChart.destroy();
+            }
+
+            // Prepare data sorted by count (descending)
+            const sortedClusters = Object.entries(volumeCluster)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10); // Show top 10 clusters
+
+            window.clusterChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedClusters.map(c => c[0]),
+                    datasets: [{
+                        label: 'Outages por Cluster',
+                        data: sortedClusters.map(c => c[1]),
+                        backgroundColor: '#E60012',
+                        borderColor: '#C5000F',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} outages`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Outages'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
                             }
                         }
                     }
