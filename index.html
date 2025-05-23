@@ -5,6 +5,8 @@
     <title>Dashboard de Outages - Claro Brasil</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -21,7 +23,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 20px auto;
             padding: 20px;
             background: #fff;
@@ -40,17 +42,82 @@
             background-color: #fff;
             border: 1px solid #ddd;
             border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
         }
         ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
         li {
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #f1f1f1;
+            display: flex;
+            justify-content: space-between;
         }
         .chart-container {
             margin-top: 30px;
+            height: 400px;
+        }
+        .file-input-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #E60012;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .file-input-label:hover {
+            background: #C5000F;
+        }
+        #fileInput {
+            display: none;
+        }
+        .value {
+            font-weight: bold;
+            color: #E60012;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: #E60012;
+            border-radius: 4px;
+        }
+        .summary-card {
+            text-align: center;
+            padding: 15px;
+        }
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #E60012;
+            margin: 10px 0;
+        }
+        .summary-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .month-name {
+            text-transform: capitalize;
         }
     </style>
 </head>
@@ -59,26 +126,47 @@
         <h1>Dashboard de Outages - Claro Brasil</h1>
     </header>
     <div class="container">
-        <input type="file" id="fileInput" multiple>
-
-        <div class="card">
-            <h2>Volume Geral por Mês</h2>
-            <ul id="volumeMes"></ul>
+        <div class="file-input-container">
+            <label for="fileInput" class="file-input-label">Selecionar Arquivos Excel</label>
+            <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
+            <div id="fileInfo" style="margin-top: 10px; font-size: 14px;"></div>
         </div>
 
-        <div class="card">
-            <h2>Volume por Analista</h2>
-            <ul id="volumeAnalista"></ul>
+        <div class="card-grid">
+            <div class="card summary-card">
+                <div class="summary-label">Total de Outages</div>
+                <div class="summary-value" id="totalOutages">0</div>
+            </div>
+            <div class="card summary-card">
+                <div class="summary-label">Período Analisado</div>
+                <div class="summary-value" id="analysisPeriod">-</div>
+            </div>
+            <div class="card summary-card">
+                <div class="summary-label">Média Diária</div>
+                <div class="summary-value" id="dailyAverage">0</div>
+            </div>
         </div>
 
-        <div class="card">
-            <h2>Clusters com Maior Atuação</h2>
-            <ul id="volumeCluster"></ul>
-        </div>
+        <div class="card-grid">
+            <div class="card">
+                <h2>Volume Geral por Mês</h2>
+                <ul id="volumeMes"></ul>
+            </div>
 
-        <div class="card">
-            <h2>Tecnologia com Maior Atuação</h2>
-            <ul id="volumeTecnologia"></ul>
+            <div class="card">
+                <h2>Volume por Analista</h2>
+                <ul id="volumeAnalista"></ul>
+            </div>
+
+            <div class="card">
+                <h2>Clusters com Maior Atuação</h2>
+                <ul id="volumeCluster"></ul>
+            </div>
+
+            <div class="card">
+                <h2>Tecnologia com Maior Atuação</h2>
+                <ul id="volumeTecnologia"></ul>
+            </div>
         </div>
 
         <div class="card">
@@ -86,8 +174,18 @@
             <ul id="volumeDias"></ul>
         </div>
 
-        <div class="chart-container">
-            <canvas id="chartAnalistas"></canvas>
+        <div class="card">
+            <h2>Evolução Mensal</h2>
+            <div class="chart-container">
+                <canvas id="chartMonthly"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Distribuição por Analista</h2>
+            <div class="chart-container">
+                <canvas id="chartAnalistas"></canvas>
+            </div>
         </div>
     </div>
 
@@ -107,10 +205,17 @@
             'N4014011': 'ALAN MARINHO DIAS'
         };
 
+        const monthNames = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+
         document.getElementById('fileInput').addEventListener('change', handleFiles, false);
 
         function handleFiles(event) {
             const files = event.target.files;
+            document.getElementById('fileInfo').textContent = `${files.length} arquivo(s) selecionado(s)`;
+            
             const promises = Array.from(files).map(readExcel);
             Promise.all(promises).then(dataArrays => {
                 const allData = dataArrays.flat();
@@ -134,11 +239,17 @@
         }
 
         function processData(data) {
+            // Update summary information
+            document.getElementById('totalOutages').textContent = data.length;
+            
             const volumeMes = {};
             const volumeAnalista = {};
             const volumeCluster = {};
             const volumeTecnologia = {};
             const diasPorMes = {};
+            const outagesPorDia = {};
+            let firstDate = null;
+            let lastDate = null;
 
             data.forEach(row => {
                 const dataHora = new Date(row['DIA / HORA']);
@@ -147,32 +258,70 @@
                 const login = (row['LOGIN'] || '').toUpperCase();
                 const cluster = row['CLUSTER'] || 'Indefinido';
                 const tecnologia = row['TECNOLOGIA'] || 'Indefinida';
+                const dateKey = dataHora.toISOString().split('T')[0];
+
+                // Track first and last dates
+                if (!firstDate || dataHora < firstDate) firstDate = dataHora;
+                if (!lastDate || dataHora > lastDate) lastDate = dataHora;
 
                 volumeMes[mes] = (volumeMes[mes] || 0) + 1;
-
                 volumeAnalista[login] = (volumeAnalista[login] || 0) + 1;
                 volumeCluster[cluster] = (volumeCluster[cluster] || 0) + 1;
                 volumeTecnologia[tecnologia] = (volumeTecnologia[tecnologia] || 0) + 1;
+                outagesPorDia[dateKey] = (outagesPorDia[dateKey] || 0) + 1;
 
                 diasPorMes[mes] = diasPorMes[mes] || {};
                 diasPorMes[mes][dia] = (diasPorMes[mes][dia] || 0) + 1;
             });
 
-            renderList('volumeMes', volumeMes, 'Mês ');
+            // Update analysis period
+            if (firstDate && lastDate) {
+                const formatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+                const startStr = firstDate.toLocaleDateString('pt-BR', formatOptions);
+                const endStr = lastDate.toLocaleDateString('pt-BR', formatOptions);
+                document.getElementById('analysisPeriod').textContent = `${startStr} a ${endStr}`;
+                
+                // Calculate daily average
+                const daysDiff = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
+                const dailyAvg = (data.length / daysDiff).toFixed(1);
+                document.getElementById('dailyAverage').textContent = dailyAvg;
+            }
+
+            renderList('volumeMes', volumeMes, monthNames);
             renderAnalistas('volumeAnalista', volumeAnalista, analistasFoco);
             renderList('volumeCluster', volumeCluster);
             renderList('volumeTecnologia', volumeTecnologia);
             renderDias('volumeDias', diasPorMes);
 
-            renderChart(volumeAnalista, analistasFoco);
+            renderAnalystChart(volumeAnalista, analistasFoco);
+            renderMonthlyChart(volumeMes);
         }
 
-        function renderList(elementId, dataObj, prefix = '') {
+        function renderList(elementId, dataObj, labelsArray = null) {
             const ul = document.getElementById(elementId);
             ul.innerHTML = '';
-            Object.keys(dataObj).sort().forEach(key => {
+            
+            // Convert object to array and sort by value (descending)
+            const sortedEntries = Object.entries(dataObj)
+                .sort((a, b) => b[1] - a[1]);
+            
+            // Get max value for progress bars
+            const maxValue = sortedEntries.length > 0 ? sortedEntries[0][1] : 1;
+            
+            sortedEntries.forEach(([key, value]) => {
                 const li = document.createElement('li');
-                li.textContent = `${prefix}${key}: ${dataObj[key]}`;
+                
+                // Use labels array if provided (for months)
+                const displayKey = labelsArray && labelsArray[key - 1] ? 
+                    `${labelsArray[key - 1]}` : key;
+                
+                li.innerHTML = `
+                    <span>${displayKey}</span>
+                    <span class="value">${value}</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${(value / maxValue) * 100}%"></div>
+                    </div>
+                `;
                 ul.appendChild(li);
             });
         }
@@ -182,41 +331,81 @@
             ul.innerHTML = '';
             let outros = 0;
 
-            Object.keys(focus).forEach(login => {
-                const nome = focus[login];
-                const count = dataObj[login] || 0;
+            // Calculate total for focus analysts
+            const focusEntries = Object.entries(focus).map(([login, nome]) => {
+                return { login, nome, count: dataObj[login] || 0 };
+            });
+
+            // Sort focus analysts by count (descending)
+            focusEntries.sort((a, b) => b.count - a.count);
+
+            // Calculate max value for progress bars
+            const maxValue = focusEntries.length > 0 ? 
+                Math.max(...focusEntries.map(e => e.count), 0) : 1;
+
+            // Add focus analysts
+            focusEntries.forEach(({ nome, count }) => {
                 const li = document.createElement('li');
-                li.textContent = `${nome}: ${count}`;
+                li.innerHTML = `
+                    <span>${nome}</span>
+                    <span class="value">${count}</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${(count / maxValue) * 100}%"></div>
+                    </div>
+                `;
                 ul.appendChild(li);
             });
 
+            // Calculate "outros"
             Object.keys(dataObj).forEach(login => {
                 if (!focus[login]) {
                     outros += dataObj[login];
                 }
             });
 
-            const li = document.createElement('li');
-            li.textContent = `OUTROS: ${outros}`;
-            ul.appendChild(li);
+            if (outros > 0) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>OUTROS</span>
+                    <span class="value">${outros}</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${(outros / maxValue) * 100}%"></div>
+                    </div>
+                `;
+                ul.appendChild(li);
+            }
         }
 
         function renderDias(elementId, diasPorMes) {
             const ul = document.getElementById(elementId);
             ul.innerHTML = '';
-            Object.keys(diasPorMes).forEach(mes => {
+            
+            Object.keys(diasPorMes).sort().forEach(mes => {
                 const dias = diasPorMes[mes];
                 const sorted = Object.entries(dias).sort((a,b) => b[1]-a[1]);
                 const maior = sorted[0];
                 const menor = sorted[sorted.length -1];
+                
                 const li = document.createElement('li');
-                li.textContent = `Mês ${mes}: Maior volume dia ${maior[0]} (${maior[1]}) | Menor volume dia ${menor[0]} (${menor[1]})`;
+                li.innerHTML = `
+                    <span class="month-name">${monthNames[mes-1]}</span>
+                    <span>
+                        <strong>Maior:</strong> dia ${maior[0]} (${maior[1]}) | 
+                        <strong>Menor:</strong> dia ${menor[0]} (${menor[1]})
+                    </span>
+                `;
                 ul.appendChild(li);
             });
         }
 
-        function renderChart(analistas, focus) {
+        function renderAnalystChart(analistas, focus) {
             const ctx = document.getElementById('chartAnalistas').getContext('2d');
+            
+            // Destroy previous chart if it exists
+            if (window.analystChart) {
+                window.analystChart.destroy();
+            }
+
             const focusAnalistas = Object.keys(focus);
             const labels = focusAnalistas.map(login => focus[login]).concat(['OUTROS']);
 
@@ -226,25 +415,104 @@
             }, 0);
             data.push(outros);
 
-            new Chart(ctx, {
+            window.analystChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: 'Volume por Analista',
                         data: data,
-                        backgroundColor: '#E60012'
+                        backgroundColor: '#E60012',
+                        borderColor: '#C5000F',
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} outages`;
+                                }
+                            }
                         }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: { 
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Outages'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMonthlyChart(volumeMes) {
+            const ctx = document.getElementById('chartMonthly').getContext('2d');
+            
+            // Destroy previous chart if it exists
+            if (window.monthlyChart) {
+                window.monthlyChart.destroy();
+            }
+
+            // Prepare data sorted by month
+            const sortedMonths = Object.keys(volumeMes)
+                .sort((a, b) => a - b)
+                .map(month => ({
+                    month: parseInt(month),
+                    name: monthNames[parseInt(month)-1],
+                    count: volumeMes[month]
+                }));
+
+            window.monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedMonths.map(m => m.name),
+                    datasets: [{
+                        label: 'Outages por Mês',
+                        data: sortedMonths.map(m => m.count),
+                        backgroundColor: 'rgba(230, 0, 18, 0.2)',
+                        borderColor: '#E60012',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} outages`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Outages'
+                            }
+                        }
                     }
                 }
             });
