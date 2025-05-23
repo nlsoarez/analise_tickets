@@ -24,6 +24,12 @@
       --border-radius: 8px;
     }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       font-family: 'Segoe UI', Roboto, sans-serif;
       background-color: #f5f7fa;
@@ -32,13 +38,356 @@
       padding: 20px;
     }
 
-    /* ... (outros estilos CSS permanecem iguais) ... */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--light-gray);
+    }
+
+    h1, h2, h3 {
+      color: var(--primary-dark);
+      margin-bottom: 15px;
+    }
+
+    .upload-area {
+      background: var(--white);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 30px;
+      text-align: center;
+      border: 2px dashed var(--accent);
+      transition: all 0.3s;
+    }
+
+    .upload-area:hover {
+      border-color: var(--primary);
+      background-color: rgba(67, 97, 238, 0.05);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .upload-btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .upload-btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .chart-container {
+      height: 350px;
+      width: 100%;
+      position: relative;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .spinner {
+      border: 5px solid var(--light-gray);
+      border-top: 5px solid var(--primary);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    .data-table th {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 12px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--light-gray);
+    }
+
+    .data-table tr:hover {
+      background-color: rgba(67, 97, 238, 0.05);
+    }
+
+    .alert {
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: var(--border-radius);
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-danger {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .tech-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .tech-card {
+      background: var(--white);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      transition: transform 0.3s;
+    }
+
+    .tech-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .tech-card h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      color: var(--primary);
+    }
+
+    .filters {
+      background: var(--white);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 25px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-group select {
+      padding: 10px;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--light-gray);
+      min-height: 120px;
+      font-size: 14px;
+    }
+
+    #applyFilters {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      align-self: flex-end;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+
+    #applyFilters:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .export-btn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .export-btn:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .file-info {
+      margin-top: 15px;
+      padding: 12px;
+      background-color: var(--light-gray);
+      border-radius: var(--border-radius);
+      display: none;
+      font-size: 14px;
+    }
+
+    .progress-container {
+      width: 100%;
+      background-color: var(--light-gray);
+      border-radius: var(--border-radius);
+      margin-top: 15px;
+      display: none;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 20px;
+      background-color: var(--primary);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+    }
+
+    .example-format {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: var(--light-gray);
+      border-radius: var(--border-radius);
+    }
+
+    .example-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .example-table th, .example-table td {
+      padding: 8px;
+      border: 1px solid var(--gray);
+      text-align: left;
+    }
+
+    .example-table th {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .card {
+        grid-column: span 1 !important;
+      }
+      
+      .chart-container {
+        height: 300px;
+      }
+      
+      .filters {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+      
+      .export-buttons {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    .chartjs-tooltip {
+      background: rgba(0, 0, 0, 0.8) !important;
+      border-radius: var(--border-radius) !important;
+      padding: 10px !important;
+      font-size: 14px !important;
+      color: white !important;
+    }
   </style>
 </head>
 <body>
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <div id="loadingText" style="color: white; margin-left: 15px;">Processando arquivos...</div>
+    <div id="loadingText" style="color: white; margin-top: 15px;">Processando arquivos...</div>
   </div>
 
   <div class="container">
@@ -102,11 +451,58 @@
     </div>
 
     <div class="dashboard-grid">
-      <!-- Cards dos gráficos permanecem iguais -->
+      <div class="card">
+        <h3><i class="fas fa-user-tie"></i> Volume por Analista</h3>
+        <div class="chart-container">
+          <canvas id="chartAnalistas"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-network-wired"></i> Volume por Cluster</h3>
+        <div class="chart-container">
+          <canvas id="chartClusters"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-clock"></i> Volume por Horário</h3>
+        <div class="chart-container">
+          <canvas id="chartHorarios"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-calendar-alt"></i> Volume por Mês</h3>
+        <div class="chart-container">
+          <canvas id="chartMeses"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-calendar-day"></i> Volume: Dias Úteis vs Finais de Semana</h3>
+        <div class="chart-container">
+          <canvas id="chartDiasSemana"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-star"></i> Volume por Dia (Destaques Mensais)</h3>
+        <div class="chart-container">
+          <canvas id="chartDias"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: span 2;">
+        <h3><i class="fas fa-project-diagram"></i> Proporção HFC/GPON por Cluster</h3>
+        <div class="chart-container">
+          <canvas id="chartTechCluster"></canvas>
+        </div>
+      </div>
     </div>
 
     <div class="card">
-      <h3>Detalhamento por Analista</h3>
+      <h3><i class="fas fa-table"></i> Detalhamento por Analista</h3>
       <div id="tabela"></div>
     </div>
   </div>
@@ -143,7 +539,7 @@
 
     function showError(message) {
       document.getElementById('errorMessage').textContent = message;
-      document.getElementById('errorAlert').style.display = 'block';
+      document.getElementById('errorAlert').style.display = 'flex';
     }
 
     function hideError() {
@@ -172,12 +568,14 @@
       if (!dateTimeStr) return { date: null, time: null };
       
       try {
+        // Se for objeto Date (quando cellDates: true)
         if (dateTimeStr instanceof Date) {
           const date = dateTimeStr.toISOString().split('T')[0];
           const hours = String(dateTimeStr.getHours()).padStart(2, '0') + 'h';
           return { date, time: hours };
         }
         
+        // Se for string no formato "dd/mm/aaaa hh:mm"
         if (typeof dateTimeStr === 'string') {
           const normalizedStr = dateTimeStr.replace(/\s*\/\s*/, '/');
           const [datePart, timePart] = normalizedStr.split(' ');
@@ -204,7 +602,7 @@
     function isWeekend(dateStr) {
       const date = new Date(dateStr);
       const day = date.getDay();
-      return day === 0 || day === 6;
+      return day === 0 || day === 6; // 0 é Domingo, 6 é Sábado
     }
 
     function getMonthName(dateStr) {
@@ -233,6 +631,7 @@
         for (let i = 0; i < fileCount; i++) {
           const file = files[i];
           
+          // Verificar tamanho do arquivo (máximo 10MB)
           if (file.size > 10 * 1024 * 1024) {
             throw new Error(`Arquivo ${file.name} excede o tamanho máximo de 10MB`);
           }
@@ -249,15 +648,17 @@
           
           workbook.SheetNames.forEach(sheetName => {
             const sheet = workbook.Sheets[sheetName];
+            
+            // Verifica se as colunas necessárias existem
             const columnNames = [];
             const range = XLSX.utils.decode_range(sheet['!ref']);
-            
             for (let C = range.s.c; C <= range.e.c; ++C) {
               const cellAddress = XLSX.utils.encode_col(C) + "1";
               const cell = sheet[cellAddress];
               if (cell) columnNames.push(cell.v);
             }
             
+            // Verifica colunas obrigatórias
             const requiredColumns = ['OUTAGE', 'TECNOLOGIA', 'CLUSTER', 'DIA / HORA', 'LOGIN'];
             const missingColumns = requiredColumns.filter(col => !columnNames.includes(col));
             
@@ -274,6 +675,7 @@
               try {
                 const linha = index + 2;
                 
+                // Verifica valores obrigatórios
                 if (!row['LOGIN'] || !row['DIA / HORA'] || !row['CLUSTER']) {
                   console.warn(`Linha ${linha} ignorada - dados obrigatórios faltando:`, row);
                   return;
@@ -281,6 +683,7 @@
                 
                 const login = String(row['LOGIN']).toLowerCase().trim();
                 
+                // Filtra apenas analistas conhecidos
                 if (!loginToName[login]) {
                   console.warn(`Linha ${linha} ignorada - analista não mapeado: ${login}`);
                   return;
@@ -326,9 +729,6 @@
       } finally {
         hideLoading();
       }
-    }    function updateDashboard(data) {
-      // Implementação completa da função updateDashboard
-      // ... (código completo da função como mostrado anteriormente)
     }
 
     function updateTotals(data) {
@@ -339,69 +739,678 @@
       document.getElementById('techStats').innerHTML += `
         <div class="tech-card">
           <h3><i class="fas fa-chart-bar"></i> Totais Consolidados</h3>
-          <p>Total Registros: ${total}</p>
-          <p>Dias Úteis: ${totalWeekdays} (${Math.round((totalWeekdays/total)*100)}%)</p>
-          <p>Finais de Semana: ${totalWeekends} (${Math.round((totalWeekends/total)*100)}%)</p>
+          <p>Total Registros: ${total.toLocaleString()}</p>
+          <p>Dias Úteis: ${totalWeekdays.toLocaleString()} (${Math.round((totalWeekdays/total)*100)}%)</p>
+          <p>Finais de Semana: ${totalWeekends.toLocaleString()} (${Math.round((totalWeekends/total)*100)}%)</p>
         </div>
       `;
     }
 
-    function updateTechStats(techStats, techByCluster) {
-      // ... (implementação da função como mostrado anteriormente)
+    function updateDashboard(data) {
+      if (!data || !Array.isArray(data)) {
+        showError("Dados inválidos para atualização do dashboard");
+        return;
+      }
+
+      // Agrupar dados para gráficos
+      const volumesAnalista = {};
+      const volumesCluster = {};
+      const volumesHorario = {};
+      const volumesDia = {};
+      const volumesPorMes = {};
+      const volumesMes = {};
+      const volumesDiaSemana = { 'Dias Úteis': 0, 'Finais de Semana': 0 };
+      const techStats = { HFC: 0, GPON: 0, OUTROS: 0 };
+      const techByCluster = {};
+
+      data.forEach(item => {
+        // Analista (apenas os mapeados)
+        if (loginToName[item.login]) {
+          volumesAnalista[item.login] = (volumesAnalista[item.login] || 0) + 1;
+        }
+        
+        // Cluster
+        volumesCluster[item.cluster] = (volumesCluster[item.cluster] || 0) + 1;
+        
+        // Horário
+        volumesHorario[item.time] = (volumesHorario[item.time] || 0) + 1;
+        
+        // Data
+        volumesDia[item.date] = (volumesDia[item.date] || 0) + 1;
+        
+        // Mês (para destacar dias com maior volume)
+        const mes = item.date.substring(0, 7);
+        if (!volumesPorMes[mes]) {
+          volumesPorMes[mes] = { date: null, volume: 0 };
+        }
+        if (volumesDia[item.date] > volumesPorMes[mes].volume) {
+          volumesPorMes[mes] = { date: item.date, volume: volumesDia[item.date] };
+        }
+        
+        // Volume por mês
+        volumesMes[mes] = (volumesMes[mes] || 0) + 1;
+        
+        // Dias úteis vs finais de semana
+        if (isWeekend(item.date)) {
+          volumesDiaSemana['Finais de Semana'] += 1;
+        } else {
+          volumesDiaSemana['Dias Úteis'] += 1;
+        }
+        
+        // Estatísticas de tecnologia
+        const tech = item.tecnologia.includes('HFC') ? 'HFC' : 
+                    item.tecnologia.includes('GPON') ? 'GPON' : 'OUTROS';
+        techStats[tech] = (techStats[tech] || 0) + 1;
+        
+        // Tecnologia por cluster
+        if (!techByCluster[item.cluster]) {
+          techByCluster[item.cluster] = { HFC: 0, GPON: 0, OUTROS: 0 };
+        }
+        techByCluster[item.cluster][tech] += 1;
+      });
+
+      // Atualizar estatísticas de tecnologia
+      updateTechStats(techStats, techByCluster);
+      
+      // Atualizar totais consolidados
+      updateTotals(data);
+
+      // Adicionar filtros
+      addFilters(
+        Object.keys(volumesAnalista).map(login => loginToName[login]),
+        Object.keys(volumesCluster)
+      );
+
+      // Gráfico de Analistas (ordenado por volume)
+      const analistasOrdenados = Object.entries(volumesAnalista)
+        .sort((a, b) => b[1] - a[1])
+        .map(([login]) => ({
+          nome: loginToName[login],
+          volume: volumesAnalista[login]
+        }));
+      
+      drawChart('chartAnalistas', {
+        type: 'bar',
+        data: {
+          labels: analistasOrdenados.map(a => a.nome),
+          datasets: [{
+            label: 'Volume por Analista',
+            data: analistasOrdenados.map(a => a.volume),
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.raw.toLocaleString()} registros`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
+
+      // Gráfico de Clusters (ordenado por volume)
+      const clustersOrdenados = Object.entries(volumesCluster)
+        .sort((a, b) => b[1] - a[1]);
+      
+      drawChart('chartClusters', {
+        type: 'bar',
+        data: {
+          labels: clustersOrdenados.map(c => c[0]),
+          datasets: [{
+            label: 'Volume por Cluster',
+            data: clustersOrdenados.map(c => c[1]),
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.raw.toLocaleString()} registros`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
+
+      // Gráfico de Horários (ordenado por volume)
+      const horariosOrdenados = Object.entries(volumesHorario)
+        .sort((a, b) => b[1] - a[1]);
+      
+      drawChart('chartHorarios', {
+        type: 'bar',
+        data: {
+          labels: horariosOrdenados.map(h => h[0]),
+          datasets: [{
+            label: 'Volume por Horário',
+            data: horariosOrdenados.map(h => h[1]),
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.raw.toLocaleString()} registros`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
+
+      // Gráfico de Volume por Mês
+      const mesesOrdenados = Object.keys(volumesMes).sort();
+      drawChart('chartMeses', {
+        type: 'bar',
+        data: {
+          labels: mesesOrdenados.map(m => {
+            const [year, month] = m.split('-');
+            return `${getMonthName(m + '-01')} ${year}`;
+          }),
+          datasets: [{
+            label: 'Volume por Mês',
+            data: mesesOrdenados.map(m => volumesMes[m]),
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.raw.toLocaleString()} registros`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { 
+                callback: value => value.toLocaleString()
+              }
+            },
+            x: {
+              ticks: { 
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
+
+      // Gráfico Dias Úteis vs Finais de Semana
+      drawChart('chartDiasSemana', {
+        type: 'pie',
+        data: {
+          labels: Object.keys(volumesDiaSemana),
+          datasets: [{
+            data: Object.values(volumesDiaSemana),
+            backgroundColor: ['#4361ee', '#4cc9f0'],
+            borderColor: ['#3a0ca3', '#3a0ca3'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const value = context.raw;
+                  const percentage = Math.round((value / total) * 100);
+                  return `${context.label}: ${value.toLocaleString()} (${percentage}%)`;
+                }
+              }
+            },
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+
+      // Gráfico de Dias com apenas os destaques mensais em ordem cronológica
+      const meses = Object.keys(volumesPorMes).sort();
+      const diasDestaque = meses.map(mes => volumesPorMes[mes].date);
+      const volumesDestaque = diasDestaque.map(d => volumesDia[d]);
+      
+      drawChart('chartDias', {
+        type: 'bar',
+        data: {
+          labels: diasDestaque,
+          datasets: [{
+            label: 'Volume nos Dias de Maior Movimento',
+            data: volumesDestaque,
+            backgroundColor: '#4361ee',
+            borderColor: '#3a0ca3',
+            borderWidth: 1,
+            barThickness: 'flex',
+            maxBarThickness: 50
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.raw.toLocaleString()} registros`;
+                },
+                afterLabel: function(context) {
+                  const date = new Date(context.label);
+                  const month = date.toLocaleString('pt-BR', { month: 'long' });
+                  return `Destaque de ${month.charAt(0).toUpperCase() + month.slice(1)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          }
+        }
+      });
+
+      // Gráfico de Proporção HFC/GPON por Cluster
+      const clustersTech = Object.keys(techByCluster);
+      const techClusterData = {
+        labels: clustersTech,
+        datasets: [
+          {
+            label: 'HFC',
+            data: clustersTech.map(c => techByCluster[c].HFC),
+            backgroundColor: '#4361ee'
+          },
+          {
+            label: 'GPON',
+            data: clustersTech.map(c => techByCluster[c].GPON),
+            backgroundColor: '#4cc9f0'
+          },
+          {
+            label: 'Outros',
+            data: clustersTech.map(c => techByCluster[c].OUTROS),
+            backgroundColor: '#e9ecef'
+          }
+        ]
+      };
+      
+      drawChart('chartTechCluster', {
+        type: 'bar',
+        data: techClusterData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: {
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              }
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Tabela (apenas analistas mapeados)
+      updateTable(analistasOrdenados.map(a => a.nome), data, techByCluster);
+    }    function updateTechStats(techStats, techByCluster) {
+      const total = techStats.HFC + techStats.GPON + techStats.OUTROS;
+      const statsContainer = document.getElementById('techStats');
+      
+      statsContainer.innerHTML = `
+        <div class="tech-card">
+          <h3><i class="fas fa-network-wired"></i> Distribuição por Tecnologia</h3>
+          <p>HFC: ${techStats.HFC.toLocaleString()} (${((techStats.HFC / total) * 100).toFixed(1)}%)</p>
+          <p>GPON: ${techStats.GPON.toLocaleString()} (${((techStats.GPON / total) * 100).toFixed(1)}%)</p>
+          <p>Outros: ${techStats.OUTROS.toLocaleString()} (${((techStats.OUTROS / total) * 100).toFixed(1)}%)</p>
+        </div>
+        
+        <div class="tech-card">
+          <h3><i class="fas fa-chart-pie"></i> Proporção HFC/GPON</h3>
+          <p>Total HFC: ${techStats.HFC.toLocaleString()}</p>
+          <p>Total GPON: ${techStats.GPON.toLocaleString()}</p>
+          <p>Razão: ${(techStats.HFC / techStats.GPON).toFixed(2)}:1</p>
+        </div>
+      `;
+      
+      // Adiciona cards para cada cluster
+      Object.entries(techByCluster).forEach(([cluster, techs]) => {
+        const totalCluster = techs.HFC + techs.GPON + techs.OUTROS;
+        statsContainer.innerHTML += `
+          <div class="tech-card">
+            <h3><i class="fas fa-project-diagram"></i> Cluster ${cluster}</h3>
+            <p>HFC: ${techs.HFC.toLocaleString()} (${((techs.HFC / totalCluster) * 100).toFixed(1)}%)</p>
+            <p>GPON: ${techs.GPON.toLocaleString()} (${((techs.GPON / totalCluster) * 100).toFixed(1)}%)</p>
+            <p>Razão: ${(techs.HFC / techs.GPON).toFixed(2)}:1</p>
+          </div>
+        `;
+      });
     }
 
     function addFilters(analistas, clusters) {
-      // ... (implementação da função como mostrado anteriormente)
+      const filtersContainer = document.getElementById('filtersContainer');
+      
+      filtersContainer.innerHTML = `
+        <div class="filter-group">
+          <label><i class="fas fa-user-tie"></i> Analistas:</label>
+          <select id="analistaFilter" multiple>
+            ${analistas.map(a => `<option value="${a}" selected>${a}</option>`).join('')}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label><i class="fas fa-network-wired"></i> Clusters:</label>
+          <select id="clusterFilter" multiple>
+            ${clusters.map(c => `<option value="${c}" selected>${c}</option>`).join('')}
+          </select>
+        </div>
+        <button id="applyFilters"><i class="fas fa-filter"></i> Aplicar Filtros</button>
+      `;
+      
+      filtersContainer.style.display = 'grid';
+      
+      document.getElementById('applyFilters').addEventListener('click', () => {
+        const selectedAnalistas = [...document.getElementById('analistaFilter').selectedOptions]
+          .map(opt => opt.value);
+        const selectedClusters = [...document.getElementById('clusterFilter').selectedOptions]
+          .map(opt => opt.value);
+        
+        if (currentData) {
+          const filteredData = currentData.filter(item => {
+            const nomeAnalista = loginToName[item.login];
+            return selectedAnalistas.includes(nomeAnalista) && 
+                   selectedClusters.includes(item.cluster);
+          });
+          
+          updateDashboard(filteredData);
+        }
+      });
     }
 
     function updateTable(analistasFiltrados, data, techByCluster) {
-      // ... (implementação da função como mostrado anteriormente)
+      const tabela = document.getElementById('tabela');
+      
+      // Agrupar por analista (apenas os filtrados)
+      const resumo = data.reduce((acc, item) => {
+        if (!analistasFiltrados.includes(loginToName[item.login])) return acc;
+        
+        if (!acc[item.login]) {
+          acc[item.login] = {
+            nome: loginToName[item.login],
+            total: 0,
+            clusters: {},
+            tecnologias: { HFC: 0, GPON: 0, OUTROS: 0 }
+          };
+        }
+        
+        acc[item.login].total++;
+        acc[item.login].clusters[item.cluster] = (acc[item.login].clusters[item.cluster] || 0) + 1;
+        
+        const tech = item.tecnologia.includes('HFC') ? 'HFC' : 
+                     item.tecnologia.includes('GPON') ? 'GPON' : 'OUTROS';
+        acc[item.login].tecnologias[tech] += 1;
+        
+        return acc;
+      }, {});
+
+      // Criar HTML da tabela
+      let html = `
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Analista</th>
+                <th>Total</th>
+                <th>HFC</th>
+                <th>GPON</th>
+                <th>Proporção</th>
+                <th>Clusters</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      Object.entries(resumo)
+        .sort((a, b) => b[1].total - a[1].total)
+        .forEach(([, info]) => {
+          const clusters = Object.entries(info.clusters)
+            .sort((a, b) => b[1] - a[1])
+            .map(([cluster, count]) => `${cluster}: ${count.toLocaleString()}`)
+            .join('<br>');
+          
+          const proporcao = info.tecnologias.GPON > 0 ? 
+                           (info.tecnologias.HFC / info.tecnologias.GPON).toFixed(2) + ':1' : 
+                           'N/A';
+          
+          html += `
+            <tr>
+              <td>${info.nome}</td>
+              <td>${info.total.toLocaleString()}</td>
+              <td>${info.tecnologias.HFC.toLocaleString()}</td>
+              <td>${info.tecnologias.GPON.toLocaleString()}</td>
+              <td>${proporcao}</td>
+              <td>${clusters}</td>
+            </tr>
+          `;
+        });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      tabela.innerHTML = html;
     }
 
     function exportChartsAsPNG() {
-      // ... (implementação da função como mostrado anteriormente)
+      showLoading("Preparando gráficos para exportação...");
+      
+      setTimeout(() => {
+        Object.keys(charts).forEach((chartId, index) => {
+          const link = document.createElement('a');
+          link.download = `grafico_${chartId}.png`;
+          link.href = document.getElementById(chartId).toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+        
+        hideLoading();
+      }, 500);
     }
 
     function exportDataAsCSV() {
-      // ... (implementação da função como mostrado anteriormente)
+      if (!currentData) return;
+      
+      showLoading("Preparando dados para exportação...");
+      
+      // Criar cabeçalhos
+      const headers = ['Analista', 'Cluster', 'Data', 'Horário', 'Outage', 'Tecnologia'];
+      
+      // Criar linhas de dados
+      const rows = currentData.map(item => {
+        return [
+          `"${loginToName[item.login]}"`,
+          `"${item.cluster}"`,
+          `"${item.date}"`,
+          `"${item.time}"`,
+          `"${item.outage}"`,
+          `"${item.tecnologia}"`
+        ].join(',');
+      });
+      
+      // Combinar tudo
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      
+      // Criar link de download
+      const link = document.createElement('a');
+      link.download = 'dados_volumetria.csv';
+      link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      hideLoading();
     }
 
     // Event Listeners
-    document.getElementById('uploadBtn').addEventListener('click', () => {
-      document.getElementById('fileInput').click();
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('uploadBtn').addEventListener('click', function() {
+        document.getElementById('fileInput').click();
+      });
 
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        processFiles([...e.target.files]);
-      }
-    });
+      document.getElementById('fileInput').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+          processFiles([...e.target.files]);
+        }
+      });
 
-    document.getElementById('exportPNG').addEventListener('click', exportChartsAsPNG);
-    document.getElementById('exportCSV').addEventListener('click', exportDataAsCSV);
+      document.getElementById('exportPNG').addEventListener('click', exportChartsAsPNG);
+      document.getElementById('exportCSV').addEventListener('click', exportDataAsCSV);
 
-    // Drag and Drop
-    const uploadArea = document.querySelector('.upload-area');
-    
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.style.borderColor = 'var(--primary)';
-      uploadArea.style.backgroundColor = 'rgba(67, 97, 238, 0.1)';
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-      uploadArea.style.borderColor = 'var(--accent)';
-      uploadArea.style.backgroundColor = 'var(--white)';
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.style.borderColor = 'var(--accent)';
-      uploadArea.style.backgroundColor = 'var(--white)';
+      // Drag and Drop
+      const uploadArea = document.querySelector('.upload-area');
       
-      if (e.dataTransfer.files.length > 0) {
-        processFiles([...e.dataTransfer.files]);
-      }
+      uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--primary)';
+        uploadArea.style.backgroundColor = 'rgba(67, 97, 238, 0.1)';
+      });
+
+      uploadArea.addEventListener('dragleave', function() {
+        uploadArea.style.borderColor = 'var(--accent)';
+        uploadArea.style.backgroundColor = 'var(--white)';
+      });
+
+      uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--accent)';
+        uploadArea.style.backgroundColor = 'var(--white)';
+        
+        if (e.dataTransfer.files.length > 0) {
+          processFiles([...e.dataTransfer.files]);
+        }
+      });
     });
   </script>
 </body>
