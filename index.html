@@ -2,26 +2,59 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard de Outages</title>
+    <title>Dashboard de Outages - Claro Brasil</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #FFFFFF;
+            color: #333;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #E60012; /* Vermelho Claro Brasil */
+        }
+        .card {
+            background-color: #F4F4F4;
+            border-left: 5px solid #E60012;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        ul { list-style: none; padding: 0; }
+        li { padding: 4px 0; }
         canvas { margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h1>Dashboard de Outages</h1>
+    <h1>Dashboard de Outages - Claro Brasil</h1>
     <input type="file" id="fileInput" multiple>
-    
-    <h2>Volume por Mês</h2>
-    <ul id="volumeMes"></ul>
 
-    <h2>Volume por Analista</h2>
-    <ul id="volumeAnalista"></ul>
+    <div class="card">
+        <h2>Volume Geral por Mês</h2>
+        <ul id="volumeMes"></ul>
+    </div>
 
-    <h2>Volume por Cluster</h2>
-    <ul id="volumeCluster"></ul>
+    <div class="card">
+        <h2>Volume por Analista</h2>
+        <ul id="volumeAnalista"></ul>
+    </div>
+
+    <div class="card">
+        <h2>Clusters com Maior Atuação</h2>
+        <ul id="volumeCluster"></ul>
+    </div>
+
+    <div class="card">
+        <h2>Tecnologia com Maior Atuação</h2>
+        <ul id="volumeTecnologia"></ul>
+    </div>
+
+    <div class="card">
+        <h2>Dias de Maior e Menor Volume por Mês</h2>
+        <ul id="volumeDias"></ul>
+    </div>
 
     <canvas id="chartAnalistas"></canvas>
 
@@ -45,12 +78,7 @@
 
         function handleFiles(event) {
             const files = event.target.files;
-            const promises = [];
-
-            for (let i = 0; i < files.length; i++) {
-                promises.push(readExcel(files[i]));
-            }
-
+            const promises = Array.from(files).map(readExcel);
             Promise.all(promises).then(dataArrays => {
                 const allData = dataArrays.flat();
                 processData(allData);
@@ -76,26 +104,31 @@
             const volumeMes = {};
             const volumeAnalista = {};
             const volumeCluster = {};
+            const volumeTecnologia = {};
+            const diasPorMes = {};
 
             data.forEach(row => {
                 const dataHora = new Date(row['DIA / HORA']);
-                const mes = dataHora.getMonth() + 1; // Janeiro = 1
+                const mes = dataHora.getMonth() + 1;
+                const dia = dataHora.getDate();
                 const login = (row['LOGIN'] || '').toUpperCase();
                 const cluster = row['CLUSTER'] || 'Indefinido';
+                const tecnologia = row['TECNOLOGIA'] || 'Indefinida';
 
-                // Volume por mês
                 volumeMes[mes] = (volumeMes[mes] || 0) + 1;
-
-                // Volume por analista
                 volumeAnalista[login] = (volumeAnalista[login] || 0) + 1;
-
-                // Volume por cluster
                 volumeCluster[cluster] = (volumeCluster[cluster] || 0) + 1;
+                volumeTecnologia[tecnologia] = (volumeTecnologia[tecnologia] || 0) + 1;
+
+                diasPorMes[mes] = diasPorMes[mes] || {};
+                diasPorMes[mes][dia] = (diasPorMes[mes][dia] || 0) + 1;
             });
 
             renderList('volumeMes', volumeMes, 'Mês ');
             renderList('volumeAnalista', volumeAnalista, '', analistasFoco);
             renderList('volumeCluster', volumeCluster);
+            renderList('volumeTecnologia', volumeTecnologia);
+            renderDias('volumeDias', diasPorMes);
 
             renderChart(volumeAnalista, analistasFoco);
         }
@@ -110,6 +143,20 @@
                 }
                 const li = document.createElement('li');
                 li.textContent = `${prefix}${label}: ${dataObj[key]}`;
+                ul.appendChild(li);
+            });
+        }
+
+        function renderDias(elementId, diasPorMes) {
+            const ul = document.getElementById(elementId);
+            ul.innerHTML = '';
+            Object.keys(diasPorMes).forEach(mes => {
+                const dias = diasPorMes[mes];
+                const sorted = Object.entries(dias).sort((a,b) => b[1]-a[1]);
+                const maior = sorted[0];
+                const menor = sorted[sorted.length -1];
+                const li = document.createElement('li');
+                li.textContent = `Mês ${mes}: Maior volume dia ${maior[0]} (${maior[1]}) | Menor volume dia ${menor[0]} (${menor[1]})`;
                 ul.appendChild(li);
             });
         }
@@ -132,7 +179,7 @@
                     datasets: [{
                         label: 'Volume por Analista',
                         data: data,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                        backgroundColor: '#E60012'
                     }]
                 },
                 options: {
