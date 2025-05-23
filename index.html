@@ -6,57 +6,90 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background-color: #FFFFFF;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
             color: #333;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
         }
-        h1, h2 {
-            color: #E60012; /* Vermelho Claro Brasil */
+        header {
+            background-color: #E60012;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #E60012;
+            border-bottom: 2px solid #E60012;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
         }
         .card {
-            background-color: #F4F4F4;
-            border-left: 5px solid #E60012;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
         }
-        ul { list-style: none; padding: 0; }
-        li { padding: 4px 0; }
-        canvas { margin-top: 20px; }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .chart-container {
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
-    <h1>Dashboard de Outages - Claro Brasil</h1>
-    <input type="file" id="fileInput" multiple>
+    <header>
+        <h1>Dashboard de Outages - Claro Brasil</h1>
+    </header>
+    <div class="container">
+        <input type="file" id="fileInput" multiple>
 
-    <div class="card">
-        <h2>Volume Geral por Mês</h2>
-        <ul id="volumeMes"></ul>
+        <div class="card">
+            <h2>Volume Geral por Mês</h2>
+            <ul id="volumeMes"></ul>
+        </div>
+
+        <div class="card">
+            <h2>Volume por Analista</h2>
+            <ul id="volumeAnalista"></ul>
+        </div>
+
+        <div class="card">
+            <h2>Clusters com Maior Atuação</h2>
+            <ul id="volumeCluster"></ul>
+        </div>
+
+        <div class="card">
+            <h2>Tecnologia com Maior Atuação</h2>
+            <ul id="volumeTecnologia"></ul>
+        </div>
+
+        <div class="card">
+            <h2>Dias de Maior e Menor Volume por Mês</h2>
+            <ul id="volumeDias"></ul>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="chartAnalistas"></canvas>
+        </div>
     </div>
-
-    <div class="card">
-        <h2>Volume por Analista</h2>
-        <ul id="volumeAnalista"></ul>
-    </div>
-
-    <div class="card">
-        <h2>Clusters com Maior Atuação</h2>
-        <ul id="volumeCluster"></ul>
-    </div>
-
-    <div class="card">
-        <h2>Tecnologia com Maior Atuação</h2>
-        <ul id="volumeTecnologia"></ul>
-    </div>
-
-    <div class="card">
-        <h2>Dias de Maior e Menor Volume por Mês</h2>
-        <ul id="volumeDias"></ul>
-    </div>
-
-    <canvas id="chartAnalistas"></canvas>
 
     <script>
         const analistasFoco = {
@@ -116,6 +149,7 @@
                 const tecnologia = row['TECNOLOGIA'] || 'Indefinida';
 
                 volumeMes[mes] = (volumeMes[mes] || 0) + 1;
+
                 volumeAnalista[login] = (volumeAnalista[login] || 0) + 1;
                 volumeCluster[cluster] = (volumeCluster[cluster] || 0) + 1;
                 volumeTecnologia[tecnologia] = (volumeTecnologia[tecnologia] || 0) + 1;
@@ -125,7 +159,7 @@
             });
 
             renderList('volumeMes', volumeMes, 'Mês ');
-            renderList('volumeAnalista', volumeAnalista, '', analistasFoco);
+            renderAnalistas('volumeAnalista', volumeAnalista, analistasFoco);
             renderList('volumeCluster', volumeCluster);
             renderList('volumeTecnologia', volumeTecnologia);
             renderDias('volumeDias', diasPorMes);
@@ -133,18 +167,38 @@
             renderChart(volumeAnalista, analistasFoco);
         }
 
-        function renderList(elementId, dataObj, prefix = '', focus = null) {
+        function renderList(elementId, dataObj, prefix = '') {
             const ul = document.getElementById(elementId);
             ul.innerHTML = '';
             Object.keys(dataObj).sort().forEach(key => {
-                let label = key;
-                if (focus && focus[key]) {
-                    label += ` - ${focus[key]}`;
-                }
                 const li = document.createElement('li');
-                li.textContent = `${prefix}${label}: ${dataObj[key]}`;
+                li.textContent = `${prefix}${key}: ${dataObj[key]}`;
                 ul.appendChild(li);
             });
+        }
+
+        function renderAnalistas(elementId, dataObj, focus) {
+            const ul = document.getElementById(elementId);
+            ul.innerHTML = '';
+            let outros = 0;
+
+            Object.keys(focus).forEach(login => {
+                const nome = focus[login];
+                const count = dataObj[login] || 0;
+                const li = document.createElement('li');
+                li.textContent = `${nome}: ${count}`;
+                ul.appendChild(li);
+            });
+
+            Object.keys(dataObj).forEach(login => {
+                if (!focus[login]) {
+                    outros += dataObj[login];
+                }
+            });
+
+            const li = document.createElement('li');
+            li.textContent = `OUTROS: ${outros}`;
+            ul.appendChild(li);
         }
 
         function renderDias(elementId, diasPorMes) {
@@ -164,7 +218,7 @@
         function renderChart(analistas, focus) {
             const ctx = document.getElementById('chartAnalistas').getContext('2d');
             const focusAnalistas = Object.keys(focus);
-            const labels = focusAnalistas.concat(['OUTROS']);
+            const labels = focusAnalistas.map(login => focus[login]).concat(['OUTROS']);
 
             const data = focusAnalistas.map(login => analistas[login] || 0);
             const outros = Object.keys(analistas).reduce((sum, login) => {
@@ -184,6 +238,11 @@
                 },
                 options: {
                     responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
                         y: { beginAtZero: true }
                     }
