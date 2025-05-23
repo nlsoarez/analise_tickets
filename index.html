@@ -1,564 +1,148 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Volumetria</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --primary: #4361ee;
-      --primary-dark: #3a0ca3;
-      --accent: #4895ef;
-      --light: #f8f9fa;
-      --dark: #2b2d42;
-      --gray: #6c757d;
-      --light-gray: #e9ecef;
-      --white: #ffffff;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      --border-radius: 8px;
-    }
-
-    body {
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      background-color: #f5f7fa;
-      color: var(--dark);
-      line-height: 1.6;
-      padding: 20px;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--light-gray);
-    }
-
-    h1, h2, h3 {
-      color: var(--primary-dark);
-      margin-bottom: 15px;
-    }
-
-    .upload-area {
-      background: var(--white);
-      padding: 25px;
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow);
-      margin-bottom: 30px;
-      text-align: center;
-      border: 2px dashed var(--accent);
-      transition: all 0.3s;
-    }
-
-    #fileInput {
-      display: none;
-    }
-
-    .upload-btn {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 50px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-    }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-      gap: 25px;
-      margin-bottom: 30px;
-    }
-
-    .card {
-      background: var(--white);
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow);
-      padding: 20px;
-    }
-
-    .chart-container {
-      height: 350px;
-      width: 100%;
-      position: relative;
-    }
-
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      flex-direction: column;
-    }
-
-    .spinner {
-      border: 5px solid var(--light-gray);
-      border-top: 5px solid var(--primary);
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 15px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 14px;
-    }
-
-    .data-table th {
-      background-color: var(--primary);
-      color: var(--white);
-      padding: 12px;
-      text-align: left;
-    }
-
-    .data-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--light-gray);
-    }
-
-    .tech-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .tech-card {
-      background: var(--white);
-      padding: 20px;
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow);
-    }
-
-    .alert {
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: var(--border-radius);
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .alert-danger {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    @media (max-width: 768px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .card {
-        grid-column: span 1 !important;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Dashboard de Outages</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { margin-top: 20px; }
+    </style>
 </head>
 <body>
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div id="loadingText" style="color: white; margin-top: 15px;">Processando arquivos...</div>
-  </div>
-
-  <div class="container">
-    <header>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <i class="fas fa-chart-bar" style="font-size: 32px; color: var(--primary);"></i>
-        <h1>Dashboard de Volumetria</h1>
-      </div>
-    </header>
-
-    <div class="alert alert-danger" id="errorAlert">
-      <i class="fas fa-exclamation-circle"></i> <span id="errorMessage"></span>
-    </div>
-
-    <div class="upload-area">
-      <label for="fileInput" style="display: block; margin-bottom: 15px; font-size: 18px; cursor: pointer;">
-        <i class="fas fa-cloud-upload-alt"></i> Arraste e solte suas planilhas ou clique para selecionar
-      </label>
-      <p style="color: var(--gray); margin-bottom: 15px;">Formatos suportados: .xlsx (Excel)</p>
-      <input type="file" id="fileInput" multiple accept=".xlsx" />
-      <button class="upload-btn" id="uploadBtn">
-        <i class="fas fa-file-excel"></i> Selecionar Arquivos
-      </button>
-    </div>
-
-    <div class="dashboard-grid">
-      <div class="card">
-        <h3><i class="fas fa-user-tie"></i> Volume por Analista</h3>
-        <div class="chart-container">
-          <canvas id="chartAnalistas"></canvas>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3><i class="fas fa-network-wired"></i> Volume por Cluster</h3>
-        <div class="chart-container">
-          <canvas id="chartClusters"></canvas>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3><i class="fas fa-calendar-alt"></i> Volume por Mês</h3>
-        <div class="chart-container">
-          <canvas id="chartMeses"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="tech-stats" id="techStats">
-      <!-- Estatísticas serão preenchidas aqui -->
-    </div>
-
-    <div class="card">
-      <h3><i class="fas fa-table"></i> Detalhamento Completo</h3>
-      <div id="tabela"></div>
-    </div>
-  </div>
-
-  <script>
-    // Mapeamento de login para nome completo
-    const analistasMapeados = {
-      "n0238475": "MARLEY MARQUES RIBEIRO",
-      "n5923221": "KELLY PINHEIRO LIRA",
-      "f160641": "JENNIFER MARIA ANDRADE SANTOS",
-      "n5772086": "THIAGO PEREIRA DA SILVA",
-      "n0239871": "LEONARDO FERREIRA LIMA DE ALMEIDA",
-      "n5577565": "MARISTELLA MARCIA DOS SANTOS",
-      "n5737414": "SANDRO DA SILVA CARVALHO",
-      "n5972428": "CRISTIANE HERMOGENES DA SILVA",
-      "n6173055": "JEFFERSON LUIS GONÇALVES COITINHO",
-      "n5932090": "EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA",
-      "n0255801": "ELBERTON ANICETO HENRIQUE",
-      "n4014011": "ALAN MARINHO DIAS"
-    };
-
-    const charts = {};
-    let currentData = null;
-
-    // Funções auxiliares
-    function showLoading(message = "Processando arquivos...") {
-      document.getElementById('loadingText').textContent = message;
-      document.getElementById('loadingOverlay').style.display = 'flex';
-    }
-
-    function hideLoading() {
-      document.getElementById('loadingOverlay').style.display = 'none';
-    }
-
-    function showError(message) {
-      document.getElementById('errorMessage').textContent = message;
-      document.getElementById('errorAlert').style.display = 'flex';
-    }
-
-    function hideError() {
-      document.getElementById('errorAlert').style.display = 'none';
-    }
-
-    function parseDateTime(dateTimeStr) {
-      if (!dateTimeStr) return { date: null, time: null };
-      
-      try {
-        if (dateTimeStr instanceof Date) {
-          const date = dateTimeStr.toISOString().split('T')[0];
-          const hours = String(dateTimeStr.getHours()).padStart(2, '0') + 'h';
-          return { date, time: hours };
-        }
-        
-        if (typeof dateTimeStr === 'string') {
-          const normalizedStr = dateTimeStr.replace(/\s*\/\s*/, '/');
-          const [datePart, timePart] = normalizedStr.split(' ');
-          
-          if (!datePart || !timePart) return { date: null, time: null };
-          
-          const [day, month, year] = datePart.split('/');
-          if (!day || !month || !year) return { date: null, time: null };
-          
-          const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-          const [hours] = timePart.split(':');
-          const time = `${hours.padStart(2, '0')}h`;
-          
-          return { date, time };
-        }
-        
-        return { date: null, time: null };
-      } catch (e) {
-        console.error('Erro ao parsear data/hora:', dateTimeStr, e);
-        return { date: null, time: null };
-      }
-    }
-
-    function drawChart(id, config) {
-      if (charts[id]) charts[id].destroy();
-      
-      const ctx = document.getElementById(id).getContext('2d');
-      charts[id] = new Chart(ctx, config);
-    }
-
-    async function processFiles(files) {
-      showLoading();
-      hideError();
-      
-      try {
-        const processedData = [];
-        let hasValidData = false;
-        
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const data = await file.arrayBuffer();
-          const workbook = XLSX.read(data, { 
-            type: 'array',
-            cellDates: true,
-            raw: false
-          });
-          
-          workbook.SheetNames.forEach(sheetName => {
-            const sheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-            
-            jsonData.forEach(row => {
-              try {
-                if (!row['LOGIN'] || !row['DIA / HORA'] || !row['CLUSTER']) return;
-                
-                const login = String(row['LOGIN']).toLowerCase().trim();
-                const diaHora = parseDateTime(row['DIA / HORA']);
-                const tecnologia = String(row['TECNOLOGIA'] || '').toUpperCase();
-                
-                if (!diaHora.date) return;
-                
-                processedData.push({
-                  login,
-                  nome: analistasMapeados[login] || `Não mapeado (${login})`,
-                  cluster: String(row['CLUSTER'] || 'INDEFINIDO').toUpperCase(),
-                  date: diaHora.date,
-                  time: diaHora.time,
-                  outage: String(row['OUTAGE'] || ''),
-                  tecnologia: tecnologia
-                });
-                
-                hasValidData = true;
-              } catch (error) {
-                console.warn('Erro ao processar linha:', row, error);
-              }
-            });
-          });
-        }
-        
-        if (!hasValidData) {
-          throw new Error('Nenhum dado válido encontrado nos arquivos.');
-        }
-        
-        currentData = processedData;
-        updateDashboard(processedData);
-      } catch (error) {
-        console.error('Erro no processamento:', error);
-        showError(error.message);
-      } finally {
-        hideLoading();
-      }
-    }
-
-    function updateDashboard(data) {
-      // Agrupar dados
-      const volumesAnalista = {};
-      const volumesCluster = {};
-      const volumesMes = {};
-      
-      data.forEach(item => {
-        // Volume por analista
-        volumesAnalista[item.nome] = (volumesAnalista[item.nome] || 0) + 1;
-        
-        // Volume por cluster
-        volumesCluster[item.cluster] = (volumesCluster[item.cluster] || 0) + 1;
-        
-        // Volume por mês (formato YYYY-MM)
-        const mes = item.date.substring(0, 7);
-        volumesMes[mes] = (volumesMes[mes] || 0) + 1;
-      });
-
-      // Ordenar analistas (maior volume primeiro)
-      const analistasOrdenados = Object.entries(volumesAnalista)
-        .sort((a, b) => b[1] - a[1])
-        .map(([nome, volume]) => ({ nome, volume }));
-
-      // Ordenar clusters (maior volume primeiro)
-      const clustersOrdenados = Object.entries(volumesCluster)
-        .sort((a, b) => b[1] - a[1]);
-
-      // Ordenar meses cronologicamente
-      const mesesOrdenados = Object.keys(volumesMes).sort();
-
-      // Gráfico de Analistas
-      drawChart('chartAnalistas', {
-        type: 'bar',
-        data: {
-          labels: analistasOrdenados.map(a => a.nome),
-          datasets: [{
-            label: 'Volume por Analista',
-            data: analistasOrdenados.map(a => a.volume),
-            backgroundColor: '#4361ee',
-            borderColor: '#3a0ca3',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true },
-            x: { ticks: { autoSkip: false } }
-          }
-        }
-      });
-
-      // Gráfico de Clusters
-      drawChart('chartClusters', {
-        type: 'bar',
-        data: {
-          labels: clustersOrdenados.map(c => c[0]),
-          datasets: [{
-            label: 'Volume por Cluster',
-            data: clustersOrdenados.map(c => c[1]),
-            backgroundColor: '#4361ee',
-            borderColor: '#3a0ca3',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true },
-            x: { ticks: { autoSkip: false } }
-          }
-        }
-      });
-
-      // Gráfico de Meses
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                         'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      
-      drawChart('chartMeses', {
-        type: 'bar',
-        data: {
-          labels: mesesOrdenados.map(m => {
-            const [year, month] = m.split('-');
-            return `${monthNames[parseInt(month)-1]}`;
-          }),
-          datasets: [{
-            label: 'Volume por Mês',
-            data: mesesOrdenados.map(m => volumesMes[m]),
-            backgroundColor: '#4361ee',
-            borderColor: '#3a0ca3',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true },
-            x: { ticks: { autoSkip: false } }
-          }
-        }
-      });
-
-      // Atualizar estatísticas
-      updateStats(analistasOrdenados, clustersOrdenados, mesesOrdenados, volumesMes);
-    }
-
-    function updateStats(analistas, clusters, meses, volumesMes) {
-      const statsContainer = document.getElementById('techStats');
-      
-      // Estatísticas de Analistas
-      let html = `
-        <div class="tech-card">
-          <h3><i class="fas fa-user-tie"></i> Top Analistas</h3>
-          ${analistas.slice(0, 5).map(a => 
-            `<p>${a.nome}: ${a.volume.toLocaleString()}</p>`
-          ).join('')}
-        </div>
-        
-        <div class="tech-card">
-          <h3><i class="fas fa-network-wired"></i> Top Clusters</h3>
-          ${clusters.slice(0, 5).map(c => 
-            `<p>${c[0]}: ${c[1].toLocaleString()}</p>`
-          ).join('')}
-        </div>
-        
-        <div class="tech-card">
-          <h3><i class="fas fa-calendar-alt"></i> Volume Mensal</h3>
-          ${meses.map(m => {
-            const [year, month] = m.split('-');
-            const monthName = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                             'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][parseInt(month)-1];
-            return `<p>${monthName}: ${volumesMes[m].toLocaleString()}</p>`;
-          }).join('')}
-        </div>
-      `;
-      
-      statsContainer.innerHTML = html;
-    }
-
-    // Event Listeners
-    document.getElementById('uploadBtn').addEventListener('click', () => {
-      document.getElementById('fileInput').click();
-    });
-
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        processFiles([...e.target.files]);
-      }
-    });
-
-    // Drag and Drop
-    const uploadArea = document.querySelector('.upload-area');
+    <h1>Dashboard de Outages</h1>
+    <input type="file" id="fileInput" multiple>
     
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.style.borderColor = 'var(--primary)';
-    });
+    <h2>Volume por Mês</h2>
+    <ul id="volumeMes"></ul>
 
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.style.borderColor = 'var(--accent)';
-      if (e.dataTransfer.files.length > 0) {
-        processFiles([...e.dataTransfer.files]);
-      }
-    });
-  </script>
+    <h2>Volume por Analista</h2>
+    <ul id="volumeAnalista"></ul>
+
+    <h2>Volume por Cluster</h2>
+    <ul id="volumeCluster"></ul>
+
+    <canvas id="chartAnalistas"></canvas>
+
+    <script>
+        const analistasFoco = {
+            'N0238475': 'MARLEY MARQUES RIBEIRO',
+            'N5923221': 'KELLY PINHEIRO LIRA',
+            'F160641': 'JENNIFER MARIA ANDRADE SANTOS',
+            'N5772086': 'THIAGO PEREIRA DA SILVA',
+            'N0239871': 'LEONARDO FERREIRA LIMA DE ALMEIDA',
+            'N5577565': 'MARISTELLA MARCIA DOS SANTOS',
+            'N5737414': 'SANDRO DA SILVA CARVALHO',
+            'N5972428': 'CRISTIANE HERMOGENES DA SILVA',
+            'N6173055': 'JEFFERSON LUIS GONÇALVES COITINHO',
+            'N5932090': 'EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA',
+            'N0255801': 'ELBERTON ANICETO HENRIQUE',
+            'N4014011': 'ALAN MARINHO DIAS'
+        };
+
+        document.getElementById('fileInput').addEventListener('change', handleFiles, false);
+
+        function handleFiles(event) {
+            const files = event.target.files;
+            const promises = [];
+
+            for (let i = 0; i < files.length; i++) {
+                promises.push(readExcel(files[i]));
+            }
+
+            Promise.all(promises).then(dataArrays => {
+                const allData = dataArrays.flat();
+                processData(allData);
+            });
+        }
+
+        function readExcel(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    resolve(json);
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function processData(data) {
+            const volumeMes = {};
+            const volumeAnalista = {};
+            const volumeCluster = {};
+
+            data.forEach(row => {
+                const dataHora = new Date(row['DIA / HORA']);
+                const mes = dataHora.getMonth() + 1; // Janeiro = 1
+                const login = (row['LOGIN'] || '').toUpperCase();
+                const cluster = row['CLUSTER'] || 'Indefinido';
+
+                // Volume por mês
+                volumeMes[mes] = (volumeMes[mes] || 0) + 1;
+
+                // Volume por analista
+                volumeAnalista[login] = (volumeAnalista[login] || 0) + 1;
+
+                // Volume por cluster
+                volumeCluster[cluster] = (volumeCluster[cluster] || 0) + 1;
+            });
+
+            renderList('volumeMes', volumeMes, 'Mês ');
+            renderList('volumeAnalista', volumeAnalista, '', analistasFoco);
+            renderList('volumeCluster', volumeCluster);
+
+            renderChart(volumeAnalista, analistasFoco);
+        }
+
+        function renderList(elementId, dataObj, prefix = '', focus = null) {
+            const ul = document.getElementById(elementId);
+            ul.innerHTML = '';
+            Object.keys(dataObj).sort().forEach(key => {
+                let label = key;
+                if (focus && focus[key]) {
+                    label += ` - ${focus[key]}`;
+                }
+                const li = document.createElement('li');
+                li.textContent = `${prefix}${label}: ${dataObj[key]}`;
+                ul.appendChild(li);
+            });
+        }
+
+        function renderChart(analistas, focus) {
+            const ctx = document.getElementById('chartAnalistas').getContext('2d');
+            const focusAnalistas = Object.keys(focus);
+            const labels = focusAnalistas.concat(['OUTROS']);
+
+            const data = focusAnalistas.map(login => analistas[login] || 0);
+            const outros = Object.keys(analistas).reduce((sum, login) => {
+                return focusAnalistas.includes(login) ? sum : sum + analistas[login];
+            }, 0);
+            data.push(outros);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Volume por Analista',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
