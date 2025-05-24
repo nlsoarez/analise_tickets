@@ -18,10 +18,14 @@
             --bg-light: #F7FAFC;
             --border-color: #E2E8F0;
             --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --font-size-base: 14px;
+            --font-size-sm: 12px;
+            --font-size-lg: 16px;
         }
         
         body {
             font-family: 'Roboto', sans-serif;
+            font-size: var(--font-size-base);
             background-color: var(--bg-light);
             color: var(--text-primary);
             margin: 0;
@@ -32,28 +36,28 @@
         header {
             background-color: var(--claro-red);
             color: white;
-            padding: 1.5rem;
+            padding: 1rem;
             text-align: center;
             box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 0 1.5rem 2rem;
+            padding: 0 1rem 1.5rem;
         }
         
         h1 {
             font-weight: 700;
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             margin: 0;
         }
         
         h2 {
             color: var(--claro-red);
             font-weight: 600;
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             border-bottom: 2px solid var(--claro-light-red);
             padding-bottom: 0.5rem;
             margin: 0 0 1rem;
@@ -63,7 +67,7 @@
             background: white;
             border-radius: 0.5rem;
             box-shadow: var(--card-shadow);
-            padding: 1.5rem;
+            padding: 1rem;
             margin-bottom: 1.5rem;
         }
         
@@ -82,7 +86,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 1.5rem;
+            padding: 1rem;
             background: white;
             border-radius: 0.5rem;
             box-shadow: var(--card-shadow);
@@ -92,13 +96,14 @@
         .file-input-label {
             display: inline-flex;
             align-items: center;
-            padding: 0.75rem 1.5rem;
+            padding: 0.5rem 1rem;
             background: var(--claro-red);
             color: white;
             border-radius: 0.375rem;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: 500;
+            font-size: var(--font-size-base);
         }
         
         .file-input-label:hover {
@@ -115,8 +120,8 @@
         }
         
         .file-info {
-            margin-top: 1rem;
-            font-size: 0.875rem;
+            margin-top: 0.75rem;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
         }
         
@@ -125,19 +130,19 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            padding: 1.5rem;
+            padding: 1rem;
         }
         
         .summary-value {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--claro-red);
-            margin: 0.5rem 0;
+            margin: 0.25rem 0;
             line-height: 1;
         }
         
         .summary-label {
-            font-size: 0.875rem;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
             font-weight: 500;
         }
@@ -145,21 +150,23 @@
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.875rem;
+            font-size: var(--font-size-sm);
         }
         
         .data-table th {
             text-align: left;
-            padding: 0.75rem 1rem;
+            padding: 0.5rem;
             background: var(--claro-light-red);
             color: var(--claro-red);
             font-weight: 600;
             border-bottom: 1px solid var(--border-color);
+            font-size: var(--font-size-sm);
         }
         
         .data-table td {
-            padding: 0.75rem 1rem;
+            padding: 0.5rem;
             border-bottom: 1px solid var(--border-color);
+            font-size: var(--font-size-sm);
         }
         
         .data-table tr:last-child td {
@@ -183,8 +190,8 @@
         
         .chart-container {
             position: relative;
-            height: 350px;
-            margin-top: 1.5rem;
+            height: 300px;
+            margin-top: 1rem;
         }
         
         .tab-container {
@@ -194,12 +201,13 @@
         }
         
         .tab {
-            padding: 0.5rem 1rem;
+            padding: 0.5rem;
             cursor: pointer;
             font-weight: 500;
             color: var(--text-secondary);
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
+            font-size: var(--font-size-sm);
         }
         
         .tab.active {
@@ -223,12 +231,12 @@
         }
         
         .month-btn {
-            padding: 0.375rem 0.75rem;
+            padding: 0.25rem 0.5rem;
             background: white;
             border: 1px solid var(--border-color);
             border-radius: 0.25rem;
             cursor: pointer;
-            font-size: 0.875rem;
+            font-size: var(--font-size-sm);
             transition: all 0.2s;
         }
         
@@ -238,6 +246,28 @@
             border-color: var(--claro-red);
         }
         
+        .cluster-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: var(--font-size-sm);
+        }
+        
+        .cluster-info-item {
+            text-align: center;
+            padding: 0.5rem;
+            flex: 1;
+        }
+        
+        .cluster-info-value {
+            font-weight: 700;
+            color: var(--claro-red);
+        }
+        
+        .cluster-info-label {
+            color: var(--text-secondary);
+        }
+        
         @media (max-width: 768px) {
             .card-grid {
                 grid-template-columns: 1fr;
@@ -245,6 +275,10 @@
             
             .card-large {
                 grid-column: span 1;
+            }
+            
+            .chart-container {
+                height: 250px;
             }
         }
     </style>
@@ -282,15 +316,22 @@
             </div>
         </div>
 
-        <div class="card">
-            <h2>Evolução Mensal</h2>
-            <div class="chart-container">
-                <canvas id="chartMonthly"></canvas>
-            </div>
-        </div>
-
         <div class="card card-large">
             <h2>Análise por Cluster</h2>
+            <div class="cluster-info" id="clusterSummary">
+                <div class="cluster-info-item">
+                    <div class="cluster-info-value" id="clusterTotal">0</div>
+                    <div class="cluster-info-label">Total de Outages</div>
+                </div>
+                <div class="cluster-info-item">
+                    <div class="cluster-info-value" id="clusterPeriod">-</div>
+                    <div class="cluster-info-label">Período Analisado</div>
+                </div>
+                <div class="cluster-info-item">
+                    <div class="cluster-info-value" id="clusterDailyAvg">0</div>
+                    <div class="cluster-info-label">Média Diária</div>
+                </div>
+            </div>
             <div class="tab-container">
                 <div class="tab active" data-tab="total">Visão Geral</div>
                 <div class="tab" data-tab="monthly">Detalhe Mensal</div>
@@ -304,6 +345,20 @@
             
             <div class="tab-content" id="tab-monthly">
                 <div class="month-selector" id="monthSelector"></div>
+                <div class="cluster-info" id="monthlyClusterSummary">
+                    <div class="cluster-info-item">
+                        <div class="cluster-info-value" id="monthlyTotal">0</div>
+                        <div class="cluster-info-label">Total no Mês</div>
+                    </div>
+                    <div class="cluster-info-item">
+                        <div class="cluster-info-value" id="monthlyDailyAvg">0</div>
+                        <div class="cluster-info-label">Média Diária</div>
+                    </div>
+                    <div class="cluster-info-item">
+                        <div class="cluster-info-value" id="monthlyWeekendAvg">0</div>
+                        <div class="cluster-info-label">Média Fim de Semana</div>
+                    </div>
+                </div>
                 <div class="chart-container">
                     <canvas id="chartClustersMonthly"></canvas>
                 </div>
@@ -323,6 +378,9 @@
                 <div class="chart-container">
                     <canvas id="chartTecnologia"></canvas>
                 </div>
+                <div class="chart-container" style="height: 400px; margin-top: 1rem;">
+                    <canvas id="chartClusterTecnologia"></canvas>
+                </div>
             </div>
         </div>
 
@@ -333,6 +391,8 @@
                     <tr>
                         <th>Mês</th>
                         <th>Outages</th>
+                        <th>Média Diária</th>
+                        <th>Média Fim de Semana</th>
                         <th style="width: 100px;">Distribuição</th>
                     </tr>
                 </thead>
@@ -353,27 +413,35 @@
                 <tbody id="volumeDias"></tbody>
             </table>
         </div>
+
+        <div class="card">
+            <h2>Evolução Mensal</h2>
+            <div class="chart-container">
+                <canvas id="chartMonthly"></canvas>
+            </div>
+        </div>
     </div>
 
     <script>
         // Configuração global do Chart.js
         Chart.defaults.font.family = "'Roboto', sans-serif";
+        Chart.defaults.font.size = 12;
         Chart.defaults.color = '#4A5568';
         Chart.defaults.borderColor = '#E2E8F0';
         
         const analistasFoco = {
-            'N0238475': 'MARLEY MARQUES RIBEIRO',
-            'N5923221': 'KELLY PINHEIRO LIRA',
-            'F160641': 'JENNIFER MARIA ANDRADE SANTOS',
-            'N5772086': 'THIAGO PEREIRA DA SILVA',
-            'N0239871': 'LEONARDO FERREIRA LIMA DE ALMEIDA',
-            'N5577565': 'MARISTELLA MARCIA DOS SANTOS',
-            'N5737414': 'SANDRO DA SILVA CARVALHO',
-            'N5972428': 'CRISTIANE HERMOGENES DA SILVA',
-            'N6173055': 'JEFFERSON LUIS GONÇALVES COITINHO',
-            'N5932090': 'EVILÁZIO ANDRÉ DE MAGALHÃES GOMES PEREIRA',
-            'N0255801': 'ELBERTON ANICETO HENRIQUE',
-            'N4014011': 'ALAN MARINHO DIAS'
+            'N0238475': 'MARLEY',
+            'N5923221': 'KELLY',
+            'F160641': 'JENNIFER',
+            'N5772086': 'THIAGO',
+            'N0239871': 'LEONARDO',
+            'N5577565': 'MARISTELLA',
+            'N5737414': 'SANDRO',
+            'N5972428': 'CRISTIANE',
+            'N6173055': 'JEFFERSON',
+            'N5932090': 'EVILÁZIO',
+            'N0255801': 'ELBERTON',
+            'N4014011': 'ALAN'
         };
 
         const monthNames = [
@@ -390,9 +458,11 @@
             diasPorMes: {},
             outagesPorDia: {},
             outagesPorClusterMes: {},
+            outagesPorTecnologiaCluster: {},
             firstDate: null,
             lastDate: null,
-            totalOutages: 0
+            totalOutages: 0,
+            weekendOutages: {}
         };
 
         document.getElementById('fileInput').addEventListener('change', handleFiles, false);
@@ -468,6 +538,11 @@
             return new Date(dateStr);
         }
 
+        function isWeekend(date) {
+            const day = date.getDay();
+            return day === 0 || day === 6;
+        }
+
         function processData(data) {
             // Reset processed data
             processedData = {
@@ -478,9 +553,13 @@
                 diasPorMes: {},
                 outagesPorDia: {},
                 outagesPorClusterMes: {},
+                outagesPorTecnologiaCluster: {},
                 firstDate: null,
                 lastDate: null,
-                totalOutages: data.length
+                totalOutages: data.length,
+                weekendOutages: {},
+                diasUteisPorMes: {},
+                diasFimSemanaPorMes: {}
             };
 
             // Update summary information
@@ -501,6 +580,7 @@
                 const cluster = row['CLUSTER'] || 'Indefinido';
                 const tecnologia = row['TECNOLOGIA'] || 'Indefinida';
                 const dateKey = dataHora.toISOString().split('T')[0];
+                const isWeekendDay = isWeekend(dataHora);
 
                 // Track first and last dates
                 if (!processedData.firstDate || dataHora < processedData.firstDate) {
@@ -522,6 +602,10 @@
                 // Volume por tecnologia
                 processedData.volumeTecnologia[tecnologia] = (processedData.volumeTecnologia[tecnologia] || 0) + 1;
 
+                // Volume por tecnologia e cluster
+                processedData.outagesPorTecnologiaCluster[tecnologia] = processedData.outagesPorTecnologiaCluster[tecnologia] || {};
+                processedData.outagesPorTecnologiaCluster[tecnologia][cluster] = (processedData.outagesPorTecnologiaCluster[tecnologia][cluster] || 0) + 1;
+
                 // Volume por cluster e mês
                 processedData.outagesPorClusterMes[mesAno] = processedData.outagesPorClusterMes[mesAno] || {};
                 processedData.outagesPorClusterMes[mesAno][cluster] = (processedData.outagesPorClusterMes[mesAno][cluster] || 0) + 1;
@@ -532,6 +616,22 @@
                 // Dias por mês
                 processedData.diasPorMes[mesAno] = processedData.diasPorMes[mesAno] || {};
                 processedData.diasPorMes[mesAno][dia] = (processedData.diasPorMes[mesAno][dia] || 0) + 1;
+
+                // Controle de fim de semana
+                processedData.weekendOutages[mesAno] = processedData.weekendOutages[mesAno] || { total: 0, days: 0 };
+                if (isWeekendDay) {
+                    processedData.weekendOutages[mesAno].total += 1;
+                    // Conta dias únicos de fim de semana
+                    if (!processedData.diasFimSemanaPorMes[mesAno]) {
+                        processedData.diasFimSemanaPorMes[mesAno] = new Set();
+                    }
+                    processedData.diasFimSemanaPorMes[mesAno].add(dateKey);
+                } else {
+                    if (!processedData.diasUteisPorMes[mesAno]) {
+                        processedData.diasUteisPorMes[mesAno] = new Set();
+                    }
+                    processedData.diasUteisPorMes[mesAno].add(dateKey);
+                }
             });
 
             // Update analysis period
@@ -540,11 +640,14 @@
                 const startStr = processedData.firstDate.toLocaleDateString('pt-BR', formatOptions);
                 const endStr = processedData.lastDate.toLocaleDateString('pt-BR', formatOptions);
                 document.getElementById('analysisPeriod').textContent = `${startStr} a ${endStr}`;
+                document.getElementById('clusterPeriod').textContent = `${startStr} a ${endStr}`;
                 
                 // Calculate daily average
                 const daysDiff = Math.ceil((processedData.lastDate - processedData.firstDate) / (1000 * 60 * 60 * 24)) + 1;
                 const dailyAvg = (data.length / daysDiff).toFixed(1);
                 document.getElementById('dailyAverage').textContent = dailyAvg;
+                document.getElementById('clusterDailyAvg').textContent = dailyAvg;
+                document.getElementById('clusterTotal').textContent = data.length.toLocaleString();
             }
 
             renderVolumeMes();
@@ -553,6 +656,7 @@
             renderMonthlyChart();
             renderClusterChart();
             renderTecnologiaChart();
+            renderClusterTecnologiaChart();
             setupMonthSelector();
         }
 
@@ -576,10 +680,21 @@
                 const count = processedData.volumeMes[mesAno];
                 const progressWidth = (count / maxValue) * 100;
                 
+                // Calcular média diária do mês
+                const diasNoMes = new Date(ano, mes, 0).getDate();
+                const mediaDiaria = (count / diasNoMes).toFixed(1);
+                
+                // Calcular média de fim de semana
+                const weekendDays = processedData.diasFimSemanaPorMes[mesAno] ? processedData.diasFimSemanaPorMes[mesAno].size : 0;
+                const weekendTotal = processedData.weekendOutages[mesAno] ? processedData.weekendOutages[mesAno].total : 0;
+                const mediaFimSemana = weekendDays > 0 ? (weekendTotal / weekendDays).toFixed(1) : '0.0';
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${monthNames[parseInt(mes)-1]} ${ano}</td>
                     <td>${count.toLocaleString()}</td>
+                    <td>${mediaDiaria}</td>
+                    <td>${mediaFimSemana}</td>
                     <td>
                         <div class="progress-container">
                             <div class="progress-bar" style="width: ${progressWidth}%"></div>
@@ -628,13 +743,9 @@
             }
 
             const focusAnalistas = Object.keys(analistasFoco);
-            const labels = focusAnalistas.map(login => analistasFoco[login]).concat(['OUTROS']);
+            const labels = focusAnalistas.map(login => analistasFoco[login]);
 
             const data = focusAnalistas.map(login => processedData.volumeAnalista[login] || 0);
-            const outros = Object.keys(processedData.volumeAnalista).reduce((sum, login) => {
-                return focusAnalistas.includes(login) ? sum : sum + processedData.volumeAnalista[login];
-            }, 0);
-            data.push(outros);
 
             window.analystChart = new Chart(ctx, {
                 type: 'bar',
@@ -913,6 +1024,106 @@
             });
         }
 
+        function renderClusterTecnologiaChart() {
+            const ctx = document.getElementById('chartClusterTecnologia').getContext('2d');
+            
+            // Destroy previous chart if it exists
+            if (window.clusterTecnologiaChart) {
+                window.clusterTecnologiaChart.destroy();
+            }
+
+            // Prepare data for stacked bar chart
+            const tecnologias = Object.keys(processedData.outagesPorTecnologiaCluster).slice(0, 8);
+            const clusters = new Set();
+            
+            tecnologias.forEach(tec => {
+                Object.keys(processedData.outagesPorTecnologiaCluster[tec]).forEach(cluster => {
+                    clusters.add(cluster);
+                });
+            });
+            
+            const uniqueClusters = Array.from(clusters).slice(0, 10); // Limit to top 10 clusters
+            
+            // Generate colors for clusters
+            const clusterColors = {};
+            const colorPalette = [
+                '#E60012', '#FF6B6B', '#FF9E4F', '#FFD166',
+                '#06D6A0', '#118AB2', '#073B4C', '#7209B7',
+                '#EF476F', '#FFD166'
+            ];
+            
+            uniqueClusters.forEach((cluster, index) => {
+                clusterColors[cluster] = colorPalette[index % colorPalette.length];
+            });
+            
+            const datasets = tecnologias.map(tec => {
+                return {
+                    label: tec,
+                    data: uniqueClusters.map(cluster => {
+                        return processedData.outagesPorTecnologiaCluster[tec][cluster] || 0;
+                    }),
+                    backgroundColor: uniqueClusters.map(cluster => clusterColors[cluster])
+                };
+            });
+
+            window.clusterTecnologiaChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: uniqueClusters,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Outages',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                drawBorder: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         function setupMonthSelector() {
             const monthSelector = document.getElementById('monthSelector');
             monthSelector.innerHTML = '';
@@ -959,13 +1170,28 @@
             if (!mesAno || !processedData.outagesPorClusterMes[mesAno]) return;
             
             const clusterData = processedData.outagesPorClusterMes[mesAno];
+            const totalMes = Object.values(clusterData).reduce((a, b) => a + b, 0);
+            
+            // Calcular média diária do mês
+            const [mes, ano] = mesAno.split('/');
+            const diasNoMes = new Date(ano, mes, 0).getDate();
+            const mediaDiaria = (totalMes / diasNoMes).toFixed(1);
+            
+            // Calcular média de fim de semana
+            const weekendDays = processedData.diasFimSemanaPorMes[mesAno] ? processedData.diasFimSemanaPorMes[mesAno].size : 0;
+            const weekendTotal = processedData.weekendOutages[mesAno] ? processedData.weekendOutages[mesAno].total : 0;
+            const mediaFimSemana = weekendDays > 0 ? (weekendTotal / weekendDays).toFixed(1) : '0.0';
+            
+            // Atualizar informações do mês
+            document.getElementById('monthlyTotal').textContent = totalMes.toLocaleString();
+            document.getElementById('monthlyDailyAvg').textContent = mediaDiaria;
+            document.getElementById('monthlyWeekendAvg').textContent = mediaFimSemana;
             
             // Prepare data sorted by count (descending)
             const sortedClusters = Object.entries(clusterData)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 10); // Show top 10 clusters
             
-            const [mes, ano] = mesAno.split('/');
             const monthName = monthNames[parseInt(mes)-1];
             
             window.clusterMonthlyChart = new Chart(ctx, {
