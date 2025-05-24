@@ -190,7 +190,13 @@
         
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 400px;
+            margin-top: 1rem;
+        }
+        
+        .chart-container-large {
+            position: relative;
+            height: 500px;
             margin-top: 1rem;
         }
         
@@ -278,7 +284,11 @@
             }
             
             .chart-container {
-                height: 250px;
+                height: 300px;
+            }
+            
+            .chart-container-large {
+                height: 400px;
             }
         }
     </style>
@@ -299,21 +309,6 @@
             </label>
             <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
             <div id="fileInfo" class="file-info">Nenhum arquivo selecionado</div>
-        </div>
-
-        <div class="card-grid">
-            <div class="card summary-card">
-                <div class="summary-label">Total de Outages</div>
-                <div class="summary-value" id="totalOutages">0</div>
-            </div>
-            <div class="card summary-card">
-                <div class="summary-label">Período Analisado</div>
-                <div class="summary-value" id="analysisPeriod">-</div>
-            </div>
-            <div class="card summary-card">
-                <div class="summary-label">Média Diária</div>
-                <div class="summary-value" id="dailyAverage">0</div>
-            </div>
         </div>
 
         <div class="card card-large">
@@ -365,22 +360,17 @@
             </div>
         </div>
 
-        <div class="card-grid">
-            <div class="card">
-                <h2>Top Analistas</h2>
-                <div class="chart-container">
-                    <canvas id="chartAnalistas"></canvas>
-                </div>
+        <div class="card">
+            <h2>Top Analistas por Cluster</h2>
+            <div class="chart-container-large">
+                <canvas id="chartAnalistas"></canvas>
             </div>
-            
-            <div class="card">
-                <h2>Distribuição por Tecnologia</h2>
-                <div class="chart-container">
-                    <canvas id="chartTecnologia"></canvas>
-                </div>
-                <div class="chart-container" style="height: 400px; margin-top: 1rem;">
-                    <canvas id="chartClusterTecnologia"></canvas>
-                </div>
+        </div>
+        
+        <div class="card">
+            <h2>Distribuição por Tecnologia e Cluster</h2>
+            <div class="chart-container-large">
+                <canvas id="chartTecnologia"></canvas>
             </div>
         </div>
 
@@ -420,9 +410,7 @@
                 <canvas id="chartMonthly"></canvas>
             </div>
         </div>
-    </div>
-
-    <script>
+    </div><script>
         // Configuração global do Chart.js
         Chart.defaults.font.family = "'Roboto', sans-serif";
         Chart.defaults.font.size = 12;
@@ -459,6 +447,7 @@
             outagesPorDia: {},
             outagesPorClusterMes: {},
             outagesPorTecnologiaCluster: {},
+            outagesPorAnalistaCluster: {},
             firstDate: null,
             lastDate: null,
             totalOutages: 0,
@@ -554,6 +543,7 @@
                 outagesPorDia: {},
                 outagesPorClusterMes: {},
                 outagesPorTecnologiaCluster: {},
+                outagesPorAnalistaCluster: {},
                 firstDate: null,
                 lastDate: null,
                 totalOutages: data.length,
@@ -563,7 +553,7 @@
             };
 
             // Update summary information
-            document.getElementById('totalOutages').textContent = data.length.toLocaleString();
+            processedData.totalOutages = data.length;
             
             data.forEach(row => {
                 const dataHora = parseDate(row['DIA / HORA']);
@@ -606,6 +596,10 @@
                 processedData.outagesPorTecnologiaCluster[tecnologia] = processedData.outagesPorTecnologiaCluster[tecnologia] || {};
                 processedData.outagesPorTecnologiaCluster[tecnologia][cluster] = (processedData.outagesPorTecnologiaCluster[tecnologia][cluster] || 0) + 1;
 
+                // Volume por analista e cluster
+                processedData.outagesPorAnalistaCluster[login] = processedData.outagesPorAnalistaCluster[login] || {};
+                processedData.outagesPorAnalistaCluster[login][cluster] = (processedData.outagesPorAnalistaCluster[login][cluster] || 0) + 1;
+
                 // Volume por cluster e mês
                 processedData.outagesPorClusterMes[mesAno] = processedData.outagesPorClusterMes[mesAno] || {};
                 processedData.outagesPorClusterMes[mesAno][cluster] = (processedData.outagesPorClusterMes[mesAno][cluster] || 0) + 1;
@@ -639,13 +633,11 @@
                 const formatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
                 const startStr = processedData.firstDate.toLocaleDateString('pt-BR', formatOptions);
                 const endStr = processedData.lastDate.toLocaleDateString('pt-BR', formatOptions);
-                document.getElementById('analysisPeriod').textContent = `${startStr} a ${endStr}`;
                 document.getElementById('clusterPeriod').textContent = `${startStr} a ${endStr}`;
                 
                 // Calculate daily average
                 const daysDiff = Math.ceil((processedData.lastDate - processedData.firstDate) / (1000 * 60 * 60 * 24)) + 1;
                 const dailyAvg = (data.length / daysDiff).toFixed(1);
-                document.getElementById('dailyAverage').textContent = dailyAvg;
                 document.getElementById('clusterDailyAvg').textContent = dailyAvg;
                 document.getElementById('clusterTotal').textContent = data.length.toLocaleString();
             }
@@ -656,7 +648,6 @@
             renderMonthlyChart();
             renderClusterChart();
             renderTecnologiaChart();
-            renderClusterTecnologiaChart();
             setupMonthSelector();
         }
 
@@ -745,39 +736,81 @@
             const focusAnalistas = Object.keys(analistasFoco);
             const labels = focusAnalistas.map(login => analistasFoco[login]);
 
-            const data = focusAnalistas.map(login => processedData.volumeAnalista[login] || 0);
+            // Get all clusters for these analysts
+            const allClusters = new Set();
+            focusAnalistas.forEach(login => {
+                if (processedData.outagesPorAnalistaCluster[login]) {
+                    Object.keys(processedData.outagesPorAnalistaCluster[login]).forEach(cluster => {
+                        allClusters.add(cluster);
+                    });
+                }
+            });
+            const clustersArray = Array.from(allClusters);
+
+            // Generate colors for clusters
+            const clusterColors = {};
+            const colorPalette = [
+                '#E60012', '#FF6B6B', '#FF9E4F', '#FFD166',
+                '#06D6A0', '#118AB2', '#073B4C', '#7209B7',
+                '#EF476F', '#FFD166', '#83C5BE', '#FFDDD2'
+            ];
+            
+            clustersArray.forEach((cluster, index) => {
+                clusterColors[cluster] = colorPalette[index % colorPalette.length];
+            });
+
+            // Prepare dataset for each cluster
+            const datasets = clustersArray.map(cluster => {
+                return {
+                    label: cluster,
+                    data: focusAnalistas.map(login => {
+                        return processedData.outagesPorAnalistaCluster[login]?.[cluster] || 0;
+                    }),
+                    backgroundColor: clusterColors[cluster],
+                    borderColor: '#fff',
+                    borderWidth: 1
+                };
+            });
 
             window.analystChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Outages',
-                        data: data,
-                        backgroundColor: '#E60012',
-                        borderColor: '#C5000F',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.parsed.y.toLocaleString()} outages`;
+                                    return `${context.dataset.label}: ${context.raw.toLocaleString()} outages`;
                                 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Outages por Analista e Cluster',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
                             }
                         }
                     },
                     scales: {
                         y: { 
                             beginAtZero: true,
+                            stacked: true,
                             title: {
                                 display: true,
                                 text: 'Quantidade de Outages',
@@ -790,6 +823,7 @@
                             }
                         },
                         x: {
+                            stacked: true,
                             grid: {
                                 display: false
                             },
@@ -969,36 +1003,58 @@
                 window.tecnologiaChart.destroy();
             }
 
-            // Prepare data sorted by count (descending)
+            // Get top technologies
             const sortedTecnologias = Object.entries(processedData.volumeTecnologia)
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 8); // Show top 8 tecnologias
+                .slice(0, 8)
+                .map(t => t[0]);
 
-            // Generate distinct colors
-            const backgroundColors = [
+            // Get clusters for these technologies
+            const clusters = new Set();
+            sortedTecnologias.forEach(tec => {
+                Object.keys(processedData.outagesPorTecnologiaCluster[tec] || {}).forEach(cluster => {
+                    clusters.add(cluster);
+                });
+            });
+            const clustersArray = Array.from(clusters);
+
+            // Generate colors for clusters
+            const clusterColors = {};
+            const colorPalette = [
                 '#E60012', '#FF6B6B', '#FF9E4F', '#FFD166',
-                '#06D6A0', '#118AB2', '#073B4C', '#7209B7'
+                '#06D6A0', '#118AB2', '#073B4C', '#7209B7',
+                '#EF476F', '#FFD166', '#83C5BE', '#FFDDD2'
             ];
+            
+            clustersArray.forEach((cluster, index) => {
+                clusterColors[cluster] = colorPalette[index % colorPalette.length];
+            });
+
+            // Prepare dataset for each technology
+            const datasets = sortedTecnologias.map(tec => {
+                return {
+                    label: tec,
+                    data: clustersArray.map(cluster => {
+                        return processedData.outagesPorTecnologiaCluster[tec]?.[cluster] || 0;
+                    }),
+                    backgroundColor: clustersArray.map(cluster => clusterColors[cluster]),
+                    borderColor: '#fff',
+                    borderWidth: 1
+                };
+            });
 
             window.tecnologiaChart = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: sortedTecnologias.map(t => t[0]),
-                    datasets: [{
-                        label: 'Outages',
-                        data: sortedTecnologias.map(t => t[1]),
-                        backgroundColor: backgroundColors,
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    }]
+                    labels: clustersArray,
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '70%',
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: 'bottom',
                             labels: {
                                 boxWidth: 12,
                                 padding: 16,
@@ -1009,87 +1065,23 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((context.raw / total) * 100);
-                                    return `${context.label}: ${context.raw.toLocaleString()} (${percentage}%)`;
+                                    return `${context.dataset.label}: ${context.raw.toLocaleString()} outages`;
                                 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Outages por Tecnologia e Cluster',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
                             }
                         }
                     },
-                    animation: {
-                        animateScale: true,
-                        animateRotate: true
-                    }
-                }
-            });
-        }
-
-        function renderClusterTecnologiaChart() {
-            const ctx = document.getElementById('chartClusterTecnologia').getContext('2d');
-            
-            // Destroy previous chart if it exists
-            if (window.clusterTecnologiaChart) {
-                window.clusterTecnologiaChart.destroy();
-            }
-
-            // Prepare data for stacked bar chart
-            const tecnologias = Object.keys(processedData.outagesPorTecnologiaCluster).slice(0, 8);
-            const clusters = new Set();
-            
-            tecnologias.forEach(tec => {
-                Object.keys(processedData.outagesPorTecnologiaCluster[tec]).forEach(cluster => {
-                    clusters.add(cluster);
-                });
-            });
-            
-            const uniqueClusters = Array.from(clusters).slice(0, 10); // Limit to top 10 clusters
-            
-            // Generate colors for clusters
-            const clusterColors = {};
-            const colorPalette = [
-                '#E60012', '#FF6B6B', '#FF9E4F', '#FFD166',
-                '#06D6A0', '#118AB2', '#073B4C', '#7209B7',
-                '#EF476F', '#FFD166'
-            ];
-            
-            uniqueClusters.forEach((cluster, index) => {
-                clusterColors[cluster] = colorPalette[index % colorPalette.length];
-            });
-            
-            const datasets = tecnologias.map(tec => {
-                return {
-                    label: tec,
-                    data: uniqueClusters.map(cluster => {
-                        return processedData.outagesPorTecnologiaCluster[tec][cluster] || 0;
-                    }),
-                    backgroundColor: uniqueClusters.map(cluster => clusterColors[cluster])
-                };
-            });
-
-            window.clusterTecnologiaChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: uniqueClusters,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
                     scales: {
-                        x: {
-                            stacked: true,
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                autoSkip: false,
-                                maxRotation: 45,
-                                minRotation: 45
-                            }
-                        },
-                        y: {
-                            stacked: true,
+                        y: { 
                             beginAtZero: true,
+                            stacked: true,
                             title: {
                                 display: true,
                                 text: 'Quantidade de Outages',
@@ -1100,25 +1092,21 @@
                             grid: {
                                 drawBorder: false
                             }
+                        },
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
                         }
                     },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
-                                }
-                            }
-                        },
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 16,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
-                            }
-                        }
+                    animation: {
+                        duration: 1000
                     }
                 }
             });
